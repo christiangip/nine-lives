@@ -1,0 +1,33 @@
+# Godot 4 .gitignore
+.godot/
+.import/
+export.cfg
+export_presets.cfg
+*.translation
+
+# Mono / C# (if hot paths are added later)
+.mono/
+data_*/
+mono_crash.*.json
+
+# Exported builds
+/build/
+/exports/
+*.exe
+*.pck
+*.zip
+*.dmg
+*.app
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*~
+*.swp
+.idea/
+.vscode/
+*.tmp
+
+# Local-only secrets / overrides
+override.cfg
+*.local.cfg

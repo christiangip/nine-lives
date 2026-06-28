@@ -1,0 +1,9 @@
+{
+  "dirs": ["res://game/tests/unit", "res://game/tests/integration"],
+  "include_subdirs": true,
+  "prefix": "test_",
+  "suffix": ".gd",
+  "log_level": 1,
+  "should_exit": true,
+  "should_maximize": true
+}

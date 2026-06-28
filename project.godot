@@ -1,0 +1,80 @@
+; Engine configuration file.
+; Nine Lives — Solo Stealth Heist Roguelite (Godot 4.6, Forward+)
+; Working title (was "Soul Heist"). See docs/DESIGN_DECISIONS.md.
+;
+; NOTE: This is a hand-authored skeleton. Open once in the Godot 4.6 editor to
+; let it (re)generate .godot/ caches and validate autoload paths.
+
+config_version=5
+
+[application]
+
+config/name="Nine Lives"
+config/description="Solo first-person stealth heist roguelite. Pull contracts in an unbroken Streak until you're caught; bank Legacy; come back sharper."
+config/version="0.0.1"
+run/main_scene="res://game/scenes/main/Main.tscn"
+config/features=PackedStringArray("4.6", "Forward Plus")
+config/icon="res://icon.svg"
+
+[autoload]
+
+EventBus="*res://game/autoload/EventBus.gd"
+GameManager="*res://game/autoload/GameManager.gd"
+InputManager="*res://game/autoload/InputManager.gd"
+SaveManager="*res://game/autoload/SaveManager.gd"
+ProgressionManager="*res://game/autoload/ProgressionManager.gd"
+RunManager="*res://game/autoload/RunManager.gd"
+MissionGenerator="*res://game/autoload/MissionGenerator.gd"
+AudioManager="*res://game/autoload/AudioManager.gd"
+
+[display]
+
+window/size/viewport_width=1920
+window/size/viewport_height=1080
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[input_devices]
+
+pointing/emulate_touch_from_mouse=false
+
+[rendering]
+
+renderer/rendering_method="forward_plus"
+anti_aliasing/quality/msaa_3d=2
+environment/defaults/default_environment="res://game/assets/default_env.tres"
+
+[physics]
+
+3d/default_gravity=9.8
+common/physics_ticks_per_second=60
+
+; ---------------------------------------------------------------------------
+; INPUT MAP
+; All actions are remappable at runtime via InputManager + the Options menu.
+; Defaults below are KB+M; gamepad events are added by InputManager at boot.
+; ---------------------------------------------------------------------------
+[input]
+
+move_forward={"deadzone":0.2,"events":[{"type":"key","keycode":87}]}      ; W
+move_back={"deadzone":0.2,"events":[{"type":"key","keycode":83}]}         ; S
+move_left={"deadzone":0.2,"events":[{"type":"key","keycode":65}]}         ; A
+move_right={"deadzone":0.2,"events":[{"type":"key","keycode":68}]}        ; D
+sprint={"deadzone":0.2,"events":[{"type":"key","keycode":4194325}]}       ; Shift
+crouch={"deadzone":0.5,"events":[{"type":"key","keycode":67}]}            ; C
+prone={"deadzone":0.5,"events":[{"type":"key","keycode":90}]}            ; Z
+jump={"deadzone":0.5,"events":[{"type":"key","keycode":32}]}              ; Space
+lean_left={"deadzone":0.5,"events":[{"type":"key","keycode":81}]}         ; Q
+lean_right={"deadzone":0.5,"events":[{"type":"key","keycode":69}]}        ; E
+interact={"deadzone":0.5,"events":[{"type":"key","keycode":70}]}          ; F
+takedown={"deadzone":0.5,"events":[{"type":"key","keycode":86}]}          ; V
+casing_vision={"deadzone":0.5,"events":[{"type":"key","keycode":88}]}     ; X (Thief Vision)
+drop_loot={"deadzone":0.5,"events":[{"type":"key","keycode":71}]}         ; G
+throw={"deadzone":0.5,"events":[{"type":"key","keycode":84}]}             ; T
+aim={"deadzone":0.5,"events":[{"type":"mouse_button","button_index":2}]}  ; RMB
+fire={"deadzone":0.5,"events":[{"type":"mouse_button","button_index":1}]} ; LMB
+reload={"deadzone":0.5,"events":[{"type":"key","keycode":82}]}            ; R
+weapon_next={"deadzone":0.5,"events":[{"type":"key","keycode":49}]}       ; 1
+gadget_use={"deadzone":0.5,"events":[{"type":"key","keycode":52}]}        ; 4
+pause={"deadzone":0.5,"events":[{"type":"key","keycode":4194305}]}        ; Esc
+ui_accept={"deadzone":0.5,"events":[{"type":"key","keycode":4194309}]}    ; Enter

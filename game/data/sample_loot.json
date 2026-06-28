@@ -1,0 +1,5 @@
+[
+  { "id": "cash_bundle", "tier": "SMALL", "value": 2500, "weight": 0.5, "volume": 0.4, "needs_bagging": true },
+  { "id": "gold_bar", "tier": "BULKY", "value": 18000, "weight": 12.4, "volume": 0.6, "needs_bagging": true },
+  { "id": "masterpiece_painting", "tier": "SPECIAL", "value": 120000, "weight": 6.0, "volume": 8.0, "hand_slots": 2, "special_hook": "stash_trophy_painting" }
+]

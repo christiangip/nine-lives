@@ -1,0 +1,3 @@
+Placeholder marker. On first open in the Godot 4.6 editor, create a WorldEnvironment
+Environment resource here named default_env.tres (referenced by project.godot).
+Suggested: sky/ambient tuned dark for stealth readability + mild SSAO.

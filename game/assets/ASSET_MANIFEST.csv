@@ -1,0 +1,5 @@
+asset_path,type,source_name,source_url,license,author,used_in,placeholder,notes
+# Every imported asset MUST get a row. Prefer CC0. Keep this in sync at import time.
+# Example rows:
+# game/assets/models/characters/guard_a.glb,model,Kenney,https://kenney.nl/assets,CC0,Kenney,actors/Guard,false,
+# game/assets/audio/sfx/alarm.ogg,audio,Freesound,https://freesound.org/s/000000,CC-BY,user,pursuit,false,attribution required
