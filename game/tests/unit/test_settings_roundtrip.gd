@@ -3,9 +3,19 @@ extends GutTest
 ## persist via ConfigFile independent of save slots (FR-01-4).
 ## docs/tasks/01_project_setup.md.
 
+const TEST_PATH := "user://test_settings.cfg"
+var _orig_path: String
+
+func before_all() -> void:
+	# Redirect I/O at a throwaway file so the suite never touches the developer's
+	# real user://settings.cfg.
+	_orig_path = SettingsManager.config_path
+	SettingsManager.config_path = TEST_PATH
+
 func after_all() -> void:
-	# Leave the on-disk settings file at defaults for the next run.
-	SettingsManager.reset_to_defaults()
+	# Drop the temp file and restore the real path for the rest of the session.
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_PATH))
+	SettingsManager.config_path = _orig_path
 
 func test_defaults_present_on_fresh_load() -> void:
 	SettingsManager.reset_to_defaults()

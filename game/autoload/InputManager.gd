@@ -4,10 +4,12 @@ extends Node
 ## [controls] section of user://settings.cfg.
 ## See docs/tasks/01_project_setup.md (input) and 15_ui_hud_menus.md (Options).
 
-const CONFIG_PATH := "user://settings.cfg"
+## Default config path; a plain var (not const) so tests can redirect I/O at a
+## throwaway user://test_*.cfg instead of clobbering the player's real rebinds.
+var config_path := "user://settings.cfg"
 const CONTROLS_SECTION := "controls"
 
-## The full action set (GDD §16.6). KB+M defaults live in project.godot [input];
+## The full action set (GDD §15 — Options → Controls). KB+M defaults live in project.godot [input];
 ## gamepad defaults are added here at boot. Keep this list in sync with [input].
 const ACTIONS: Array[StringName] = [
 	&"move_forward", &"move_back", &"move_left", &"move_right",
@@ -89,7 +91,7 @@ func rebind_action(action: StringName, event: InputEvent) -> void:
 ## action present in the file. Actions absent from the file keep their defaults.
 func load_bindings() -> void:
 	var cfg := ConfigFile.new()
-	if cfg.load(CONFIG_PATH) != OK:
+	if cfg.load(config_path) != OK:
 		return
 	for action in ACTIONS:
 		if not cfg.has_section_key(CONTROLS_SECTION, action):
@@ -108,9 +110,12 @@ func load_bindings() -> void:
 
 ## Write every action's current events to the [controls] section, preserving the
 ## other sections (video/audio/gameplay) that SettingsManager owns.
+## TODO[01]: persist a controls schema version (mirroring the save system) so a future
+## default-binding change or new pad default can reach returning players — today the
+## full saved keymap always wins, masking later default edits.
 func save_bindings() -> void:
 	var cfg := ConfigFile.new()
-	cfg.load(CONFIG_PATH)  # ignore error: a missing file just means a fresh write
+	cfg.load(config_path)  # ignore error: a missing file just means a fresh write
 	for action in ACTIONS:
 		if not InputMap.has_action(action):
 			continue
@@ -120,7 +125,7 @@ func save_bindings() -> void:
 			if not data.is_empty():
 				encoded.append(data)
 		cfg.set_value(CONTROLS_SECTION, action, encoded)
-	cfg.save(CONFIG_PATH)
+	cfg.save(config_path)
 
 # --- helpers ---------------------------------------------------------------
 

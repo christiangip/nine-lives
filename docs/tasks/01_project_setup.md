@@ -11,7 +11,7 @@ it's the ground everyone else builds on.
 ## Functional Requirements
 - **FR-01-1** Project opens in Godot 4.6 Forward+ with all 9 autoloads resolving (no script errors).
 - **FR-01-2** `Main.tscn` is the boot scene and loads the Main Menu (placeholder OK).
-- **FR-01-3** Every input action in GDD §16.6 exists and is **remappable at runtime**; rebinds persist to `user://settings.cfg`.
+- **FR-01-3** Every input action in GDD §15 (Options → Controls) exists and is **remappable at runtime**; rebinds persist to `user://settings.cfg`.
 - **FR-01-4** Options/settings persist via `ConfigFile`, independent of save slots.
 - **FR-01-5** GUT runs headlessly via `tools/scripts/run_tests.sh`; CI executes it on push/PR.
 - **FR-01-6** Git LFS configured; `.gitignore` excludes `.godot/`, builds, secrets.

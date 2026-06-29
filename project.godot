@@ -46,13 +46,6 @@ enabled=PackedStringArray("res://addons/gut/plugin.cfg")
 
 [input]
 
-ui_accept={
-"deadzone": 0.5,
-"events": [{
-"keycode": 4194309,
-"type": "key"
-}]
-}
 move_forward={
 "deadzone": 0.2,
 "events": [{

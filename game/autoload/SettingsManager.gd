@@ -4,7 +4,9 @@ extends Node
 ## Input rebinds live in the same file's [controls] section, owned by InputManager.
 ## See docs/tasks/01_project_setup.md (FR-01-3/4) and 15_ui_hud_menus.md.
 
-const CONFIG_PATH := "user://settings.cfg"
+## Default config path; a plain var (not const) so tests can redirect I/O at a
+## throwaway user://test_*.cfg instead of clobbering the player's real settings.
+var config_path := "user://settings.cfg"
 
 ## The schema and its defaults, grouped by ConfigFile section. The keys here ARE
 ## the contract — Options UI and gameplay read through get_value()/set_value().
@@ -59,7 +61,7 @@ func reset_to_defaults() -> void:
 func load() -> void:
 	_values = _deep_copy(DEFAULTS)
 	var cfg := ConfigFile.new()
-	if cfg.load(CONFIG_PATH) != OK:
+	if cfg.load(config_path) != OK:
 		return
 	for section in DEFAULTS:
 		for key in DEFAULTS[section]:
@@ -69,11 +71,11 @@ func load() -> void:
 ## Persist all settings, preserving the [controls] section InputManager writes.
 func save() -> void:
 	var cfg := ConfigFile.new()
-	cfg.load(CONFIG_PATH)  # ignore error: missing file just means a fresh write
+	cfg.load(config_path)  # ignore error: missing file just means a fresh write
 	for section in _values:
 		for key in _values[section]:
 			cfg.set_value(section, key, _values[section][key])
-	cfg.save(CONFIG_PATH)
+	cfg.save(config_path)
 
 # --- apply -----------------------------------------------------------------
 
