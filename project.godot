@@ -1,9 +1,10 @@
 ; Engine configuration file.
-; Nine Lives — Solo Stealth Heist Roguelite (Godot 4.6, Forward+)
-; Working title (was "Soul Heist"). See docs/DESIGN_DECISIONS.md.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
 ;
-; NOTE: This is a hand-authored skeleton. Open once in the Godot 4.6 editor to
-; let it (re)generate .godot/ caches and validate autoload paths.
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
 
 config_version=5
 
@@ -15,6 +16,10 @@ config/version="0.0.1"
 run/main_scene="res://game/scenes/main/Main.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"
+
+[audio]
+
+buses/default_bus_layout="res://game/assets/default_bus_layout.tres"
 
 [autoload]
 
@@ -35,55 +40,168 @@ window/size/viewport_height=1080
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
-[input_devices]
-
-pointing/emulate_touch_from_mouse=false
-
-[audio]
-
-buses/default_bus_layout="res://game/assets/default_bus_layout.tres"
-
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/gut/plugin.cfg")
 
-[rendering]
-
-renderer/rendering_method="forward_plus"
-anti_aliasing/quality/msaa_3d=2
-environment/defaults/default_environment="res://game/assets/default_env.tres"
-
-[physics]
-
-3d/default_gravity=9.8
-common/physics_ticks_per_second=60
-
-; ---------------------------------------------------------------------------
-; INPUT MAP
-; All actions are remappable at runtime via InputManager + the Options menu.
-; Defaults below are KB+M; gamepad events are added by InputManager at boot.
-; ---------------------------------------------------------------------------
 [input]
 
-move_forward={"deadzone":0.2,"events":[{"type":"key","keycode":87}]}      ; W
-move_back={"deadzone":0.2,"events":[{"type":"key","keycode":83}]}         ; S
-move_left={"deadzone":0.2,"events":[{"type":"key","keycode":65}]}         ; A
-move_right={"deadzone":0.2,"events":[{"type":"key","keycode":68}]}        ; D
-sprint={"deadzone":0.2,"events":[{"type":"key","keycode":4194325}]}       ; Shift
-crouch={"deadzone":0.5,"events":[{"type":"key","keycode":67}]}            ; C
-prone={"deadzone":0.5,"events":[{"type":"key","keycode":90}]}            ; Z
-jump={"deadzone":0.5,"events":[{"type":"key","keycode":32}]}              ; Space
-lean_left={"deadzone":0.5,"events":[{"type":"key","keycode":81}]}         ; Q
-lean_right={"deadzone":0.5,"events":[{"type":"key","keycode":69}]}        ; E
-interact={"deadzone":0.5,"events":[{"type":"key","keycode":70}]}          ; F
-takedown={"deadzone":0.5,"events":[{"type":"key","keycode":86}]}          ; V
-casing_vision={"deadzone":0.5,"events":[{"type":"key","keycode":88}]}     ; X (Thief Vision)
-drop_loot={"deadzone":0.5,"events":[{"type":"key","keycode":71}]}         ; G
-throw={"deadzone":0.5,"events":[{"type":"key","keycode":84}]}             ; T
-aim={"deadzone":0.5,"events":[{"type":"mouse_button","button_index":2}]}  ; RMB
-fire={"deadzone":0.5,"events":[{"type":"mouse_button","button_index":1}]} ; LMB
-reload={"deadzone":0.5,"events":[{"type":"key","keycode":82}]}            ; R
-weapon_next={"deadzone":0.5,"events":[{"type":"key","keycode":49}]}       ; 1
-gadget_use={"deadzone":0.5,"events":[{"type":"key","keycode":52}]}        ; 4
-pause={"deadzone":0.5,"events":[{"type":"key","keycode":4194305}]}        ; Esc
-ui_accept={"deadzone":0.5,"events":[{"type":"key","keycode":4194309}]}    ; Enter
+ui_accept={
+"deadzone": 0.5,
+"events": [{
+"keycode": 4194309,
+"type": "key"
+}]
+}
+move_forward={
+"deadzone": 0.2,
+"events": [{
+"keycode": 87,
+"type": "key"
+}]
+}
+move_back={
+"deadzone": 0.2,
+"events": [{
+"keycode": 83,
+"type": "key"
+}]
+}
+move_left={
+"deadzone": 0.2,
+"events": [{
+"keycode": 65,
+"type": "key"
+}]
+}
+move_right={
+"deadzone": 0.2,
+"events": [{
+"keycode": 68,
+"type": "key"
+}]
+}
+sprint={
+"deadzone": 0.2,
+"events": [{
+"keycode": 4194325,
+"type": "key"
+}]
+}
+crouch={
+"deadzone": 0.5,
+"events": [{
+"keycode": 67,
+"type": "key"
+}]
+}
+prone={
+"deadzone": 0.5,
+"events": [{
+"keycode": 90,
+"type": "key"
+}]
+}
+jump={
+"deadzone": 0.5,
+"events": [{
+"keycode": 32,
+"type": "key"
+}]
+}
+lean_left={
+"deadzone": 0.5,
+"events": [{
+"keycode": 81,
+"type": "key"
+}]
+}
+lean_right={
+"deadzone": 0.5,
+"events": [{
+"keycode": 69,
+"type": "key"
+}]
+}
+interact={
+"deadzone": 0.5,
+"events": [{
+"keycode": 70,
+"type": "key"
+}]
+}
+takedown={
+"deadzone": 0.5,
+"events": [{
+"keycode": 86,
+"type": "key"
+}]
+}
+casing_vision={
+"deadzone": 0.5,
+"events": [{
+"keycode": 88,
+"type": "key"
+}]
+}
+drop_loot={
+"deadzone": 0.5,
+"events": [{
+"keycode": 71,
+"type": "key"
+}]
+}
+throw={
+"deadzone": 0.5,
+"events": [{
+"keycode": 84,
+"type": "key"
+}]
+}
+aim={
+"deadzone": 0.5,
+"events": [{
+"button_index": 2,
+"type": "mouse_button"
+}]
+}
+fire={
+"deadzone": 0.5,
+"events": [{
+"button_index": 1,
+"type": "mouse_button"
+}]
+}
+reload={
+"deadzone": 0.5,
+"events": [{
+"keycode": 82,
+"type": "key"
+}]
+}
+weapon_next={
+"deadzone": 0.5,
+"events": [{
+"keycode": 49,
+"type": "key"
+}]
+}
+gadget_use={
+"deadzone": 0.5,
+"events": [{
+"keycode": 52,
+"type": "key"
+}]
+}
+pause={
+"deadzone": 0.5,
+"events": [{
+"keycode": 4194305,
+"type": "key"
+}]
+}
+
+[rendering]
+
+anti_aliasing/quality/msaa_3d=2
+environment/defaults/default_environment="res://game/assets/default_env.tres"

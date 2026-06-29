@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://cj7fiqtetfpbk"
+
+[deps]
+
+files=["res://game/assets/ASSET_MANIFEST.type.translation", "res://game/assets/ASSET_MANIFEST.source.translation", "res://game/assets/ASSET_MANIFEST.source.translation", "res://game/assets/ASSET_MANIFEST.license.translation", "res://game/assets/ASSET_MANIFEST.author.translation", "res://game/assets/ASSET_MANIFEST.used.translation", "res://game/assets/ASSET_MANIFEST.placeholder.translation", "res://game/assets/ASSET_MANIFEST.notes.translation"]
+
+source_file="res://game/assets/ASSET_MANIFEST.csv"
+dest_files=["res://game/assets/ASSET_MANIFEST.type.translation", "res://game/assets/ASSET_MANIFEST.source.translation", "res://game/assets/ASSET_MANIFEST.source.translation", "res://game/assets/ASSET_MANIFEST.license.translation", "res://game/assets/ASSET_MANIFEST.author.translation", "res://game/assets/ASSET_MANIFEST.used.translation", "res://game/assets/ASSET_MANIFEST.placeholder.translation", "res://game/assets/ASSET_MANIFEST.notes.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true
