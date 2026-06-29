@@ -50,8 +50,9 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
 ## Sub-task lists
 
 ### Foundation
-- [ ] **01 — Project Setup & Tooling** · `01_project_setup.md` · *(M0)*
+- [~] **01 — Project Setup & Tooling** · `01_project_setup.md` · *(M0)*
   Godot project config, autoload wiring, input map, GUT + CI, config/options persistence. **Blocks: everything.**
+  *Authoring complete (9 autoloads incl. `SettingsManager`, boot → Main Menu, input rebind + settings persistence, GUT vendored + tests). In-engine verification pending Godot 4.6 — see the `[~]` boxes in the list.*
 - [ ] **02 — Core Architecture & Data Framework** · `02_core_architecture.md` · *(M0)*
   EventBus, manager skeletons, content registries (scan `_defs` instances by id), scene/state machine, base components. **Blocks: 03,11,12,13,16.**
 
@@ -112,7 +113,7 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
 ## Overall progress
 
 ```
-Foundation        [01][02]                          0 / 2
+Foundation        [~01][02]                         0 / 2
 Core stealth (M0) [03][04][05·G][06·c][07·c][08]    0 / 6
 Spine (M1)        [11·b][12][13·m][15·m][16]         0 / 5
 Loud + breadth    [09][10][14]                       0 / 3

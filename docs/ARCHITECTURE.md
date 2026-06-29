@@ -28,6 +28,7 @@ Declared in `project.godot [autoload]`, loaded top-to-bottom:
 6. **RunManager** — current Streak (Notoriety, level, Edges, Heat, Take, Job Map, `committed`).
 7. **MissionGenerator** — seeded hybrid-procedural assembly + population + solvability validation.
 8. **AudioManager** — dynamic music layers + SFX bus.
+9. **SettingsManager** — graphics/audio/gameplay options + `ConfigFile` persistence (`user://settings.cfg`); input rebinds live in that file's `[controls]` section, owned by `InputManager`. Registered last so every other manager exists when it applies on boot.
 
 **Dependency rule:** managers depend *downward* (e.g. `RunManager` may read `ProgressionManager`, not vice-versa) and communicate *sideways* only via `EventBus`. No two managers hold hard references to each other's mutable state.
 

@@ -36,7 +36,7 @@ nine-lives/
 │       ├── 00_MASTER_TASKLIST.md   ← tracks all sub-lists + milestone gates
 │       └── 01..21_*.md             ← one sub-system task list per section
 ├── game/                     ← the Godot project content (see game/README.md)
-│   ├── autoload/             ← 8 singletons (EventBus, GameManager, …)
+│   ├── autoload/             ← 9 singletons (EventBus, GameManager, …)
 │   ├── systems/              ← gameplay code by domain
 │   ├── scenes/               ← main/menu/hideout/mission/player/actors/ui
 │   ├── resources/_defs/      ← data schema (LootDef, GearDef, EdgeDef, …)

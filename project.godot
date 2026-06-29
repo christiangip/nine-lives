@@ -26,6 +26,7 @@ ProgressionManager="*res://game/autoload/ProgressionManager.gd"
 RunManager="*res://game/autoload/RunManager.gd"
 MissionGenerator="*res://game/autoload/MissionGenerator.gd"
 AudioManager="*res://game/autoload/AudioManager.gd"
+SettingsManager="*res://game/autoload/SettingsManager.gd"
 
 [display]
 
@@ -37,6 +38,14 @@ window/stretch/aspect="expand"
 [input_devices]
 
 pointing/emulate_touch_from_mouse=false
+
+[audio]
+
+buses/default_bus_layout="res://game/assets/default_bus_layout.tres"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/gut/plugin.cfg")
 
 [rendering]
 
