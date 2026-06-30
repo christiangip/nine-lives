@@ -1,0 +1,108 @@
+[gd_scene load_steps=18 format=3]
+
+; Dev-only greybox for the task-05 manual playtest (F6). Not wired into GameManager —
+; mission flow is task 11. A GuardAI patrols the three waypoints (looping) with a child
+; DetectionSensor + debug cone. Walk into its cone to get investigated/searched; sprint nearby
+; to pull it off-route to the noise; it recovers and resumes when it finds nothing. A loose
+; Body sits off the route — step out of the way and let the guard's cone sweep over it to watch
+; the alarm trip. Movement is direct steering on the open floor (no nav-mesh bake needed).
+
+[ext_resource type="PackedScene" path="res://game/scenes/player/PlayerController.tscn" id="1_player"]
+[ext_resource type="Environment" path="res://game/assets/default_env.tres" id="2_env"]
+[ext_resource type="Script" path="res://game/systems/ai/GuardAI.gd" id="3_guard"]
+[ext_resource type="Script" path="res://game/systems/stealth/DetectionSensor.gd" id="4_sensor"]
+[ext_resource type="Script" path="res://game/systems/stealth/DetectionConeDebug.gd" id="5_cone"]
+[ext_resource type="Script" path="res://game/systems/ai/Body.gd" id="6_body"]
+[ext_resource type="Resource" path="res://game/resources/detection/default_detection.tres" id="7_cfg"]
+[ext_resource type="Resource" path="res://game/resources/enemies/default_guard.tres" id="8_enemy"]
+[ext_resource type="Resource" path="res://game/resources/ai/default_ai.tres" id="9_ai"]
+
+[sub_resource type="BoxMesh" id="Mesh_floor"]
+size = Vector3(28, 0.4, 28)
+
+[sub_resource type="BoxShape3D" id="Shape_floor"]
+size = Vector3(28, 0.4, 28)
+
+[sub_resource type="CapsuleShape3D" id="Shape_guard"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="CapsuleMesh" id="Mesh_guard"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="Mat_guard"]
+albedo_color = Color(0.2, 0.35, 0.78, 1)
+
+[sub_resource type="CapsuleMesh" id="Mesh_body"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="Mat_body"]
+albedo_color = Color(0.78, 0.18, 0.18, 1)
+
+[node name="GuardGreybox" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = ExtResource("2_env")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.643, -0.766, 0, 0.766, 0.643, 0, 8, 0)
+shadow_enabled = true
+
+[node name="Floor" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, 0)
+metadata/surface = "concrete"
+
+[node name="FloorMesh" type="MeshInstance3D" parent="Floor"]
+mesh = SubResource("Mesh_floor")
+
+[node name="FloorShape" type="CollisionShape3D" parent="Floor"]
+shape = SubResource("Shape_floor")
+
+[node name="Patrol" type="Node3D" parent="."]
+
+[node name="WP0" type="Marker3D" parent="Patrol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 5)
+
+[node name="WP1" type="Marker3D" parent="Patrol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0, 5)
+
+[node name="WP2" type="Marker3D" parent="Patrol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0, -3)
+
+[node name="Guard" type="CharacterBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0.9, 5)
+script = ExtResource("3_guard")
+def = ExtResource("8_enemy")
+ai_config = ExtResource("9_ai")
+patrol_path = NodePath("../Patrol")
+sensor_path = NodePath("Sensor")
+
+[node name="GuardShape" type="CollisionShape3D" parent="Guard"]
+shape = SubResource("Shape_guard")
+
+[node name="GuardMesh" type="MeshInstance3D" parent="Guard"]
+mesh = SubResource("Mesh_guard")
+surface_material_override/0 = SubResource("Mat_guard")
+
+[node name="Sensor" type="Node3D" parent="Guard"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+script = ExtResource("4_sensor")
+config = ExtResource("7_cfg")
+enemy_def = ExtResource("8_enemy")
+
+[node name="ConeDebug" type="MeshInstance3D" parent="Guard/Sensor"]
+script = ExtResource("5_cone")
+
+[node name="Body0" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0.4, 5)
+script = ExtResource("6_body")
+
+[node name="Body0Mesh" type="MeshInstance3D" parent="Body0"]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0, 0)
+mesh = SubResource("Mesh_body")
+surface_material_override/0 = SubResource("Mat_body")
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 9)

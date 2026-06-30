@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="AIConfigDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/AIConfigDef.gd" id="1_ai"]
+
+[resource]
+script = ExtResource("1_ai")
+id = &"default"
+arrival_radius = 0.6
+waypoint_pause = 1.0
+patrol_speed_mult = 0.6
+investigate_speed_mult = 1.0
+look_around_duration = 1.5
+investigate_timeout = 6.0
+search_duration = 5.0
+search_radius = 4.0
+max_fakeable_checkins = 2
+checkin_delay = 8.0
+checkin_window = 4.0
+alert_propagation_radius = 12.0
+body_discovery_range = 8.0

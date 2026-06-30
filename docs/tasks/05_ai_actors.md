@@ -21,25 +21,32 @@ Fairness over emergent chaos. Guards are the M0 vertical; the rest of the roster
 
 ## Phases
 ### Phase 05.1 — Guard core (M0)
-- [ ] Nav patrol over waypoints; idle/look-around.
-- [ ] Investigate (go to last-known position) ↔ Search (local sweep) ↔ resume, tied to 04 states.
-- [ ] Takedown reaction; body spawn; discovery → alarm.
+- [x] Nav patrol over waypoints; idle/look-around. *(`GuardAI` direct-steers a looping waypoint
+  route with a `waypoint_pause` glance; NavigationServer pathing for obstacle avoidance is a later
+  refinement — open-floor greybox needs no nav-mesh bake.)*
+- [x] Investigate (go to last-known position) ↔ Search (local sweep) ↔ resume, tied to 04 states.
+- [x] Takedown reaction; body spawn; discovery → alarm. *(`take_down()` → `Body` (group `&"body"`)
+  + armed `RadioCheckin`; guards scan their cone for un-concealed bodies → `body_discovered`/`alarm_tripped`.)*
 
 ### Phase 05.2 — Radios & coordination
-- [ ] Radio check-in prompt + fakeable-count escalation.
-- [ ] Nearby-guard alert propagation on Searching/Alerted.
+- [x] Radio check-in fakeable-count escalation. *(`RadioCheckin.try_fake()`; the on-screen
+  hold-prompt **widget** is HUD task 15 — logic + hook shipped here.)*
+- [x] Nearby-guard alert propagation on Searching/Alerted. *(`GuardAI` converges to investigate
+  on a teammate's spot/search/body-find within `alert_propagation_radius`.)*
 
-### Phase 05.3 — Sensors-as-actors
-- [ ] Camera arc + monitoring feed / delayed auto-alarm; operator blind-window.
+### Phase 05.3 — Sensors-as-actors  *(deferred — needs mission population/keycards/inventory)*
+- [ ] Camera arc + monitoring feed / delayed auto-alarm; operator blind-window. *(↩ build in 11.)*
 - [ ] Guard dog scent sensor; civilian panic FSM; inspector roaming + keycard carry.
+  *(↩ inspector keycard waits on 06; population on 11. `EnemyDef.Kind` already enumerates all.)*
 
-### Phase 05.4 — Combat AI (M2, with 10)
+### Phase 05.4 — Combat AI (M2, with 10)  *(deferred — hard-blocked by task 10)*
 - [ ] Cover selection, suppress/peek, flank, advance under Pursuit; responder/SWAT/specialist tiers.
+  *(↩ `GuardAI._tick_combat` is a converge-only stub; flesh out in `10_going_loud_pursuit.md`.)*
 
-### Phase 05.5 — Performance
+### Phase 05.5 — Performance  *(deferred — profile against 11's dense populations)*
 - [ ] Round-robin AI ticks; sleep distant actors; budget for 60 FPS with dense populations.
 
-## Tests (GUT)
+## Tests (GUT) — **all green on Godot 4.6.3** (seam-style, headless-deterministic)
 - `test_guard_patrol.gd` — guard follows waypoints and loops.
 - `test_investigate_recover.gd` — noise → investigate last position → return to patrol if nothing found.
 - `test_body_discovery_alarm.gd` — an unhidden body within a cone raises the alarm; hidden does not.
@@ -47,5 +54,7 @@ Fairness over emergent chaos. Guards are the M0 vertical; the rest of the roster
 - `test_enemydef_scaling.gd` — higher-tier `EnemyDef` yields larger cones/health/speed.
 
 ## Definition of Done
-- [ ] M0: Phase 05.1 done + its tests green (guard usable in the greybox).
-- [ ] M2/M3: 05.2–05.5 done; combat AI integrates with 10; perf budget held.
+- [~] M0: Phase 05.1 done + its tests green (guard usable in the greybox). *(Code + automated DoD
+  complete & **verified green on 4.6.3**; only residual is the in-editor F6 "feel" sign-off on
+  `game/scenes/ai/GuardGreybox.tscn` — mark `[x]` after it, mirroring tasks 03/04.)*
+- [ ] M2/M3: 05.2 done; 05.3–05.5 deferred (see per-phase ↩ notes); combat AI integrates with 10; perf budget held.

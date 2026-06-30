@@ -3,6 +3,11 @@
 **Milestone:** M0 (lock/hack/laser core) · M2 (full) · **Depends on:** 02, 03 · **Blocks:** 07, 11
 **Implements:** GDD §9.1–9.7 · **Decisions:** Q6 (keycards gate, no disguises).
 
+> **↩ From 05 (AI Actors):** the Inspector roaming gate (FR-05-7, Phase 05.3) needs the
+> **must-have keycard** authored here. Once keycards exist, give the Inspector `EnemyDef` a
+> carried keycard so taking it down (or pickpocketing) yields the gate key. Come back and
+> tick the Inspector item in `05_ai_actors.md`.
+
 ## Overview
 The puzzle-box catalogue: every obstacle is a data-driven, reusable `Interactable`
 with defined counter-play. Obstacles pair with minigames (07) but are never

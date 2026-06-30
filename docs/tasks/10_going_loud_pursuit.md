@@ -3,6 +3,12 @@
 **Milestone:** M2 · **Depends on:** 05, 09 · **Blocks:** 17
 **Implements:** GDD §8.6–8.7 · **Decisions:** **Q2 fuller cover-shooter**.
 
+> **↩ From 05 (AI Actors):** `GuardAI._tick_combat` (state `COMBAT` in
+> `game/systems/ai/GuardAI.gd`) is a deferred stub — it only *converges on the last-known
+> position* today. **Phase 05.4** (cover selection, suppress/peek, flank, advance under
+> Pursuit; responder/SWAT/specialist tiers) lands **here**. Drive it off `EnemyDef.loadout`
+> and `AIConfigDef`. Come back and tick 05.4 + DoD-M2 in `05_ai_actors.md` when done.
+
 ## Overview
 When stealth breaks, the game becomes a first-person **cover-shooter escape
 gauntlet**. Per Q2 this is the fuller model: weapon depth, an armor layer, ammo

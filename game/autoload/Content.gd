@@ -23,6 +23,7 @@ var attributes: ContentRegistry
 var stations: ContentRegistry
 var intel: ContentRegistry
 var detection: ContentRegistry
+var ai: ContentRegistry
 
 var _registries: Dictionary = {}    ## StringName -> ContentRegistry
 
@@ -45,6 +46,7 @@ func _build() -> void:
 	stations = _make(&"stations", StationDef, "stations")
 	intel = _make(&"intel", IntelDef, "intel")
 	detection = _make(&"detection", DetectionConfigDef, "detection")
+	ai = _make(&"ai", AIConfigDef, "ai")
 
 func _make(key: StringName, def_script: GDScript, folder: String, json_files: Array = []) -> ContentRegistry:
 	var reg := ContentRegistry.new(def_script, [_RESOURCE_ROOT.path_join(folder)], json_files)

@@ -154,3 +154,25 @@ checkbox in the task list. Keep tests headless-safe (no editor-only deps).
   escalation is task 10. **Residual (`[~]`):** the manual F6 "feel" playtest on the new
   `game/scenes/player/DetectionGreybox.tscn` (walk a cone, hug shadow, recover by breaking LoS) — mark
   `[x]` after in-engine sign-off, mirroring task 03.
+- **05 — AI Actors:** **M0 guard core + Phase 05.2 coordination — code + automated DoD complete &
+  verified green** on Godot 4.6.3 (headless GUT **84/84**, +5 task-05 tests). Fleshed out
+  `game/systems/ai/GuardAI.gd` (`CharacterBody3D`) into a state machine (PATROL/INVESTIGATE/SEARCH/
+  COMBAT/DOWNED) driven by its child `DetectionSensor` via **pure deterministic seams**
+  (`next_waypoint_index`, `ai_state_for_detection`, `reached`, `tick_timer`, `investigate_next`/
+  `search_next`, `within_propagation_radius`) + thin steering glue: loops a waypoint route,
+  peels off to investigate `last_seen`/`last_heard`, does a local search, and **recovers** (drops
+  back to patrol when the lead goes stale / detection decays). `take_down()` drops a discoverable
+  **`Body`** (`game/systems/ai/Body.gd`, group `&"body"`, `concealed` flag + drag/hide hook for 08)
+  and arms a **`RadioCheckin`** (`game/systems/ai/RadioCheckin.gd`, fakeable-count → `alarm_tripped`).
+  Guards scan their cone for un-concealed bodies (`body_discovered`) and **propagate** alerts to
+  nearby guards on a teammate's spot/search/body-find. **EventBus stayed frozen** — it already
+  declared `body_discovered`/`alarm_tripped`/`player_spotted`/`detection_changed` (locked by the
+  contract test), so no signal changes. **No magic numbers:** behavior tunables live in a new
+  **`AIConfigDef`** (+ `default_ai.tres`) registered as a **12th `Content` registry** (`Content.ai`);
+  per-actor senses/health/speed in `EnemyDef`, now with a `tier` + pure `scaled(mult)` for
+  data-driven difficulty (FR-05-9). Dev greybox `game/scenes/ai/GuardGreybox.tscn` (direct-steer,
+  no nav-mesh bake). **Deferred (↩ notes added to the blocking task docs):** **05.3** full sensor
+  roster (cameras/operator/dogs/civilians/inspector → 06 keycards / 11 population), **05.4** combat AI
+  (`_tick_combat` is a converge-only stub → task 10), **05.5** perf round-robin (→ 11). **Residual
+  (`[~]`):** the manual F6 "feel" sign-off on `GuardGreybox.tscn` — mark M0 DoD `[x]` after it,
+  mirroring tasks 03/04.

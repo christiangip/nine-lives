@@ -73,8 +73,14 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
   `DetectionConfigDef` (+ `default_detection.tres`, registered as an 11th `Content` registry);
   per-actor geometry from `EnemyDef` (`default_guard.tres`). **Only residual:** in-editor F6
   "feel" sign-off on `DetectionGreybox.tscn` (then `[x]`).*
-- [ ] **05 — AI Actors** · `05_ai_actors.md` · *(M0 = Guard only · M2/M3 = full roster + combat)*
+- [~] **05 — AI Actors** · `05_ai_actors.md` · *(M0 = Guard only · M2/M3 = full roster + combat)*
   Guards, cameras, operator, dogs, civilians, inspector; state machines over NavigationServer.
+  *M0 guard core + Phase 05.2 coordination **code + automated DoD complete & verified green on 4.6.3**
+  (GUT 84/84; +5 task-05 tests). `GuardAI` patrols/investigates/searches/recovers off `DetectionSensor`;
+  takedown → discoverable `Body` + `RadioCheckin`; alert propagation. Tunables in a new `AIConfigDef`
+  (`Content.ai`); `EnemyDef.scaled()` tiers. **Deferred (↩ noted on the blocking tasks):** 05.3 roster
+  (cameras/dogs/civilians/inspector → 06/11), 05.4 combat AI (→ 10), 05.5 perf (→ 11). Residual: F6
+  sign-off on `GuardGreybox.tscn`.*
 - [ ] **06 — Heist Mechanics & Obstacles** · `06_heist_mechanics_obstacles.md` · *(M0 core · M2 full)*
   Locks, safes, keys/keycards, cases, hacking targets, lasers, sensors, biometrics, power, breaching.
 - [ ] **07 — Minigames** · `07_minigames.md` · *(M0 core · M2 full)*
@@ -126,7 +132,7 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
 
 ```
 Foundation        [x01][x02]                        2 / 2
-Core stealth (M0) [x03][~04][05·G][06·c][07·c][08]  1 / 6
+Core stealth (M0) [x03][~04][~05·G][06·c][07·c][08]  1 / 6
 Spine (M1)        [11·b][12][13·m][15·m][16]         0 / 5
 Loud + breadth    [09][10][14]                       0 / 3
 Presentation      [17][18]                           0 / 2

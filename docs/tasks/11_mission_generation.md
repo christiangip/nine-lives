@@ -3,6 +3,12 @@
 **Milestone:** M1 (basic) · M2 (full) · **Depends on:** 04, 05, 06, 08 · **Blocks:** 13, 14
 **Implements:** GDD §7.5 · **Decisions:** **Q7 hybrid procedural**.
 
+> **↩ From 05 (AI Actors):** the full sensor-actor roster (cameras/operator/dogs/civilians/
+> inspector, Phase 05.3) and the AI perf budget (round-robin ticks / sleep distant actors,
+> Phase 05.5) are deferred until there is a populated mission to host and profile them. Spawn
+> them from `EnemyDef` here (`MissionGenerator.build`), then come back and tick 05.3/05.5 +
+> DoD-M3 in `05_ai_actors.md`.
+
 ## Overview
 Seeded, hybrid-procedural assembly: hand-authored modular **sections** stitched by
 a rule-based assembler, then **populated** with loot/guards/cameras/objectives —

@@ -1,27 +1,307 @@
 extends CharacterBody3D
 class_name GuardAI
-## Patrol guard: state machine over NavigationServer. Investigates, searches,
-## fights when loud (cover-shooter, Q2). See docs/tasks/05_ai_actors.md, GDD §8.4.
+## Patrol guard: a lightweight state machine driven by its child DetectionSensor (04).
+## Patrols waypoints → investigates the last-known spot on a noise/half-sighting → does a local
+## search → resumes; converges/raises when a nearby guard spots the player or finds a body
+## (Phase 05.2 coordination). Takedownable: leaves a discoverable Body and arms a RadioCheckin.
+## Combat (COMBAT state) is a converge-only placeholder until task 10 wires the cover-shooter.
+## Movement/threshold tunables come from AIConfigDef (Content.ai), per-actor senses from EnemyDef
+## — no magic numbers. See docs/tasks/05_ai_actors.md and GDD §8.3-§8.5.
 
 enum AIState { PATROL, INVESTIGATE, SEARCH, COMBAT, DOWNED }
 
-@export var def: EnemyDef
-@export var patrol_path: NodePath
+const _GRAVITY := 9.8   ## fall accel; keeps the body grounded (not a gameplay tunable)
+
+@export var def: EnemyDef                ## per-actor archetype (senses/health/speed); FR-05-9
+@export var ai_config: AIConfigDef       ## behavior tunables; falls back to Content.ai's &"default"
+@export var patrol_path: NodePath        ## a node whose Node3D children are the patrol waypoints
+@export var sensor_path: NodePath        ## the DetectionSensor (auto-found among children if unset)
 
 var ai_state: int = AIState.PATROL
+var radio: RadioCheckin                  ## armed when this guard is taken down (Phase 05.2)
+
+var _sensor: DetectionSensor
+var _waypoints: Array[Vector3] = []
+var _patrol_index: int = 0
+var _timer: float = 0.0                  ## multipurpose per-state countdown (pause/timeout/search)
+var _investigate_target: Vector3 = Vector3.ZERO
+var _has_investigate_target: bool = false
 
 func _ready() -> void:
-	pass # TODO[05]: cache nav agent, patrol points, DetectionSensor
+	add_to_group(&"guard")
+	if def == null and Content != null and Content.enemies != null:
+		def = Content.enemies.get_def(&"guard") as EnemyDef
+	if def == null:
+		def = EnemyDef.new()   # data-driven defaults; avoids magic-number speeds in logic
+	if ai_config == null and Content != null and Content.ai != null:
+		ai_config = Content.ai.get_def(&"default") as AIConfigDef
+	if ai_config == null:
+		ai_config = AIConfigDef.new()
+	_resolve_sensor()
+	_resolve_waypoints()
+	if not EventBus.detection_changed.is_connected(_on_detection_changed):
+		EventBus.detection_changed.connect(_on_detection_changed)
+	if not EventBus.player_spotted.is_connected(_on_player_spotted):
+		EventBus.player_spotted.connect(_on_player_spotted)
+	if not EventBus.body_discovered.is_connected(_on_body_discovered):
+		EventBus.body_discovered.connect(_on_body_discovered)
 
+func _exit_tree() -> void:
+	if EventBus.detection_changed.is_connected(_on_detection_changed):
+		EventBus.detection_changed.disconnect(_on_detection_changed)
+	if EventBus.player_spotted.is_connected(_on_player_spotted):
+		EventBus.player_spotted.disconnect(_on_player_spotted)
+	if EventBus.body_discovered.is_connected(_on_body_discovered):
+		EventBus.body_discovered.disconnect(_on_body_discovered)
+
+func _resolve_sensor() -> void:
+	if sensor_path != NodePath() and has_node(sensor_path):
+		_sensor = get_node(sensor_path) as DetectionSensor
+	if _sensor == null:
+		for c in get_children():
+			if c is DetectionSensor:
+				_sensor = c
+				break
+	if _sensor != null and def != null and _sensor.enemy_def == null:
+		_sensor.enemy_def = def
+
+func _resolve_waypoints() -> void:
+	_waypoints.clear()
+	if patrol_path == NodePath() or not has_node(patrol_path):
+		return
+	for c in get_node(patrol_path).get_children():
+		if c is Node3D:
+			_waypoints.append((c as Node3D).global_position)
+
+# --- Pure seams (deterministic; unit-tested headless) ----------------------
+## Next waypoint in a looping route. TODO[05].
+func next_waypoint_index(current: int, count: int) -> int:
+	if count <= 0:
+		return 0
+	return (current + 1) % count
+
+## Map a DetectionSensor state to the guard's behavior state. TODO[05].
+func ai_state_for_detection(det_state: int) -> int:
+	match det_state:
+		DetectionSensor.DetectionState.SUSPICIOUS:
+			return AIState.INVESTIGATE
+		DetectionSensor.DetectionState.SEARCHING:
+			return AIState.SEARCH
+		DetectionSensor.DetectionState.ALERTED, DetectionSensor.DetectionState.PURSUIT:
+			return AIState.COMBAT
+		_:
+			return AIState.PATROL
+
+## Within `radius` of `target`? (arrival / discovery / propagation test). TODO[05].
+func reached(from_pos: Vector3, target: Vector3, radius: float) -> bool:
+	return from_pos.distance_to(target) <= radius
+
+## Count a per-state timer down, floored at 0. TODO[05].
+func tick_timer(t: float, dt: float) -> float:
+	return maxf(t - dt, 0.0)
+
+## Is a teammate (or event) at `other` close enough for this guard to react? (FR-05-2). TODO[05].
+func within_propagation_radius(from_pos: Vector3, other: Vector3, radius: float) -> bool:
+	return from_pos.distance_to(other) <= radius
+
+## Resolution of an INVESTIGATE: arriving starts a local SEARCH; timing out gives up to PATROL. TODO[05].
+func investigate_next(arrived: bool, timed_out: bool) -> int:
+	if arrived:
+		return AIState.SEARCH
+	if timed_out:
+		return AIState.PATROL
+	return AIState.INVESTIGATE
+
+## Resolution of a SEARCH: resume PATROL once the sweep time is spent. TODO[05].
+func search_next(timed_out: bool) -> int:
+	return AIState.PATROL if timed_out else AIState.SEARCH
+
+# --- Tick ------------------------------------------------------------------
 func _physics_process(delta: float) -> void:
+	if ai_state == AIState.DOWNED:
+		return
+	_scan_for_bodies()
 	match ai_state:
 		AIState.PATROL: _tick_patrol(delta)
 		AIState.INVESTIGATE: _tick_investigate(delta)
 		AIState.SEARCH: _tick_search(delta)
-		AIState.COMBAT: _tick_combat(delta)       # TODO[10]: take cover, suppress, flank
-		AIState.DOWNED: pass
+		AIState.COMBAT: _tick_combat(delta)
 
-func _tick_patrol(_d: float) -> void: pass   # TODO[05]
-func _tick_investigate(_d: float) -> void: pass # TODO[05]
-func _tick_search(_d: float) -> void: pass   # TODO[05]
-func _tick_combat(_d: float) -> void: pass   # TODO[10]
+func _tick_patrol(delta: float) -> void:
+	if _waypoints.is_empty():
+		_halt(delta)
+		return
+	var target := _waypoints[_patrol_index]
+	if reached(global_position, target, ai_config.arrival_radius):
+		_timer = tick_timer(_timer, delta)
+		_halt(delta)
+		if _timer <= 0.0:
+			_patrol_index = next_waypoint_index(_patrol_index, _waypoints.size())
+			_timer = ai_config.waypoint_pause
+	else:
+		_move_toward(target, def.move_speed * ai_config.patrol_speed_mult, delta)
+
+func _tick_investigate(delta: float) -> void:
+	var arrived := reached(global_position, _investigate_target, ai_config.arrival_radius)
+	_timer = tick_timer(_timer, delta)
+	var next := investigate_next(arrived, _timer <= 0.0)
+	if next != AIState.INVESTIGATE:
+		_set_ai_state(next)
+		return
+	_move_toward(_investigate_target, def.move_speed * ai_config.investigate_speed_mult, delta)
+
+func _tick_search(delta: float) -> void:
+	_timer = tick_timer(_timer, delta)
+	_halt(delta)   # hold position and watch; the cone keeps sensing during the sweep window
+	if search_next(_timer <= 0.0) == AIState.PATROL:
+		_set_ai_state(AIState.PATROL)
+
+func _tick_combat(delta: float) -> void:
+	# TODO[10]: cover selection, suppress/peek, flank, advance. For M0 just converge on the
+	# last-known position so a spotted player is pressured in the greybox.
+	if _sensor != null:
+		_move_toward(_sensor.last_seen_position, def.move_speed, delta)
+	else:
+		_halt(delta)
+
+# --- State entry -----------------------------------------------------------
+func _set_ai_state(s: int) -> void:
+	if s == ai_state or ai_state == AIState.DOWNED:
+		return
+	ai_state = s
+	match s:
+		AIState.INVESTIGATE: _begin_investigate()
+		AIState.SEARCH: _timer = ai_config.search_duration
+		AIState.PATROL: _begin_patrol()
+		AIState.COMBAT: pass
+
+func _begin_investigate() -> void:
+	if not _has_investigate_target:
+		if _sensor != null and _sensor.has_target:
+			_investigate_target = _sensor.last_seen_position
+		elif _sensor != null:
+			_investigate_target = _sensor.last_heard_position
+		else:
+			_investigate_target = global_position
+	_has_investigate_target = false
+	_timer = ai_config.investigate_timeout
+
+func _begin_patrol() -> void:
+	_timer = 0.0   # head straight to the current waypoint, then pause on arrival
+
+# --- Takedown / body / radio (FR-05-2, FR-05-3) ----------------------------
+## Non-lethal or lethal takedown: stop, drop a discoverable Body, arm the radio check-in. TODO[05].
+func take_down(lethal: bool = false) -> void:
+	if ai_state == AIState.DOWNED:
+		return
+	ai_state = AIState.DOWNED
+	velocity = Vector3.ZERO
+	if _sensor != null:
+		_sensor.set_physics_process(false)
+	_spawn_body(lethal)
+	if ai_config != null:
+		radio = RadioCheckin.new(ai_config.max_fakeable_checkins, global_position)
+
+func _spawn_body(lethal: bool) -> void:
+	var body := Body.new()
+	body.lethal = lethal
+	var host := get_parent()
+	if host != null:
+		host.add_child(body)
+		body.global_position = global_position
+
+# --- Body discovery scan (FR-05-2) -----------------------------------------
+func _scan_for_bodies() -> void:
+	if _sensor == null or not is_inside_tree():
+		return
+	var origin := _sensor.global_position
+	var forward := -_sensor.global_transform.basis.z
+	var half_angle := deg_to_rad(_sensor.cone_angle_deg() * 0.5)
+	var rng := ai_config.body_discovery_range
+	for b in get_tree().get_nodes_in_group(&"body"):
+		if not (b is Body):
+			continue
+		var body := b as Body
+		if body.discovered or body.concealed:
+			continue
+		var in_cone := _sensor.is_in_cone(origin, forward, body.global_position, half_angle, rng)
+		if not in_cone:
+			continue
+		if Body.raises_alarm(body.concealed, in_cone, _has_los(origin, body.global_position)):
+			body.discover()
+			if ai_state == AIState.PATROL or ai_state == AIState.INVESTIGATE:
+				_set_ai_state(AIState.SEARCH)
+
+func _has_los(from_pos: Vector3, to_pos: Vector3) -> bool:
+	var space := get_world_3d().direct_space_state
+	if space == null:
+		return false
+	var q := PhysicsRayQueryParameters3D.create(from_pos, to_pos)
+	q.exclude = [get_rid()]
+	return space.intersect_ray(q).is_empty()
+
+# --- Detection / coordination signals --------------------------------------
+func _on_detection_changed(actor_id: int, det_state: int, _fill: float) -> void:
+	if ai_state == AIState.DOWNED:
+		return
+	if _sensor != null and actor_id == _sensor.get_instance_id():
+		var want := ai_state_for_detection(det_state)
+		if want != ai_state:
+			_has_investigate_target = false   # investigate the spot our own sensor tracked
+			_set_ai_state(want)
+	elif det_state >= DetectionSensor.DetectionState.SEARCHING:
+		_propagate_from(actor_id)
+
+func _on_player_spotted(by_actor_id: int) -> void:
+	if ai_state == AIState.DOWNED:
+		return
+	if _sensor != null and by_actor_id == _sensor.get_instance_id():
+		_set_ai_state(AIState.COMBAT)
+	else:
+		_propagate_from(by_actor_id)   # ally spotted the player → converge
+
+func _on_body_discovered(position: Vector3) -> void:
+	if ai_state == AIState.DOWNED:
+		return
+	if ai_state == AIState.PATROL and within_propagation_radius(global_position, position, ai_config.alert_propagation_radius):
+		_investigate_target = position
+		_has_investigate_target = true
+		_set_ai_state(AIState.INVESTIGATE)
+
+## A nearby teammate raised the alarm at `actor_id`'s sensor: converge to investigate (FR-05-2).
+func _propagate_from(actor_id: int) -> void:
+	if ai_state != AIState.PATROL:
+		return
+	var src := instance_from_id(actor_id)
+	if src is Node3D and within_propagation_radius(global_position, (src as Node3D).global_position, ai_config.alert_propagation_radius):
+		_investigate_target = (src as Node3D).global_position
+		_has_investigate_target = true
+		_set_ai_state(AIState.INVESTIGATE)
+
+# --- Movement helpers ------------------------------------------------------
+func _move_toward(target: Vector3, speed: float, delta: float) -> void:
+	var to := target - global_position
+	to.y = 0.0
+	var dist := to.length()
+	if dist > 0.05:
+		var dir := to / dist
+		velocity.x = dir.x * speed
+		velocity.z = dir.z * speed
+		look_at(global_position + dir, Vector3.UP)   # face travel so the cone leads the way
+	else:
+		velocity.x = 0.0
+		velocity.z = 0.0
+	_apply_gravity(delta)
+	move_and_slide()
+
+func _halt(delta: float) -> void:
+	velocity.x = 0.0
+	velocity.z = 0.0
+	_apply_gravity(delta)
+	move_and_slide()
+
+func _apply_gravity(delta: float) -> void:
+	if is_on_floor():
+		velocity.y = 0.0
+	else:
+		velocity.y -= _GRAVITY * delta

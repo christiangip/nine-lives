@@ -3,6 +3,11 @@
 **Milestone:** M0 · **Depends on:** 03 · **Blocks:** 11, 14
 **Implements:** GDD §10 · **Decisions:** secured-loot banks immediately; multi-trip core.
 
+> **↩ From 05 (AI Actors):** `Body` (`game/systems/ai/Body.gd`) exposes a `concealed` flag +
+> `set_concealed()` hook but no drag/carry yet (FR-05-2). Wire body **drag/hide** into the carry
+> system here (a body is a heavy two-handed haul), plus the Inspector keycard pickup. Come back
+> and tick the body-drag note in `05_ai_actors.md`.
+
 ## Overview
 The economic heartbeat of the micro-loop. A two-axis carry system + hand slots
 forces prioritization; physical pickup/bagging/throwing makes carrying the score a
