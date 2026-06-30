@@ -33,19 +33,20 @@ Canonical design lives in `docs/GDD.md`; build against `docs/ARCHITECTURE.md`.
 - CI (`.github/workflows/ci.yml`) runs both on push/PR.
 
 ## Architecture in one screen
-**9 autoload singletons** (`project.godot [autoload]`, loaded top-to-bottom — order matters):
+**10 autoload singletons** (`project.godot [autoload]`, loaded top-to-bottom — order matters):
 
 | # | Autoload | Role |
 |---|----------|------|
 | 1 | `EventBus` | Signals only, **zero logic**. The nervous system; everything connects here. |
-| 2 | `GameManager` | App state machine `BOOT→MAIN_MENU→HIDEOUT→MISSION→MISSION_RESULTS`; owns scene swaps. |
-| 3 | `InputManager` | Remappable actions (KB+M + gamepad); persists rebinds to `user://settings.cfg`. |
-| 4 | `SaveManager` | 10-slot I/O, autosave, `scan_slots()` (drives the Continue button). |
-| 5 | `ProgressionManager` | Permanent account: Legacy, attributes, unlocks, Hideout state, Stash. |
-| 6 | `RunManager` | Current Streak: Notoriety, level, Edges, Heat, Take, Job Map, `committed`. |
-| 7 | `MissionGenerator` | Seeded hybrid-procedural assembly + population + solvability validation. |
-| 8 | `AudioManager` | Dynamic music layers + SFX/bus routing. |
-| 9 | `SettingsManager` | Graphics/audio/gameplay options + `ConfigFile` persistence (controls owned by InputManager). |
+| 2 | `Content` | Content-registry hub: one `ContentRegistry` per `*Def` type, scanned at boot, indexed by `id`. |
+| 3 | `GameManager` | App state machine `BOOT→MAIN_MENU→HIDEOUT→MISSION→MISSION_RESULTS`; owns scene swaps. |
+| 4 | `InputManager` | Remappable actions (KB+M + gamepad); persists rebinds to `user://settings.cfg`. |
+| 5 | `SaveManager` | 10-slot I/O, autosave, `scan_slots()` (drives the Continue button). |
+| 6 | `ProgressionManager` | Permanent account: Legacy, attributes, unlocks, Hideout state, Stash. |
+| 7 | `RunManager` | Current Streak: Notoriety, level, Edges, Heat, Take, Job Map, `committed`. |
+| 8 | `MissionGenerator` | Seeded hybrid-procedural assembly + population + solvability validation. |
+| 9 | `AudioManager` | Dynamic music layers + SFX/bus routing. |
+| 10 | `SettingsManager` | Graphics/audio/gameplay options + `ConfigFile` persistence (controls owned by InputManager). |
 
 **Rules of the road**
 - **Dependency rule:** managers depend *downward* only (e.g. `RunManager` reads
@@ -53,13 +54,14 @@ Canonical design lives in `docs/GDD.md`; build against `docs/ARCHITECTURE.md`.
   No two managers hold hard references to each other's mutable state.
 - **Scene swaps go through `GameManager`** — never ad-hoc `change_scene` in gameplay code.
 - **Add signals in `EventBus.gd` only**, document them, keep that file logic-free.
-- **Content registries** scan a folder of `*Def` resources at boot and index by `id`
-  (lowercase_snake). New content file → appears automatically, no code edit.
+- **Content registries** (`Content` autoload + `systems/core/ContentRegistry.gd`) scan a folder
+  of `*Def` resources at boot and index by `id` (lowercase_snake). New content file → appears
+  automatically, no code edit.
 
 ## Folder map
 ```
 game/
-  autoload/      # the 9 singletons above
+  autoload/      # the 10 singletons above
   systems/       # reusable gameplay code by domain (stealth, AI, inventory, …)
   scenes/        # scene-local scripts + .tscn (main, menu, hideout, mission, player, ui)
   resources/
@@ -105,4 +107,14 @@ checkbox in the task list. Keep tests headless-safe (no editor-only deps).
   persistence; SettingsManager schema/persistence; GUT vendored + 3 new tests). **In-engine verification
   (open editor, regenerate `.godot/`, green `run_tests.sh`) is pending a machine with Godot 4.6** — those
   DoD boxes are marked `[~]` in `docs/tasks/01_project_setup.md` until confirmed. Mark them `[x]` after a
-  clean editor open + green test run.
+  clean editor open + green test run. **Update 2026-06-29:** headless GUT now runs **green on
+  Godot 4.6.3** (`.godot/` regenerated via `--import`), and the interactive "open editor → reach
+  Main Menu" smoke (FR-01-2) passed — so **01 is complete** (`[x]`). Only residual: bare `godot`
+  on PATH for the convenience `run_tests.sh`/CI (the User PATH entry points at the `.exe` file, not
+  its directory; a session restart is also needed).
+- **02 — Core Architecture & Data Framework:** **complete & verified green** on Godot 4.6.3 (headless
+  GUT 22/22). Added a **10th autoload `Content`** (content-registry hub — one generic `ContentRegistry`
+  per def type, in `game/systems/core/`), a `Services` static locator, a validated `GameManager` state
+  machine + fade hook, the `EventBus.game_state_changed` signal, and a `SaveManager.migrate()` schema
+  hook. Fixed a latent `01` bug: `SettingsManager.load()` shadowed Godot's global `load()` → renamed
+  `load_config()`.

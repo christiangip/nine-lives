@@ -32,7 +32,7 @@ const DEFAULTS := {
 var _values: Dictionary = {}
 
 func _ready() -> void:
-	load()
+	load_config()
 	apply_all()
 
 # --- public API ------------------------------------------------------------
@@ -57,8 +57,9 @@ func reset_to_defaults() -> void:
 # --- persistence -----------------------------------------------------------
 
 ## Start from defaults, then overlay any values present in the config file so a
-## partial or older file still yields a complete, valid set.
-func load() -> void:
+## partial or older file still yields a complete, valid set. Named `load_config`
+## (not `load`) so it never collides with Godot's global `load()` utility.
+func load_config() -> void:
 	_values = _deep_copy(DEFAULTS)
 	var cfg := ConfigFile.new()
 	if cfg.load(config_path) != OK:

@@ -17,3 +17,4 @@ Build order and dependencies are in `docs/tasks/00_MASTER_TASKLIST.md`.
 | `save/` | 10-slot saves, autosave, scan, strict policy | `16_save_system.md` |
 | `audio/` | Dynamic music layers, SFX bus | `17_audio.md` |
 | `interaction/` | Shared interactable base + prompt system | `06_heist_mechanics_obstacles.md` |
+| `core/` | Architecture backbone: `ContentRegistry` + `Services` locator | `02_core_architecture.md` |

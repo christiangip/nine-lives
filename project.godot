@@ -24,6 +24,7 @@ buses/default_bus_layout="res://game/assets/default_bus_layout.tres"
 [autoload]
 
 EventBus="*res://game/autoload/EventBus.gd"
+Content="*res://game/autoload/Content.gd"
 GameManager="*res://game/autoload/GameManager.gd"
 InputManager="*res://game/autoload/InputManager.gd"
 SaveManager="*res://game/autoload/SaveManager.gd"

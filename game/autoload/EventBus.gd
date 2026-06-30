@@ -26,8 +26,9 @@ signal streak_level_up(new_level: int, edge_choices: Array)
 signal streak_ended(reason: String, legacy_awarded: int)         ## the "Catch"
 signal mission_completed(summary: Dictionary)
 
-# --- Meta / flow (docs/tasks/15_ui_hud_menus.md, 16_save_system.md) ---
+# --- Meta / flow (docs/tasks/02_core_architecture.md, 15_ui_hud_menus.md, 16_save_system.md) ---
 signal scene_transition_requested(target: String, payload: Dictionary)
+signal game_state_changed(previous: int, next: int)              ## GameManager.State enum
 signal save_completed(slot: int)
 signal settings_changed(section: String)
 

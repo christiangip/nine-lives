@@ -50,11 +50,12 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
 ## Sub-task lists
 
 ### Foundation
-- [~] **01 — Project Setup & Tooling** · `01_project_setup.md` · *(M0)*
+- [x] **01 — Project Setup & Tooling** · `01_project_setup.md` · *(M0)*
   Godot project config, autoload wiring, input map, GUT + CI, config/options persistence. **Blocks: everything.**
-  *Authoring complete (9 autoloads incl. `SettingsManager`, boot → Main Menu, input rebind + settings persistence, GUT vendored + tests). In-engine verification pending Godot 4.6 — see the `[~]` boxes in the list.*
-- [ ] **02 — Core Architecture & Data Framework** · `02_core_architecture.md` · *(M0)*
+  *Complete & **verified on Godot 4.6.3**: headless GUT green + interactive boot → Main Menu smoke. (Local `run_tests.sh`/CI still want `godot` on PATH as the directory, not the `.exe` file.)*
+- [x] **02 — Core Architecture & Data Framework** · `02_core_architecture.md` · *(M0)*
   EventBus, manager skeletons, content registries (scan `_defs` instances by id), scene/state machine, base components. **Blocks: 03,11,12,13,16.**
+  *Done & **verified green on Godot 4.6.3** (22/22 GUT). Content registries live in a new **10th autoload `Content`**; added a `Services` locator + `SaveManager.migrate()` hook; generic `ContentRegistry` proves "add content without code."*
 
 ### Core stealth gameplay (M0)
 - [ ] **03 — Player Controller & Camera (FP)** · `03_player_controller_camera.md` · *(M0)*
@@ -113,14 +114,14 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
 ## Overall progress
 
 ```
-Foundation        [~01][02]                         0 / 2
+Foundation        [x01][x02]                        2 / 2
 Core stealth (M0) [03][04][05·G][06·c][07·c][08]    0 / 6
 Spine (M1)        [11·b][12][13·m][15·m][16]         0 / 5
 Loud + breadth    [09][10][14]                       0 / 3
 Presentation      [17][18]                           0 / 2
 Live + release    [19][20][21]                       0 / 3
 Onboarding        [22]                               0 / 1
-                                          TOTAL  0 / 22 lists
+                                          TOTAL  2 / 22 lists
 Milestones        [ ] M0  [ ] M1  [ ] M2  [ ] M3  [ ] M4  [ ] M5
 ```
 

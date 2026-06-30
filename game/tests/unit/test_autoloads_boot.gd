@@ -5,6 +5,7 @@ extends GutTest
 
 const EXPECTED := {
 	"EventBus": "res://game/autoload/EventBus.gd",
+	"Content": "res://game/autoload/Content.gd",
 	"GameManager": "res://game/autoload/GameManager.gd",
 	"InputManager": "res://game/autoload/InputManager.gd",
 	"SaveManager": "res://game/autoload/SaveManager.gd",
@@ -27,5 +28,5 @@ func test_all_autoloads_present_and_correct() -> void:
 				assert_eq(script.resource_path, EXPECTED[autoload_name],
 					"Autoload '%s' should run %s" % [autoload_name, EXPECTED[autoload_name]])
 
-func test_project_defines_nine_autoloads() -> void:
-	assert_eq(EXPECTED.size(), 9, "Project defines nine autoloads")
+func test_project_defines_ten_autoloads() -> void:
+	assert_eq(EXPECTED.size(), 10, "Project defines ten autoloads (Content is the data backbone)")

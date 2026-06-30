@@ -21,14 +21,15 @@ Main.tscn (boot)
 Declared in `project.godot [autoload]`, loaded top-to-bottom:
 
 1. **EventBus** — signals only, zero logic. The nervous system. Everything else may connect here.
-2. **GameManager** — app state + scene transitions.
-3. **InputManager** — remappable actions (KB+M + gamepad); persists rebinds.
-4. **SaveManager** — 10-slot I/O, autosave, `scan_slots()` (drives Continue).
-5. **ProgressionManager** — permanent account (Legacy, attributes, unlocks, Hideout state, Stash).
-6. **RunManager** — current Streak (Notoriety, level, Edges, Heat, Take, Job Map, `committed`).
-7. **MissionGenerator** — seeded hybrid-procedural assembly + population + solvability validation.
-8. **AudioManager** — dynamic music layers + SFX bus.
-9. **SettingsManager** — graphics/audio/gameplay options + `ConfigFile` persistence (`user://settings.cfg`); input rebinds live in that file's `[controls]` section, owned by `InputManager`. Registered last so every other manager exists when it applies on boot.
+2. **Content** — content-registry hub: one `ContentRegistry` per `*Def` type, scanned at boot and indexed by `id` (see "Data-driven content"). Loaded early so any manager may read content.
+3. **GameManager** — app state + scene transitions.
+4. **InputManager** — remappable actions (KB+M + gamepad); persists rebinds.
+5. **SaveManager** — 10-slot I/O, autosave, `scan_slots()` (drives Continue).
+6. **ProgressionManager** — permanent account (Legacy, attributes, unlocks, Hideout state, Stash).
+7. **RunManager** — current Streak (Notoriety, level, Edges, Heat, Take, Job Map, `committed`).
+8. **MissionGenerator** — seeded hybrid-procedural assembly + population + solvability validation.
+9. **AudioManager** — dynamic music layers + SFX bus.
+10. **SettingsManager** — graphics/audio/gameplay options + `ConfigFile` persistence (`user://settings.cfg`); input rebinds live in that file's `[controls]` section, owned by `InputManager`. Registered last so every other manager exists when it applies on boot.
 
 **Dependency rule:** managers depend *downward* (e.g. `RunManager` may read `ProgressionManager`, not vice-versa) and communicate *sideways* only via `EventBus`. No two managers hold hard references to each other's mutable state.
 
@@ -48,11 +49,11 @@ All content is a Godot `Resource` subclass (schemas in `game/resources/_defs/`) 
 | `StationDef` | `resources/stations/` | Hideout (manifest-driven) |
 | `IntelDef` | `resources/intel/` | Planning Table, Economy |
 
-**Content registries:** at boot, lightweight registries scan their folders (`ResourceLoader` / `DirAccess`) and index defs by `id`. Systems look content up by id, so new files appear automatically without code edits. (Built in `02_core_architecture.md`.)
+**Content registries:** at boot, lightweight registries scan their folders (`ResourceLoader` / `DirAccess`) and index defs by `id`. Systems look content up by id, so new files appear automatically without code edits. Implemented as the **`Content` autoload** owning one generic `ContentRegistry` (`game/systems/core/ContentRegistry.gd`) per def type, with optional `data/*.json` hydration. (Built in `02_core_architecture.md`.)
 
 ## EventBus signal catalogue
 
-The authoritative list lives in `game/autoload/EventBus.gd`. Categories: detection (`detection_changed`, `noise_emitted`, `player_spotted`, `body_discovered`), alarms/pursuit (`alarm_tripped`, `heat_changed`, `pursuit_phase_changed`), loot/objectives (`loot_picked_up`, `loot_secured`, `carry_changed`, `objective_updated`), run/progression (`notoriety_gained`, `streak_level_up`, `streak_ended`, `mission_completed`), and meta (`scene_transition_requested`, `save_completed`, `settings_changed`). **Add new signals here, document them, keep the file logic-free.**
+The authoritative list lives in `game/autoload/EventBus.gd`. Categories: detection (`detection_changed`, `noise_emitted`, `player_spotted`, `body_discovered`), alarms/pursuit (`alarm_tripped`, `heat_changed`, `pursuit_phase_changed`), loot/objectives (`loot_picked_up`, `loot_secured`, `carry_changed`, `objective_updated`), run/progression (`notoriety_gained`, `streak_level_up`, `streak_ended`, `mission_completed`), and meta (`scene_transition_requested`, `game_state_changed`, `save_completed`, `settings_changed`). **Add new signals here, document them, keep the file logic-free.**
 
 ## Save schema (10 slots)
 

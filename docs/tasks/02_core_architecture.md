@@ -8,6 +8,15 @@ The decoupling and expandability backbone: the EventBus contract, the
 GameManager state machine, and the **content registries** that let new `.tres`/JSON
 content appear without code edits. Get this right and every later list is additive.
 
+> **Status (2026-06-29):** Implemented and **verified green on Godot 4.6.3** (headless GUT —
+> 22/22 tests, the 4 new ones for this list among them). Content registries live in a new
+> **10th autoload `Content`** (one generic `ContentRegistry` per def type, in
+> `game/systems/core/`), paired with a `Services` static locator and a `SaveManager.migrate()`
+> schema hook. Notes: (1) the `data/*.json` archetype sample hydrates scalar fields only —
+> id-reference arrays such as `loot_table` are resolved by `MissionGenerator` in `11`;
+> (2) the first real engine run surfaced a latent `01` bug — `SettingsManager.load()` shadowed
+> Godot's global `load()`; renamed to `load_config()`.
+
 ## Functional Requirements
 - **FR-02-1** `EventBus` exposes the documented signal set; it contains **no logic**.
 - **FR-02-2** `GameManager` implements `BOOT→MAIN_MENU→HIDEOUT→MISSION→MISSION_RESULTS` and is the **only** place scene swaps happen.
@@ -18,21 +27,21 @@ content appear without code edits. Get this right and every later list is additi
 
 ## Phases
 ### Phase 02.1 — EventBus & state machine
-- [ ] Freeze the signal catalogue (extend `EventBus.gd`); document each signal's args.
-- [ ] Implement `GameManager` state transitions + `scene_transition_requested` handling with a fade/loading screen hook.
+- [x] Freeze the signal catalogue (extend `EventBus.gd`); document each signal's args.
+- [x] Implement `GameManager` state transitions + `scene_transition_requested` handling with a fade/loading screen hook.
 
 ### Phase 02.2 — Content registry
-- [ ] Implement `ContentRegistry` (scan dir, load defs, index by `id`, warn on dup ids).
-- [ ] Implement JSON↔Resource hydration for `data/*.json` (so bulk content can be JSON).
-- [ ] Instantiate one registry per def type at boot; expose `get(id)` / `all()` / `filter(tag)`.
+- [x] Implement `ContentRegistry` (scan dir, load defs, index by `id`, warn on dup ids).
+- [x] Implement JSON↔Resource hydration for `data/*.json` (so bulk content can be JSON).
+- [x] Instantiate one registry per def type at boot; expose `get(id)` / `all()` / `filter(tag)`.
 
 ### Phase 02.3 — Base components & service locators
-- [ ] Finalize `Interactable` (prompt, hold, can/do interact) used by 06/08.
-- [ ] Finalize `DetectionSensor` and `Minigame` base contracts (impl lands in 04/07).
-- [ ] Lightweight `Services` access for managers (no sideways manager refs).
+- [x] Finalize `Interactable` (prompt, hold, can/do interact) used by 06/08.
+- [x] Finalize `DetectionSensor` and `Minigame` base contracts (impl lands in 04/07).
+- [x] Lightweight `Services` access for managers (no sideways manager refs).
 
 ### Phase 02.4 — Schema versioning hooks
-- [ ] Add `schema_version` constants and a migration entry-point used by 16.
+- [x] Add `schema_version` constants and a migration entry-point used by 16.
 
 ## Tests (GUT)
 - `test_event_bus_contract.gd` — all documented signals exist with expected arg counts.
@@ -41,6 +50,6 @@ content appear without code edits. Get this right and every later list is additi
 - `test_gamemanager_states.gd` — illegal transitions are rejected; legal ones emit the right signals.
 
 ## Definition of Done
-- [ ] FR-02-1..6 satisfied; phases checked; tests green.
-- [ ] A README note in `game/systems/` (done) accurately maps folders→lists.
-- [ ] "Add content without code" demonstrated by a passing registry test.
+- [x] FR-02-1..6 satisfied; phases checked; tests green.
+- [x] A README note in `game/systems/` (done) accurately maps folders→lists.
+- [x] "Add content without code" demonstrated by a passing registry test.

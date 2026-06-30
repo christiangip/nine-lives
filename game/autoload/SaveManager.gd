@@ -10,6 +10,16 @@ const SCHEMA_VERSION := 1
 func _ready() -> void:
 	DirAccess.make_dir_recursive_absolute(SAVE_DIR)
 
+## Schema-migration entry-point (the hook task 16 fills in). Brings an older save
+## dictionary up to the current SCHEMA_VERSION, then stamps it. v1 is the baseline
+## (no-op); later versions add stepwise transforms keyed off `version`.
+func migrate(data: Dictionary) -> Dictionary:
+	var version: int = int(data.get("schema_version", SCHEMA_VERSION))
+	if version < SCHEMA_VERSION:
+		pass # TODO[16]: apply stepwise migrations (e.g. _migrate_1_to_2(data)) up to current
+	data["schema_version"] = SCHEMA_VERSION
+	return data
+
 ## Returns an Array[bool] of length SLOT_COUNT; true = populated.
 func scan_slots() -> Array:
 	var out := []

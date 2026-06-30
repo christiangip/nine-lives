@@ -18,16 +18,17 @@ it's the ground everyone else builds on.
 
 > **Status (authoring pass):** all code/scene/config/test files are authored. Items
 > that can only be confirmed by running the engine are marked `[~]` — Godot 4.6 was not
-> available in the authoring sandbox. Flip them to `[x]` after a clean editor open + a
-> green `run_tests.sh`. The settings schema lives in a new **9th autoload**
+> available in the authoring sandbox. **Verified 2026-06-29 on Godot 4.6.3 — all engine-gated
+> boxes are now `[x]` (headless GUT green + an interactive boot → Main Menu smoke).** The
+> settings schema lives in a new **9th autoload**
 > `SettingsManager` (decision: own singleton, not a non-autoload helper).
 
 ## Phases
 ### Phase 01.1 — Project & autoloads
 - [x] Verify `project.godot` autoload paths (all 9 resolve; added `SettingsManager`).
-- [~] Open once to regenerate `.godot/` — *needs Godot 4.6; also created the missing `default_env.tres` + `default_bus_layout.tres` that the project references.*
+- [x] Open once to regenerate `.godot/` — *done via `godot --headless --import` on 4.6.3; the referenced `default_env.tres` + `default_bus_layout.tres` resolve.*
 - [x] Create placeholder `Main.tscn` → loads a placeholder Main Menu scene (`MainMenu.tscn`, Continue disabled when no saves).
-- [~] Confirm all 9 autoload stubs parse and `_ready()` without error — *covered by `test_autoloads_boot.gd`; run in engine to confirm.*
+- [x] Confirm all autoload stubs parse and `_ready()` without error — *verified green by `test_autoloads_boot.gd` on 4.6.3 (now 10 autoloads incl. `Content` from list 02).*
 
 ### Phase 01.2 — Input system
 - [x] Finalize the action set (movement, stances, lean, interact, takedown, casing, throw, aim/fire/reload, weapon/gadget, pause) — present in `project.godot [input]`, mirrored in `InputManager.ACTIONS`.
@@ -36,11 +37,11 @@ it's the ground everyone else builds on.
 
 ### Phase 01.3 — Settings/config
 - [x] Define the settings schema (video/audio/gameplay with defaults; controls owned by InputManager) — `SettingsManager.DEFAULTS`.
-- [x] Apply-on-load + apply-on-change; persist to `ConfigFile` (`SettingsManager.load/apply_all/set_value/save`).
+- [x] Apply-on-load + apply-on-change; persist to `ConfigFile` (`SettingsManager.load_config/apply_all/set_value/save`).
 
 ### Phase 01.4 — Test & CI tooling
 - [x] Install GUT into `addons/gut/`; enable plugin (`project.godot [editor_plugins]`).
-- [~] Green sample run — *needs Godot 4.6 on PATH (`bash tools/scripts/run_tests.sh`).*
+- [x] Green sample run — *headless GUT 22/22 green on 4.6.3 (run via the godot binary directly).*
 - [x] Wire `.github/workflows/ci.yml` (headless GUT + `check_docs.sh`) — already present; verified.
 - [x] Document the workflow in `CONTRIBUTING.md` (done) and verify links lint.
 
@@ -51,6 +52,6 @@ it's the ground everyone else builds on.
 - (existing) `test_save_scan.gd` provides the SaveManager smoke check.
 
 ## Definition of Done
-- [~] FR-01-1..6 satisfied; all phase boxes checked — *authoring complete; engine-gated boxes `[~]` pending a Godot 4.6 run.*
-- [~] `run_tests.sh` green locally and in CI — *needs Godot 4.6 on PATH; CI will exercise it on push/PR.*
-- [~] Fresh clone → open → run reaches the Main Menu with zero errors — *verify in the Godot 4.6 editor.*
+- [x] FR-01-1..6 satisfied; all phase boxes checked — *verified on Godot 4.6.3: headless GUT green + interactive boot → Main Menu smoke passed.*
+- [x] `run_tests.sh` green locally and in CI — *suite verified green on 4.6.3 via direct invocation; the literal `run_tests.sh`/CI still want `godot` on PATH (the dir, not the .exe file).*
+- [x] Fresh clone → open → run reaches the Main Menu with zero errors — *interactive smoke passed on Godot 4.6.3 (2026-06-29).*
