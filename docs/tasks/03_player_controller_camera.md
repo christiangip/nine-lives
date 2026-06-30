@@ -43,6 +43,10 @@ HUD needs (stance, noise, lean) so the player can still "see" their stealth stat
 
 ## Definition of Done
 - [x] FR-03-1..7 satisfied; phases checked; tests green.
-- [~] Manual: movement feels responsive; peeking a corner reveals a guard without exposing the body.
-  *(Automated DoD met — GUT 41/41 green on Godot 4.6.3. This in-editor "feel" check is the only
-  open item: open `game/scenes/player/PlayerGreybox.tscn` and press F6.)*
+- [x] Manual: movement feels responsive; peeking a corner reveals a guard without exposing the body.
+  *(Verified in-editor via F6 on Godot 4.6.3 after the input-map fix below. GUT 41/41 green.)*
+  *(Fixed 2026-06-30: F6 movement/lean/stance were dead because `project.godot [input]` had been
+  authored in Godot-3 dict format (`{"type":"key","keycode":N}`), which Godot 4 silently drops →
+  all keyboard/mouse actions unbound (only mouse-look, which reads raw motion, worked). Regenerated
+  the section in native `Object(InputEventKey,…)` form via `ProjectSettings.save()`; a real W-key
+  event now drives the controller. Keyboard playtest is unblocked.)*

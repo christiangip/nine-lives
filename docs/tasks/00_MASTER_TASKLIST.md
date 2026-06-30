@@ -58,12 +58,12 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
   *Done & **verified green on Godot 4.6.3** (22/22 GUT). Content registries live in a new **10th autoload `Content`**; added a `Services` locator + `SaveManager.migrate()` hook; generic `ContentRegistry` proves "add content without code."*
 
 ### Core stealth gameplay (M0)
-- [~] **03 — Player Controller & Camera (FP)** · `03_player_controller_camera.md` · *(M0)*
+- [x] **03 — Player Controller & Camera (FP)** · `03_player_controller_camera.md` · *(M0)*
   First-person movement, stances, stamina, lean/peek, interaction raycast, noise emission.
   *Code + automated DoD complete & **verified green on Godot 4.6.3** (GUT 41/41). Data-driven via a new
   `PlayerConfigDef` (+ `default_player.tres`, `stamina`/`silence` attribute defs); local readability signals
-  (EventBus stays frozen by its contract test). Only the in-editor "feel" playtest is open (`[~]`):
-  `game/scenes/player/PlayerGreybox.tscn` (F6). Flip to `[x]` after that sign-off.*
+  (EventBus stays frozen by its contract test). **In-editor F6 "feel" playtest signed off 2026-06-30**
+  after fixing a Godot-3-format `[input]` map that had silently unbound all keyboard/mouse actions.*
 - [ ] **04 — Stealth & Detection** · `04_stealth_detection.md` · *(M0)*
   Vision cones, light sampling, sound propagation, detection states, noise rings.
 - [ ] **05 — AI Actors** · `05_ai_actors.md` · *(M0 = Guard only · M2/M3 = full roster + combat)*
@@ -119,7 +119,7 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
 
 ```
 Foundation        [x01][x02]                        2 / 2
-Core stealth (M0) [~03][04][05·G][06·c][07·c][08]   0 / 6
+Core stealth (M0) [x03][04][05·G][06·c][07·c][08]   1 / 6
 Spine (M1)        [11·b][12][13·m][15·m][16]         0 / 5
 Loud + breadth    [09][10][14]                       0 / 3
 Presentation      [17][18]                           0 / 2

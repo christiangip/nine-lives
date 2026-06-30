@@ -129,6 +129,10 @@ checkbox in the task list. Keep tests headless-safe (no editor-only deps).
   **EventBus stayed frozen** (its contract test asserts the exact signal set + zero methods), so player
   readability uses **local signals** + the `&"player"` group; detection (04) reads stance via that group.
   Tests favor pure seams (`compute_noise_radius`, `update_stamina`, `update_hold`, `_resolve_interactable`)
-  so they're headless-deterministic. Only open item: the manual "feel" playtest (`[~]`) — run
-  `game/scenes/player/PlayerGreybox.tscn` (F6). *(Pre-existing, unrelated: `test_carry_system.gd`
-  `preload`s a not-yet-existing `Inventory.gd` (task 08) → GUT ignores that one script; suite still exits 0.)*
+  so they're headless-deterministic. **Complete (`[x]`):** the manual F6 "feel" playtest
+  (`game/scenes/player/PlayerGreybox.tscn`) was signed off **2026-06-30**. That playtest surfaced a latent
+  bug — `project.godot [input]` had been authored in **Godot-3 dict format** (`{"type":"key","keycode":N}`),
+  which Godot 4 silently drops, leaving every keyboard/mouse action unbound (only mouse-look worked); fixed
+  by regenerating the section as native `Object(InputEventKey,…)` via `ProjectSettings.save()`.
+  *(Pre-existing, unrelated: `test_carry_system.gd` `preload`s a not-yet-existing `Inventory.gd` (task 08)
+  → GUT ignores that one script; suite still exits 0.)*
