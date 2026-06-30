@@ -20,26 +20,31 @@ audio (17), and pursuit (10).
 
 ## Phases
 ### Phase 04.1 — Vision
-- [ ] Cone test (angle+range) + LoS raycast against occluders.
-- [ ] Distance falloff + stance + movement modifiers → fill accumulation.
+- [x] Cone test (angle+range) + LoS raycast against occluders.
+- [x] Distance falloff + stance + movement modifiers → fill accumulation.
 
 ### Phase 04.2 — Light & cover
-- [ ] Light sampling (lit/shadow) shrinks/raises effective range.
-- [ ] Cover query: partial (reduce) vs full (block LoS).
+- [x] Light sampling (lit/shadow) shrinks/raises effective range.
+- [x] Cover query: partial (reduce) vs full (block LoS).
 
 ### Phase 04.3 — Sound
-- [ ] Hearing subscription to `noise_emitted`; distance attenuation; investigate-source behavior handoff to 05.
+- [x] Hearing subscription to `noise_emitted`; distance attenuation; investigate-source behavior handoff to 05.
 
 ### Phase 04.4 — State machine & feedback
-- [ ] Implement the 5 states + thresholds + recovery timers; emit `detection_changed`, `player_spotted`.
-- [ ] HUD feedback hooks: directional eye indicator, cone-fill meter, noise ring.
+- [x] Implement the 5 states + thresholds + recovery timers; emit `detection_changed`, `player_spotted`.
+- [x] HUD feedback hooks: directional eye indicator, cone-fill meter, noise ring.
+      *(Data side done: `detection_changed`/`player_spotted` carry state+fill+actor, player
+      emits `noise_emitted`, and a dev `DetectionConeDebug` draws the cone. The polished HUD
+      widgets are task 15, which consumes these signals.)*
 
 ## Tests (GUT)
-- `test_cone_los.gd` — target in-cone + clear LoS detects; behind cover or out-of-cone does not.
-- `test_fill_modifiers.gd` — closer/lit/standing/running fills faster than far/shadow/prone/still (ordered assertions).
-- `test_state_transitions.gd` — fill thresholds drive Unaware↔Suspicious↔Searching↔Alerted; recovery works.
-- `test_sound_investigation.gd` — a noise inside hearing radius flips a guard to Suspicious toward the source.
+- [x] `test_cone_los.gd` — target in-cone + clear LoS detects; behind cover or out-of-cone does not.
+- [x] `test_fill_modifiers.gd` — closer/lit/standing/running fills faster than far/shadow/prone/still (ordered assertions).
+- [x] `test_state_transitions.gd` — fill thresholds drive Unaware↔Suspicious↔Searching↔Alerted; recovery works.
+- [x] `test_sound_investigation.gd` — a noise inside hearing radius flips a guard to Suspicious toward the source.
 
 ## Definition of Done
-- [ ] FR-04-1..7 satisfied; phases checked; tests green.
-- [ ] Manual: a player can read a cone, hug shadow, and recover from Suspicious by breaking LoS.
+- [x] FR-04-1..7 satisfied; phases checked; tests green. *(Headless GUT green on Godot 4.6.3 — 64/64, incl. 24 new detection asserts across 4 files.)*
+- [~] Manual: a player can read a cone, hug shadow, and recover from Suspicious by breaking LoS.
+      *(Greybox `game/scenes/player/DetectionGreybox.tscn` built for F6 sign-off; mark `[x]`
+      after the in-editor "feel" pass, mirroring task 03.)*

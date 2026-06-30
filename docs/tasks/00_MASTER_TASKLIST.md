@@ -64,8 +64,15 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
   `PlayerConfigDef` (+ `default_player.tres`, `stamina`/`silence` attribute defs); local readability signals
   (EventBus stays frozen by its contract test). **In-editor F6 "feel" playtest signed off 2026-06-30**
   after fixing a Godot-3-format `[input]` map that had silently unbound all keyboard/mouse actions.*
-- [ ] **04 — Stealth & Detection** · `04_stealth_detection.md` · *(M0)*
+- [~] **04 — Stealth & Detection** · `04_stealth_detection.md` · *(M0)*
   Vision cones, light sampling, sound propagation, detection states, noise rings.
+  *Code + automated DoD complete & **verified green on Godot 4.6.3** (GUT 64/64). `DetectionSensor`
+  fleshed out with pure, deterministic seams (cone/LoS-cover/distance/light/movement/sound) +
+  the 5-state machine (Alerted latches; Suspicious/Searching recover); emits the pre-existing
+  `detection_changed`/`player_spotted` (EventBus stayed frozen). Tunables in a new
+  `DetectionConfigDef` (+ `default_detection.tres`, registered as an 11th `Content` registry);
+  per-actor geometry from `EnemyDef` (`default_guard.tres`). **Only residual:** in-editor F6
+  "feel" sign-off on `DetectionGreybox.tscn` (then `[x]`).*
 - [ ] **05 — AI Actors** · `05_ai_actors.md` · *(M0 = Guard only · M2/M3 = full roster + combat)*
   Guards, cameras, operator, dogs, civilians, inspector; state machines over NavigationServer.
 - [ ] **06 — Heist Mechanics & Obstacles** · `06_heist_mechanics_obstacles.md` · *(M0 core · M2 full)*
@@ -119,7 +126,7 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
 
 ```
 Foundation        [x01][x02]                        2 / 2
-Core stealth (M0) [x03][04][05·G][06·c][07·c][08]   1 / 6
+Core stealth (M0) [x03][~04][05·G][06·c][07·c][08]  1 / 6
 Spine (M1)        [11·b][12][13·m][15·m][16]         0 / 5
 Loud + breadth    [09][10][14]                       0 / 3
 Presentation      [17][18]                           0 / 2

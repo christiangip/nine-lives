@@ -1,0 +1,98 @@
+[gd_scene load_steps=16 format=3]
+
+; Dev-only greybox for the task-04 manual playtest (F6). Not wired into GameManager —
+; mission flow is task 11. A stationary DetectionSensor faces the player spawn with a
+; debug cone (green→yellow→orange→red). Walk into the cone to fill it; duck behind the
+; CoverWall to break LoS and recover; step into the ShadowZone to slow detection; make
+; noise (sprint) to flip it Suspicious toward you. Positions are tunable.
+
+[ext_resource type="PackedScene" path="res://game/scenes/player/PlayerController.tscn" id="1_player"]
+[ext_resource type="Environment" path="res://game/assets/default_env.tres" id="2_env"]
+[ext_resource type="Script" path="res://game/systems/stealth/DetectionSensor.gd" id="3_sensor"]
+[ext_resource type="Script" path="res://game/systems/stealth/DetectionConeDebug.gd" id="4_cone"]
+[ext_resource type="Resource" path="res://game/resources/detection/default_detection.tres" id="5_cfg"]
+[ext_resource type="Resource" path="res://game/resources/enemies/default_guard.tres" id="6_guard"]
+
+[sub_resource type="BoxMesh" id="Mesh_floor"]
+size = Vector3(24, 0.4, 24)
+
+[sub_resource type="BoxShape3D" id="Shape_floor"]
+size = Vector3(24, 0.4, 24)
+
+[sub_resource type="CapsuleMesh" id="Mesh_guard"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="Mat_guard"]
+albedo_color = Color(0.78, 0.18, 0.18, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_wall"]
+size = Vector3(3, 2.0, 0.4)
+
+[sub_resource type="BoxShape3D" id="Shape_wall"]
+size = Vector3(3, 2.0, 0.4)
+
+[sub_resource type="BoxShape3D" id="Shape_shadow"]
+size = Vector3(5, 2.4, 5)
+
+[sub_resource type="BoxMesh" id="Mesh_shadow"]
+size = Vector3(5, 2.4, 5)
+
+[sub_resource type="StandardMaterial3D" id="Mat_shadow"]
+transparency = 1
+albedo_color = Color(0.05, 0.05, 0.12, 0.28)
+
+[node name="DetectionGreybox" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = ExtResource("2_env")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.643, -0.766, 0, 0.766, 0.643, 0, 8, 0)
+shadow_enabled = true
+
+[node name="Floor" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, 0)
+metadata/surface = "concrete"
+
+[node name="FloorMesh" type="MeshInstance3D" parent="Floor"]
+mesh = SubResource("Mesh_floor")
+
+[node name="FloorShape" type="CollisionShape3D" parent="Floor"]
+shape = SubResource("Shape_floor")
+
+[node name="GuardMesh" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, -4)
+mesh = SubResource("Mesh_guard")
+surface_material_override/0 = SubResource("Mat_guard")
+
+[node name="Sensor" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 1.5, -4)
+script = ExtResource("3_sensor")
+config = ExtResource("5_cfg")
+enemy_def = ExtResource("6_guard")
+
+[node name="ConeDebug" type="MeshInstance3D" parent="Sensor"]
+script = ExtResource("4_cone")
+
+[node name="CoverWall" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, -1)
+
+[node name="CoverWallMesh" type="MeshInstance3D" parent="CoverWall"]
+mesh = SubResource("Mesh_wall")
+
+[node name="CoverWallShape" type="CollisionShape3D" parent="CoverWall"]
+shape = SubResource("Shape_wall")
+
+[node name="ShadowZone" type="Area3D" parent="." groups=["shadow"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 1.2, 1)
+
+[node name="ShadowShape" type="CollisionShape3D" parent="ShadowZone"]
+shape = SubResource("Shape_shadow")
+
+[node name="ShadowMesh" type="MeshInstance3D" parent="ShadowZone"]
+mesh = SubResource("Mesh_shadow")
+material_override = SubResource("Mat_shadow")
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 5)

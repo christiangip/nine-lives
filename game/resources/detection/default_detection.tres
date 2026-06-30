@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="DetectionConfigDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/DetectionConfigDef.gd" id="1_det"]
+
+[resource]
+script = ExtResource("1_det")
+id = &"default"
+see_gain_rate = 0.9
+decay_rate = 0.35
+sound_gain = 0.4
+sound_fill_cap = 0.6
+suspicious_threshold = 0.2
+searching_threshold = 0.5
+alerted_threshold = 0.85
+distance_falloff_exp = 1.0
+min_light_factor = 0.25
+walk_speed = 1.5
+run_speed = 4.0
+still_factor = 0.55
+walk_factor = 0.8
+run_factor = 1.0
+los_sample_heights = Array[float]([1.5, 0.9, 0.2])

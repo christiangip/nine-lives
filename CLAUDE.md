@@ -136,3 +136,21 @@ checkbox in the task list. Keep tests headless-safe (no editor-only deps).
   by regenerating the section as native `Object(InputEventKey,…)` via `ProjectSettings.save()`.
   *(Pre-existing, unrelated: `test_carry_system.gd` `preload`s a not-yet-existing `Inventory.gd` (task 08)
   → GUT ignores that one script; suite still exits 0.)*
+- **04 — Stealth & Detection:** **code + automated DoD complete & verified green** on Godot 4.6.3
+  (headless GUT **64/64**). Fleshed out `game/systems/stealth/DetectionSensor.gd` into the legibility
+  core: **pure, deterministic seams** (`is_in_cone`, `distance_factor`, `movement_factor`,
+  `compute_fill_rate`, `step_fill`, `state_for_fill`/`step_state`, `hearing_bump`) wrapped by thin
+  node glue (`_physics_process` cone test + **multi-ray LoS that doubles as cover** → visibility
+  fraction; `_sample_light_level` via `&"shadow"` Area3D; `_on_noise_emitted` sound channel). The
+  **5-state machine** runs Unaware→Suspicious→Searching→Alerted (fill thresholds) with
+  **Alerted/Pursuit latched** ("full detection commits to alert", GDD §8.3) and Suspicious/Searching
+  recovering on decay; sound alone is capped below Alerted. **EventBus stayed frozen** — it already
+  declared `detection_changed`/`player_spotted`/`noise_emitted` (locked by the contract test), so no
+  signal changes. **No magic numbers:** all curve/threshold tunables live in a new `DetectionConfigDef`
+  (+ `default_detection.tres`), registered as an **11th `Content` registry** (`Content.detection`);
+  per-actor cone/hearing geometry comes from `EnemyDef` (added `default_guard.tres`). Readability HUD
+  widgets are deferred to task 15 (this ships the signal data + a dev `DetectionConeDebug` wedge); AI
+  behaviors that consume `state`/`last_seen_position`/`last_heard_position` are task 05; PURSUIT
+  escalation is task 10. **Residual (`[~]`):** the manual F6 "feel" playtest on the new
+  `game/scenes/player/DetectionGreybox.tscn` (walk a cone, hug shadow, recover by breaking LoS) — mark
+  `[x]` after in-engine sign-off, mirroring task 03.
