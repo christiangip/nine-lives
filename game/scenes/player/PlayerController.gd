@@ -1,23 +1,445 @@
 extends CharacterBody3D
 class_name PlayerController
-## First-person player controller. Movement, stances, stamina, lean/peek.
+## First-person player controller: locomotion, three stances, stamina, clamped
+## mouse/gamepad look, lean/peek, an interaction raycast, and footstep noise. Also a
+## first-person *readability surface* — it exposes stance/noise/lean/interaction data
+## (local signals + group "player") for the HUD (task 15) and detection (task 04).
+## Tunables live in `config` (PlayerConfigDef) so there are no magic numbers here.
 ## See docs/tasks/03_player_controller_camera.md and GDD §8.0 (Q1 = first-person).
 
 enum Stance { STAND, CROUCH, PRONE }
 
-@export var walk_speed: float = 3.2
-@export var sprint_speed: float = 5.6
-@export var mouse_sensitivity: float = 0.0025
+## Normalized look-sensitivity (SettingsManager "mouse_sensitivity", ~0..1) -> radians
+## per mouse count. A unit conversion, not a gameplay tunable.
+const _LOOK_UNIT: float = 0.01
 
+@export var config: PlayerConfigDef   ## all tunables; assign default_player.tres in the scene
+
+@onready var _collider: CollisionShape3D = $Collider
+@onready var _head: Node3D = $Head
+@onready var _camera: Camera3D = $Head/Camera3D
+@onready var _interact_ray: RayCast3D = $Head/Camera3D/InteractRay
+@onready var _ceiling_cast: ShapeCast3D = $CeilingCast
+@onready var _lean_cast_l: RayCast3D = $LeanCastL
+@onready var _lean_cast_r: RayCast3D = $LeanCastR
+@onready var _hands: Node3D = $Head/Hands
+
+# --- Readable state (HUD/detection read these) -----------------------------
 var stance: int = Stance.STAND
-var stamina: float = 100.0
-var noise_level: float = 0.0     ## current footstep/action noise radius (m)
+var stamina: float = 0.0
+var noise_level: float = 0.0          ## last emitted footstep radius (m)
+var lean_amount: float = 0.0          ## -1..+1, lerped (left..right)
 
-func _physics_process(delta: float) -> void:
-	pass # TODO[03]: gravity, move_and_slide, stance height, stamina drain
+# --- Carry hooks (task 08 writes these) ------------------------------------
+var carry_speed_mult: float = 1.0
+var can_climb: bool = true
+var can_use_vents: bool = true
+
+# --- Internal --------------------------------------------------------------
+var _pitch: float = 0.0
+var _pitch_min: float = -1.55
+var _pitch_max: float = 1.55
+var _gravity: float = 9.8
+var _eye_height: float = 1.6
+var _is_sprinting: bool = false
+var _sprint_locked: bool = false      ## true after depletion until regen passes the unlock fraction
+var _regen_cooldown: float = 0.0
+var _step_accum: float = 0.0
+var _current_interactable: Interactable = null
+var _hold_timer: float = 0.0          ## -1.0 = an interaction already fired this press (latched)
+var _crouch_toggle_state: bool = false
+var _sprint_toggle_state: bool = false
+# Cached settings (refreshed on EventBus.settings_changed)
+var _sens: float = 0.3
+var _invert_y: bool = false
+var _crouch_toggle: bool = false
+var _sprint_toggle: bool = false
+
+signal stance_changed(new_stance: int)
+signal stamina_changed(current: float, maximum: float)
+signal interaction_target_changed(interactable: Interactable)
+
+func _ready() -> void:
+	add_to_group(&"player")
+	if config == null:
+		config = PlayerConfigDef.new()   # never crash on a missing config
+	_resolve_gravity()
+	_pitch_min = deg_to_rad(config.pitch_min_deg)
+	_pitch_max = deg_to_rad(config.pitch_max_deg)
+	_refresh_settings()
+	if not EventBus.settings_changed.is_connected(_on_settings_changed):
+		EventBus.settings_changed.connect(_on_settings_changed)
+	stamina = _stamina_max()
+	# Don't mutate the shared scene resource — each instance gets its own capsule.
+	if _collider != null and _collider.shape != null:
+		_collider.shape = _collider.shape.duplicate()
+	_eye_height = stance_eye_height(stance)
+	if _head != null:
+		_head.position.y = _eye_height
+	if _interact_ray != null:
+		_interact_ray.target_position = Vector3(0.0, 0.0, -config.interact_range)
+	# The casts start inside our own capsule — don't let them detect the player.
+	for ray in [_interact_ray, _lean_cast_l, _lean_cast_r]:
+		if ray != null:
+			ray.add_exception(self)
+	if _ceiling_cast != null:
+		_ceiling_cast.add_exception(self)
+	_capture_mouse()
 
 func _unhandled_input(event: InputEvent) -> void:
-	pass # TODO[03]: mouselook (clamped pitch), lean, stance toggles
+	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+		var mm := event as InputEventMouseMotion
+		var look := _sens * _LOOK_UNIT
+		rotation.y -= mm.relative.x * look
+		var inv := -1.0 if _invert_y else 1.0
+		_pitch = clampf(_pitch - mm.relative.y * look * inv, _pitch_min, _pitch_max)
+		if _head != null:
+			_head.rotation.x = _pitch
+
+func _physics_process(delta: float) -> void:
+	if config == null:
+		return
+	if Input.is_action_just_pressed(&"pause"):
+		# Convenience for the greybox playtest; full pause/menu is task 15.
+		Input.mouse_mode = (Input.MOUSE_MODE_VISIBLE if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
+			else Input.MOUSE_MODE_CAPTURED)
+	_apply_gamepad_look(delta)
+	_update_toggle_inputs()
+	_update_stance_input()
+	_update_stance_transition(delta)
+
+	var on_floor := is_on_floor()
+	if not on_floor:
+		velocity.y -= _gravity * delta
+	elif Input.is_action_just_pressed(&"jump") and stance == Stance.STAND:
+		velocity.y = config.jump_velocity
+
+	var input_2d := Input.get_vector(&"move_left", &"move_right", &"move_forward", &"move_back")
+	var wish_dir := (transform.basis * Vector3(input_2d.x, 0.0, input_2d.y))
+	wish_dir.y = 0.0
+	wish_dir = wish_dir.normalized()
+	var moving := input_2d.length() > 0.1
+
+	_is_sprinting = _resolve_sprint(moving and on_floor)
+	update_stamina(delta, _is_sprinting)
+
+	var target_speed := stance_speed(stance)
+	if _is_sprinting:
+		target_speed = config.sprint_speed
+	target_speed *= carry_speed_mult
+
+	var accel := config.accel if on_floor else config.accel * config.air_control
+	var friction := config.friction if on_floor else config.friction * config.air_control
+	var horizontal := Vector3(velocity.x, 0.0, velocity.z)
+	if moving:
+		horizontal = horizontal.move_toward(wish_dir * target_speed, accel * delta)
+	else:
+		horizontal = horizontal.move_toward(Vector3.ZERO, friction * delta)
+	velocity.x = horizontal.x
+	velocity.z = horizontal.z
+
+	move_and_slide()
+
+	_update_lean(delta)
+	_update_footsteps(delta, Vector2(velocity.x, velocity.z).length(), _is_sprinting)
+	_update_interaction(delta)
+
+# --- Stamina (FR-03-1) -----------------------------------------------------
+
+## Max stamina scaled by the player's trained "stamina" attribute (§5.5).
+func _stamina_max() -> float:
+	return config.stamina_max * (1.0 + attr_effect(&"stamina"))
+
+## Drain while sprinting; after a delay, regen. Depleting locks sprint until regen
+## passes `sprint_unlock_fraction` of max. Pure enough to drive directly in tests.
+func update_stamina(delta: float, is_sprinting: bool) -> void:
+	var smax := _stamina_max()
+	if is_sprinting:
+		stamina = maxf(0.0, stamina - config.stamina_drain_per_sec * delta)
+		_regen_cooldown = config.stamina_regen_delay
+		if stamina <= 0.0:
+			_sprint_locked = true
+	else:
+		if _regen_cooldown > 0.0:
+			_regen_cooldown = maxf(0.0, _regen_cooldown - delta)
+		else:
+			stamina = minf(smax, stamina + config.stamina_regen_per_sec * delta)
+		if _sprint_locked and stamina >= smax * config.sprint_unlock_fraction:
+			_sprint_locked = false
+	stamina_changed.emit(stamina, smax)
+
+## Can a *new* sprint start? (A sprint already underway continues until empty.)
+func can_sprint() -> bool:
+	return not _sprint_locked and stamina >= config.sprint_min_to_start
+
+func _resolve_sprint(can_try: bool) -> bool:
+	var wants := _sprint_input() and can_try and stance == Stance.STAND
+	if not wants:
+		return false
+	if _is_sprinting:
+		return stamina > 0.0 and not _sprint_locked
+	return can_sprint()
+
+func _sprint_input() -> bool:
+	return _sprint_toggle_state if _sprint_toggle else Input.is_action_pressed(&"sprint")
+
+# --- Stances (FR-03-2) -----------------------------------------------------
+
+func stance_speed(stance_id: int) -> float:
+	match stance_id:
+		Stance.CROUCH: return config.crouch_speed
+		Stance.PRONE: return config.prone_speed
+		_: return config.stand_speed
+
+func stance_eye_height(stance_id: int) -> float:
+	match stance_id:
+		Stance.CROUCH: return config.crouch_eye_height
+		Stance.PRONE: return config.prone_eye_height
+		_: return config.stand_eye_height
+
+func stance_collider_height(stance_id: int) -> float:
+	match stance_id:
+		Stance.CROUCH: return config.crouch_collider_height
+		Stance.PRONE: return config.prone_collider_height
+		_: return config.stand_collider_height
+
+func stance_noise_mult(stance_id: int) -> float:
+	match stance_id:
+		Stance.CROUCH: return config.crouch_noise_mult
+		Stance.PRONE: return config.prone_noise_mult
+		_: return config.stand_noise_mult
+
+## 0..1 visibility the detection system (task 04) samples: stand > crouch > prone.
+func detection_profile(stance_id: int = stance) -> float:
+	match stance_id:
+		Stance.CROUCH: return config.crouch_visibility
+		Stance.PRONE: return config.prone_visibility
+		_: return config.stand_visibility
+
+## Change stance. Standing up (to a taller stance) fails if a low ceiling blocks it.
+func set_stance(stance_id: int) -> bool:
+	if stance_id == stance:
+		return true
+	if stance_id < stance and _ceiling_cast != null:   # lower enum = taller -> standing up
+		_ceiling_cast.force_shapecast_update()
+		if _ceiling_cast.is_colliding():
+			return false
+	stance = stance_id
+	stance_changed.emit(stance)
+	return true
+
+func _update_toggle_inputs() -> void:
+	if _crouch_toggle and Input.is_action_just_pressed(&"crouch"):
+		_crouch_toggle_state = not _crouch_toggle_state
+	if _sprint_toggle and Input.is_action_just_pressed(&"sprint"):
+		_sprint_toggle_state = not _sprint_toggle_state
+
+func _update_stance_input() -> void:
+	if Input.is_action_just_pressed(&"prone"):
+		set_stance(Stance.STAND if stance == Stance.PRONE else Stance.PRONE)
+		return
+	if _crouch_toggle:
+		if Input.is_action_just_pressed(&"crouch"):
+			set_stance(Stance.STAND if stance == Stance.CROUCH else Stance.CROUCH)
+	else:
+		if Input.is_action_pressed(&"crouch"):
+			if stance != Stance.PRONE:
+				set_stance(Stance.CROUCH)
+		elif stance == Stance.CROUCH:
+			set_stance(Stance.STAND)
+
+func _update_stance_transition(delta: float) -> void:
+	if _collider == null or _head == null:
+		return
+	var t := clampf(config.stance_lerp_speed * delta, 0.0, 1.0)
+	var shape := _collider.shape
+	if shape is CapsuleShape3D:
+		var cap := shape as CapsuleShape3D
+		cap.height = lerpf(cap.height, stance_collider_height(stance), t)
+		_collider.position.y = cap.height * 0.5   # keep feet planted at the body origin
+	_eye_height = lerpf(_eye_height, stance_eye_height(stance), t)
+	_head.position.y = _eye_height
+
+# --- Look (FR-03-3) --------------------------------------------------------
+
+func _apply_gamepad_look(delta: float) -> void:
+	var rx := Input.get_joy_axis(0, JOY_AXIS_RIGHT_X)
+	var ry := Input.get_joy_axis(0, JOY_AXIS_RIGHT_Y)
+	if absf(rx) < config.gamepad_deadzone:
+		rx = 0.0
+	if absf(ry) < config.gamepad_deadzone:
+		ry = 0.0
+	if rx == 0.0 and ry == 0.0:
+		return
+	var speed := deg_to_rad(config.gamepad_look_speed) * delta
+	rotation.y -= rx * speed
+	var inv := -1.0 if _invert_y else 1.0
+	_pitch = clampf(_pitch - ry * speed * inv, _pitch_min, _pitch_max)
+	if _head != null:
+		_head.rotation.x = _pitch
+	# TODO[03]: iterate Input.get_connected_joypads() instead of assuming device 0.
+
+# --- Lean / peek (FR-03-4) -------------------------------------------------
+
+func _update_lean(delta: float) -> void:
+	if _head == null:
+		return
+	var dir := Input.get_action_strength(&"lean_right") - Input.get_action_strength(&"lean_left")
+	lean_amount = lerpf(lean_amount, dir, clampf(config.lean_lerp_speed * delta, 0.0, 1.0))
+	var target_x := lean_amount * config.lean_offset
+	# Shorten the offset so the camera never pokes through a wall.
+	var cast := _lean_cast_r if target_x > 0.0 else _lean_cast_l
+	if cast != null and cast.is_colliding():
+		var clearance := maxf(0.0, cast.global_position.distance_to(cast.get_collision_point()) - config.lean_clear_margin)
+		target_x = clampf(target_x, -clearance, clearance)
+	_head.position.x = target_x
+	_head.rotation.z = -(target_x / maxf(config.lean_offset, 0.001)) * deg_to_rad(config.lean_roll_deg)
+
+# --- Interaction (FR-03-5) -------------------------------------------------
+
+func _update_interaction(delta: float) -> void:
+	var hit: Interactable = null
+	if _interact_ray != null and _interact_ray.is_colliding():
+		hit = _resolve_interactable(_interact_ray.get_collider())
+	if hit != _current_interactable:
+		_current_interactable = hit
+		_hold_timer = 0.0
+		interaction_target_changed.emit(_current_interactable)
+	if update_hold(delta, Input.is_action_pressed(&"interact")):
+		if _current_interactable != null and _current_interactable.can_interact(self):
+			_current_interactable.interact(self)
+
+## Walk up from a ray-hit collider to the owning Interactable (or null). Pure.
+func _resolve_interactable(collider: Object) -> Interactable:
+	var node := collider as Node
+	while node != null:
+		if node is Interactable:
+			return node as Interactable
+		node = node.get_parent()
+	return null
+
+## Drive tap/hold timing against the current target. Returns true exactly once when an
+## interaction completes (instant for hold_seconds==0, else after holding that long).
+## Releasing (pressed=false) re-arms it. Pure given `_current_interactable` + `_hold_timer`.
+func update_hold(delta: float, pressed: bool) -> bool:
+	if _current_interactable == null or not pressed:
+		_hold_timer = 0.0
+		return false
+	if _hold_timer < 0.0:
+		return false   # already fired this press; wait for release
+	var required := _current_interactable.hold_seconds
+	if required <= 0.0:
+		_hold_timer = -1.0
+		return true
+	_hold_timer += delta
+	if _hold_timer >= required:
+		_hold_timer = -1.0
+		return true
+	return false
+
+## The current interaction prompt for the HUD ("" when nothing is targetable).
+func current_prompt() -> String:
+	if _current_interactable != null and _current_interactable.can_interact(self):
+		return _current_interactable.prompt
+	return ""
+
+# --- Noise (FR-03-6) -------------------------------------------------------
+
+func _update_footsteps(delta: float, horizontal_speed: float, is_running: bool) -> void:
+	if not is_on_floor() or horizontal_speed < 0.1:
+		_step_accum = 0.0
+		return
+	_step_accum += delta
+	var interval := config.step_interval_sprint if is_running else config.step_interval_walk
+	if _step_accum < interval:
+		return
+	_step_accum = 0.0
+	var reduction := clampf(attr_effect(&"silence"), 0.0, config.max_silence_reduction)
+	noise_level = compute_noise_radius(stance, is_running, _current_surface_tag(), reduction)
+	emit_noise(noise_level, "footstep")
+
+## Footstep noise radius (m): base × stance × run × surface × (1 − Silence). Pure;
+## `silence_reduction` is the already-resolved 0..1 fraction (live code reads it from
+## the Silence attribute; tests pass it explicitly).
+func compute_noise_radius(stance_id: int, is_running: bool, surface_tag: String, silence_reduction: float) -> float:
+	var r := config.base_step_radius
+	r *= stance_noise_mult(stance_id)
+	if is_running:
+		r *= config.run_noise_mult
+	r *= surface_mult(surface_tag)
+	r *= (1.0 - clampf(silence_reduction, 0.0, config.max_silence_reduction))
+	return maxf(0.0, r)
+
+func surface_mult(surface_tag: String) -> float:
+	if surface_tag == "":
+		return config.surface_noise_default
+	return float(config.surface_noise.get(surface_tag, config.surface_noise_default))
+
+func _current_surface_tag() -> String:
+	var col := get_last_slide_collision()
+	if col == null:
+		return ""
+	var collider := col.get_collider()
+	if collider != null and collider.has_meta("surface"):
+		return str(collider.get_meta("surface"))
+	return ""
 
 func emit_noise(radius: float, source: String) -> void:
 	EventBus.noise_emitted.emit(global_position, radius, source)
+
+# --- Carry hooks (FR-03-7; consumed by task 08) ----------------------------
+
+## Task 08 calls this when bulky/hand-slot loot is carried.
+func apply_carry_penalty(speed_mult: float, blocks_climb: bool, blocks_vents: bool) -> void:
+	carry_speed_mult = clampf(speed_mult, 0.0, 1.0)
+	can_climb = not blocks_climb
+	can_use_vents = not blocks_vents
+	# TODO[08]: mount the carried viewmodel under _hands; gate vault/climb on can_climb/can_use_vents.
+
+func clear_carry_penalty() -> void:
+	carry_speed_mult = 1.0
+	can_climb = true
+	can_use_vents = true
+
+# --- Attributes / settings / helpers ---------------------------------------
+
+## Trained effect of an attribute: level × effect_per_level. 0.0 if the attribute is
+## untrained or its def isn't present (so the controller degrades gracefully).
+func attr_effect(attr_id: StringName) -> float:
+	var prog := Services.progression()
+	if prog == null:
+		return 0.0
+	var level: int = prog.attribute_level(attr_id)
+	if level <= 0:
+		return 0.0
+	var content := Services.content()
+	if content == null or content.attributes == null:
+		return 0.0
+	var def := content.attributes.get_def(attr_id) as AttributeDef
+	if def == null:
+		return 0.0
+	return float(level) * def.effect_per_level
+
+func _refresh_settings() -> void:
+	var s := Services.settings()
+	if s == null:
+		return
+	_sens = float(s.get_value("gameplay", "mouse_sensitivity"))
+	_invert_y = bool(s.get_value("gameplay", "invert_y"))
+	_crouch_toggle = bool(s.get_value("gameplay", "crouch_toggle"))
+	_sprint_toggle = bool(s.get_value("gameplay", "sprint_toggle"))
+
+func _on_settings_changed(section: String) -> void:
+	if section == "gameplay":
+		_refresh_settings()
+
+func _resolve_gravity() -> void:
+	if config != null and config.gravity >= 0.0:
+		_gravity = config.gravity
+	else:
+		_gravity = float(ProjectSettings.get_setting("physics/3d/default_gravity", 9.8))
+
+func _capture_mouse() -> void:
+	if Engine.is_editor_hint() or DisplayServer.get_name() == "headless":
+		return
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED

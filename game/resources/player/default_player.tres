@@ -1,0 +1,57 @@
+[gd_resource type="Resource" script_class="PlayerConfigDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/PlayerConfigDef.gd" id="1_cfg"]
+
+[resource]
+script = ExtResource("1_cfg")
+sprint_speed = 5.6
+accel = 12.0
+friction = 14.0
+air_control = 0.3
+jump_velocity = 4.5
+gravity = -1.0
+stand_speed = 3.2
+crouch_speed = 1.5
+prone_speed = 0.8
+stand_eye_height = 1.6
+crouch_eye_height = 0.9
+prone_eye_height = 0.4
+stand_collider_height = 1.8
+crouch_collider_height = 1.0
+prone_collider_height = 0.8
+stand_visibility = 1.0
+crouch_visibility = 0.6
+prone_visibility = 0.35
+stand_noise_mult = 1.0
+crouch_noise_mult = 0.5
+prone_noise_mult = 0.25
+stance_lerp_speed = 10.0
+stamina_max = 100.0
+stamina_drain_per_sec = 25.0
+stamina_regen_per_sec = 18.0
+stamina_regen_delay = 0.6
+sprint_unlock_fraction = 0.25
+sprint_min_to_start = 5.0
+mouse_sensitivity = 0.3
+pitch_min_deg = -89.0
+pitch_max_deg = 89.0
+gamepad_look_speed = 180.0
+gamepad_deadzone = 0.15
+lean_offset = 0.6
+lean_roll_deg = 8.0
+lean_lerp_speed = 10.0
+lean_clear_margin = 0.25
+interact_range = 2.5
+step_interval_walk = 0.5
+step_interval_sprint = 0.32
+base_step_radius = 6.0
+run_noise_mult = 1.7
+max_silence_reduction = 0.85
+surface_noise = {
+"carpet": 0.45,
+"concrete": 1.1,
+"grass": 0.7,
+"metal": 1.5,
+"wood": 1.0
+}
+surface_noise_default = 1.0

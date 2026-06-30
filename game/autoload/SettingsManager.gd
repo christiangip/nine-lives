@@ -26,6 +26,8 @@ const DEFAULTS := {
 		"mouse_sensitivity": 0.3,
 		"invert_y": false,
 		"ui_scale": 1.0,
+		"crouch_toggle": false,  # false = hold to crouch; true = press to toggle (task 03)
+		"sprint_toggle": false,  # false = hold to sprint; true = press to toggle (task 03)
 	},
 }
 

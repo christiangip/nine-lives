@@ -20,20 +20,20 @@ HUD needs (stance, noise, lean) so the player can still "see" their stealth stat
 
 ## Phases
 ### Phase 03.1 — Locomotion
-- [ ] Capsule body, gravity, walk/sprint, air control, slopes/steps.
-- [ ] Stamina drain/regen; sprint lockout when empty.
+- [x] Capsule body, gravity, walk/sprint, air control, slopes/steps.
+- [x] Stamina drain/regen; sprint lockout when empty.
 
 ### Phase 03.2 — Stances & camera
-- [ ] Stand/crouch/prone with smooth collider + eye-height transitions; hold/toggle option.
-- [ ] FP camera, clamped mouselook, sensitivity/invert from settings, gamepad look.
-- [ ] Lean/peek with collision-safe camera offset.
+- [x] Stand/crouch/prone with smooth collider + eye-height transitions; hold/toggle option.
+- [x] FP camera, clamped mouselook, sensitivity/invert from settings, gamepad look.
+- [x] Lean/peek with collision-safe camera offset.
 
 ### Phase 03.3 — Interaction & noise
-- [ ] Interaction ray + prompt UI hook + tap/hold timing.
-- [ ] Surface-tagged footstep noise → `noise_emitted`; Silence attribute scaling.
+- [x] Interaction ray + prompt UI hook + tap/hold timing.
+- [x] Surface-tagged footstep noise → `noise_emitted`; Silence attribute scaling.
 
 ### Phase 03.4 — Carry hooks
-- [ ] Expose carry-penalty interface for 08 (speed mult, climb/vent block, viewmodel slot).
+- [x] Expose carry-penalty interface for 08 (speed mult, climb/vent block, viewmodel slot).
 
 ## Tests (GUT)
 - `test_stamina.gd` — sprint drains; depletion locks sprint; regen restores.
@@ -42,5 +42,7 @@ HUD needs (stance, noise, lean) so the player can still "see" their stealth stat
 - `test_interaction_ray.gd` — ray reports the nearest interactable and respects hold time.
 
 ## Definition of Done
-- [ ] FR-03-1..7 satisfied; phases checked; tests green.
-- [ ] Manual: movement feels responsive; peeking a corner reveals a guard without exposing the body.
+- [x] FR-03-1..7 satisfied; phases checked; tests green.
+- [~] Manual: movement feels responsive; peeking a corner reveals a guard without exposing the body.
+  *(Automated DoD met — GUT 41/41 green on Godot 4.6.3. This in-editor "feel" check is the only
+  open item: open `game/scenes/player/PlayerGreybox.tscn` and press F6.)*

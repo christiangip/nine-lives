@@ -118,3 +118,17 @@ checkbox in the task list. Keep tests headless-safe (no editor-only deps).
   machine + fade hook, the `EventBus.game_state_changed` signal, and a `SaveManager.migrate()` schema
   hook. Fixed a latent `01` bug: `SettingsManager.load()` shadowed Godot's global `load()` → renamed
   `load_config()`.
+- **03 — Player Controller & Camera (FP):** **code + automated DoD complete & verified green** on
+  Godot 4.6.3 (headless GUT **41/41**). Filled in `game/scenes/player/PlayerController.gd` (+ new
+  `PlayerController.tscn`): locomotion/stamina, Stand/Crouch/Prone (collider+eye lerp, ceiling-blocked
+  stand-up), clamped mouse + gamepad-axis look (`SettingsManager` sens/invert, refreshed on
+  `settings_changed`), collision-safe lean, interaction ray (tap/hold), surface-tagged footstep noise on
+  `EventBus.noise_emitted` with Silence scaling, and task-08 carry hooks. **No magic numbers** — all
+  tunables in a new `PlayerConfigDef` (`game/resources/_defs/`) + `default_player.tres`; added
+  `stamina`/`silence` `AttributeDef` instances and two gameplay settings (`crouch_toggle`/`sprint_toggle`).
+  **EventBus stayed frozen** (its contract test asserts the exact signal set + zero methods), so player
+  readability uses **local signals** + the `&"player"` group; detection (04) reads stance via that group.
+  Tests favor pure seams (`compute_noise_radius`, `update_stamina`, `update_hold`, `_resolve_interactable`)
+  so they're headless-deterministic. Only open item: the manual "feel" playtest (`[~]`) — run
+  `game/scenes/player/PlayerGreybox.tscn` (F6). *(Pre-existing, unrelated: `test_carry_system.gd`
+  `preload`s a not-yet-existing `Inventory.gd` (task 08) → GUT ignores that one script; suite still exits 0.)*

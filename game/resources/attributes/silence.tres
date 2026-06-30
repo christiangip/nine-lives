@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="AttributeDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/AttributeDef.gd" id="1_attr"]
+
+[resource]
+script = ExtResource("1_attr")
+id = &"silence"
+display_name = "Silence"
+description = "Reduces footstep and action noise radius."
+max_level = 10
+effect_per_level = 0.06
