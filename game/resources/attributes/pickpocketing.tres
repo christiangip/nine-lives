@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="AttributeDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/AttributeDef.gd" id="1_attr"]
+
+[resource]
+script = ExtResource("1_attr")
+id = &"pickpocketing"
+display_name = "Pickpocketing"
+description = "Widens the pickpocket timing window; steal keys/keycards off NPCs with less risk."
+max_level = 10
+cost_curve = Array[int]([])
+effect_per_level = 0.02

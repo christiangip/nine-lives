@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="MinigameConfigDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/MinigameConfigDef.gd" id="1_mg"]
+
+[resource]
+script = ExtResource("1_mg")
+id = &"default"
+lockpick_arc_base_deg = 25.0
+lockpick_arc_tier_penalty_deg = 4.0
+lockpick_arc_per_level_deg = 2.0
+lockpick_arc_min_deg = 6.0
+hack_time_limit_base = 8.0
+hack_time_limit_tier_penalty = 1.5
+hack_time_limit_min = 2.5
+hack_nodes_base = 4
+hack_nodes_per_tier = 1
+hack_fault_base = 0.0
+hack_fault_per_level = 0.34
+hack_proximity_range = 3.0
+safe_wheels_base = 3
+safe_wheels_per_tier = 1
+safe_tolerance_base_deg = 6.0
+safe_tolerance_tier_penalty_deg = 1.0
+safe_tolerance_per_level_deg = 0.5
+safe_stethoscope_bonus_deg = 4.0
+safe_tolerance_min_deg = 1.5
+keypad_symbol_count = 6
+keypad_length_base = 3
+keypad_length_per_tier = 1
+keypad_max_guesses = 8
+pickpocket_window_base = 0.18
+pickpocket_window_per_level = 0.02
+pickpocket_window_tier_penalty = 0.02
+pickpocket_window_min = 0.04
+pickpocket_meter_speed = 1.2

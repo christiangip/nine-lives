@@ -16,6 +16,11 @@
 > and **spawn the found clues/codes** (`clue_id`) that skip safes/keypads. Come back and tick
 > DoD-M2 ("consumed by the generator") in `06_…md`.
 
+> **↩ From 07 (Minigames):** when populating NPCs, drop a `MinigameHost` into the level and
+> `attach_all(root)` so obstacle/NPC `minigame_requested` signals mount overlays; give each pickpockable
+> civilian the `&"pickpocket"` requester seam (see `↩ From 07` in `05_ai_actors.md`). Then tick the
+> pickpocket line in `07_minigames.md`.
+
 ## Overview
 Seeded, hybrid-procedural assembly: hand-authored modular **sections** stitched by
 a rule-based assembler, then **populated** with loot/guards/cameras/objectives —

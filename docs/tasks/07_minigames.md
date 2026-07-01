@@ -29,28 +29,48 @@ and is skippable via clues/intel where sensible. Never the *only* solution.
 
 ## Phases
 ### Phase 07.1 — Framework (M0)
-- [ ] `Minigame` lifecycle, overlay mount/unmount, pause-world handling, abort path.
-- [ ] Attribute+gear injection API; difficulty mapping helper.
+- [x] `Minigame` lifecycle, overlay mount/unmount, pause-world handling, abort path.
+- [x] Attribute+gear injection API; difficulty mapping helper.
 
 ### Phase 07.2 — Lockpick + Hack (M0)
-- [ ] Lockpick arc/tension/snap; juice + SFX hooks (17).
-- [ ] Hack node-routing + soft timer + proximity-lock; one visual variant.
+- [x] Lockpick arc/tension/snap; juice + SFX hooks (17). *(SFX/juice = `TODO[17]` hooks; snap delegates to `Lock.snap_chance`.)*
+- [x] Hack node-routing + soft timer + proximity-lock; one visual variant.
 
 ### Phase 07.3 — Safe + Keypad (M2)
-- [ ] Safe dial clicks + wheels + stethoscope; combo-clue instant-solve path.
-- [ ] Keypad deduction + found-code path.
+- [x] Safe dial clicks + wheels + stethoscope; combo-clue instant-solve path.
+- [x] Keypad deduction + found-code path.
 
 ### Phase 07.4 — Pickpocket + Drill/Thermite (M2)
-- [ ] Pickpocket timing meter + suspicion-on-fail.
-- [ ] Drill/thermite tension manager + jam/repair + noise.
+- [~] Pickpocket timing meter + suspicion-on-fail. *(Framework + seams + tests + greybox done; the fail
+  emits `failed("caught")` as the hook — the NPC suspicion reaction wires with the civilian roster,
+  `↩ From 07` in `05`/`11`.)*
+- [x] Drill/thermite tension manager + jam/repair + noise. *(Overlay drives `BreachPoint`; timer/jam/noise live there.)*
 
 ## Tests (GUT)
-- `test_minigame_lifecycle.gd` — begin→solve/fail/abort emit correct signals once.
-- `test_lockpick_scaling.gd` — higher Lockpicking widens the sweet-spot and lowers snap probability.
-- `test_hack_timer_proximity.gd` — running out of soft time fails; leaving proximity pauses.
-- `test_keypad_deduction.gd` — correct deduction sequence solves; found-code path instant-solves.
-- `test_pickpocket_window.gd` — Pickpocketing widens the safe-zone window.
+- [x] `test_minigame_lifecycle.gd` — begin→solve/fail/abort emit correct signals once.
+- [x] `test_lockpick_scaling.gd` — higher Lockpicking widens the sweet-spot and lowers snap probability.
+- [x] `test_hack_timer_proximity.gd` — running out of soft time fails; leaving proximity pauses.
+- [x] `test_keypad_deduction.gd` — correct deduction sequence solves; found-code path instant-solves.
+- [x] `test_pickpocket_window.gd` — Pickpocketing widens the safe-zone window.
+- [x] `test_safecrack_scaling.gd`, `test_minigame_host_routing.gd`, `test_minigame_registry.gd` — +3 for parity.
 
 ## Definition of Done
-- [ ] M0: lockpick + hack fully playable and attribute-scaled; tests green.
-- [ ] M2: all six frameworks shipped, accessible, and wired to obstacles (06).
+- [x] M0: lockpick + hack fully playable and attribute-scaled; tests green. *(Godot 4.6.3, GUT 148/148.)*
+- [~] M2: all six frameworks shipped, accessible, and wired to obstacles (06). *(All six frameworks +
+  host wiring code-complete & green; residual: the F6 `MinigameGreybox.tscn` "feel" sign-off, and the
+  pickpocket→NPC attach point which is blocked on the civilian roster — `↩ From 07` in `05`/`11`.)*
+
+## Progress note
+**Code + automated DoD complete & verified green** on Godot 4.6.3 (headless GUT **148/148**, +36 task-07
+tests). A `Minigame` (Control) base + six subclasses in `game/systems/minigames/` (Lockpick, Hack,
+SafeCrack, Keypad, Pickpocket, Drill), each with **pure static seams** (unit-tested) under thin
+code-built overlay glue; keyboard **and** gamepad via built-in `ui_*` actions (FR-07-9). Tunables live in
+a new **`MinigameConfigDef`** (+ `default_minigame.tres`), registered as the **15th `Content` registry**
+`Content.minigames`; added the missing **`pickpocketing`** `AttributeDef`. A **`MinigameHost`** driver
+maps `kind → overlay`, injects difficulty/attribute/gear (attribute `TODO[12]`, gear `TODO[09]`), and
+routes `solved/failed/aborted` back through one polymorphic **`Obstacle.apply_minigame_result(kind,
+success)`**. **EventBus stayed frozen** — the obstacle→host request is a local `minigame_requested`
+signal lifted to the `Obstacle` base. Closes the `↩ From 06` overlay slices (lockpick / safe dial /
+e-lock hack / keypad Mastermind / drill gauge); the six task-06 obstacle consequence seams + their tests
+stayed untouched. **Residual (`[~]`):** F6 sign-off on `game/scenes/minigames/MinigameGreybox.tscn`,
+mirroring 03/04.

@@ -1,0 +1,180 @@
+[gd_scene load_steps=32 format=3]
+
+; Dev-only greybox for the task-07 manual playtest (F6). Not wired into GameManager (mission flow is
+; task 11). Each obstacle is an Obstacle (Interactable) Node3D with a StaticBody3D collider so the
+; player's interaction ray resolves it; the MinigameHost node attaches to them all (via the Debug
+; node) and mounts the right overlay on minigame_requested. Move WASD, look mouse, aim the + and press
+; [F] (NOT E/Q — those are lean). Then drive the overlay with ◄►/▲▼ + [Enter], [Esc] to cancel:
+;   * LOCK  -> lockpick (spin to the give, set; a miss can snap a pick)
+;   * SAFE  -> dial (spin to each click number; Hacking/stethoscope widen the *click* cue)
+;   * KEYPAD-> Mastermind deduction (▲▼ change a digit, [Enter] submit; read exact/partial)
+;   * CASE  -> e-lock hack (route the ◄►▲▼ sequence under a soft timer; NON-MODAL — proximity pauses it)
+;   * VAULT -> drill tension gauge ([Enter] to clear a JAM; NON-MODAL — it grinds while guards would close in)
+; See docs/tasks/07_minigames.md.
+
+[ext_resource type="PackedScene" path="res://game/scenes/player/PlayerController.tscn" id="1_player"]
+[ext_resource type="Environment" path="res://game/assets/default_env.tres" id="2_env"]
+[ext_resource type="Script" path="res://game/systems/obstacles/Lock.gd" id="3_lock_s"]
+[ext_resource type="Resource" path="res://game/resources/obstacles/lock_basic.tres" id="4_lock_d"]
+[ext_resource type="Script" path="res://game/systems/obstacles/Safe.gd" id="5_safe_s"]
+[ext_resource type="Resource" path="res://game/resources/obstacles/safe_basic.tres" id="6_safe_d"]
+[ext_resource type="Script" path="res://game/systems/obstacles/HackTarget.gd" id="7_hack_s"]
+[ext_resource type="Resource" path="res://game/resources/obstacles/keypad_door.tres" id="8_keypad_d"]
+[ext_resource type="Script" path="res://game/systems/obstacles/DisplayCase.gd" id="9_case_s"]
+[ext_resource type="Resource" path="res://game/resources/obstacles/display_case.tres" id="10_case_d"]
+[ext_resource type="Script" path="res://game/systems/obstacles/BreachPoint.gd" id="11_breach_s"]
+[ext_resource type="Resource" path="res://game/resources/obstacles/breach_vault.tres" id="12_breach_d"]
+[ext_resource type="Script" path="res://game/systems/minigames/MinigameHost.gd" id="13_host"]
+[ext_resource type="Script" path="res://game/scenes/minigames/MinigameGreyboxDebug.gd" id="14_dbg"]
+
+[sub_resource type="BoxMesh" id="Mesh_floor"]
+size = Vector3(28, 0.4, 28)
+
+[sub_resource type="BoxShape3D" id="Shape_floor"]
+size = Vector3(28, 0.4, 28)
+
+[sub_resource type="BoxMesh" id="Mesh_door"]
+size = Vector3(1.2, 2.2, 0.2)
+
+[sub_resource type="BoxShape3D" id="Shape_door"]
+size = Vector3(1.2, 2.2, 0.2)
+
+[sub_resource type="BoxMesh" id="Mesh_safe"]
+size = Vector3(0.9, 0.9, 0.9)
+
+[sub_resource type="BoxShape3D" id="Shape_safe"]
+size = Vector3(0.9, 0.9, 0.9)
+
+[sub_resource type="BoxMesh" id="Mesh_device"]
+size = Vector3(0.6, 0.9, 0.2)
+
+[sub_resource type="BoxShape3D" id="Shape_device"]
+size = Vector3(0.6, 0.9, 0.2)
+
+[sub_resource type="BoxMesh" id="Mesh_case"]
+size = Vector3(0.8, 1.2, 0.6)
+
+[sub_resource type="BoxShape3D" id="Shape_case"]
+size = Vector3(0.8, 1.2, 0.6)
+
+[sub_resource type="BoxMesh" id="Mesh_vault"]
+size = Vector3(2, 2.4, 0.3)
+
+[sub_resource type="BoxShape3D" id="Shape_vault"]
+size = Vector3(2, 2.4, 0.3)
+
+[sub_resource type="StandardMaterial3D" id="Mat_lock"]
+albedo_color = Color(0.55, 0.55, 0.58, 1)
+
+[sub_resource type="StandardMaterial3D" id="Mat_safe"]
+albedo_color = Color(0.28, 0.3, 0.34, 1)
+
+[sub_resource type="StandardMaterial3D" id="Mat_keypad"]
+albedo_color = Color(0.2, 0.7, 0.85, 1)
+
+[sub_resource type="StandardMaterial3D" id="Mat_case"]
+albedo_color = Color(0.25, 0.7, 0.4, 1)
+
+[sub_resource type="StandardMaterial3D" id="Mat_vault"]
+albedo_color = Color(0.8, 0.2, 0.2, 1)
+
+[node name="MinigameGreybox" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = ExtResource("2_env")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.643, -0.766, 0, 0.766, 0.643, 0, 8, 0)
+shadow_enabled = true
+
+[node name="Floor" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, 0)
+metadata/surface = "concrete"
+
+[node name="FloorMesh" type="MeshInstance3D" parent="Floor"]
+mesh = SubResource("Mesh_floor")
+
+[node name="FloorShape" type="CollisionShape3D" parent="Floor"]
+shape = SubResource("Shape_floor")
+
+[node name="Lock" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 1.1, 2)
+script = ExtResource("3_lock_s")
+def = ExtResource("4_lock_d")
+
+[node name="Col" type="StaticBody3D" parent="Lock"]
+
+[node name="Mesh" type="MeshInstance3D" parent="Lock/Col"]
+mesh = SubResource("Mesh_door")
+surface_material_override/0 = SubResource("Mat_lock")
+
+[node name="Shape" type="CollisionShape3D" parent="Lock/Col"]
+shape = SubResource("Shape_door")
+
+[node name="Safe" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 0.5, 2)
+script = ExtResource("5_safe_s")
+def = ExtResource("6_safe_d")
+
+[node name="Col" type="StaticBody3D" parent="Safe"]
+
+[node name="Mesh" type="MeshInstance3D" parent="Safe/Col"]
+mesh = SubResource("Mesh_safe")
+surface_material_override/0 = SubResource("Mat_safe")
+
+[node name="Shape" type="CollisionShape3D" parent="Safe/Col"]
+shape = SubResource("Shape_safe")
+
+[node name="Keypad" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1.1, 2)
+script = ExtResource("7_hack_s")
+def = ExtResource("8_keypad_d")
+
+[node name="Col" type="StaticBody3D" parent="Keypad"]
+
+[node name="Mesh" type="MeshInstance3D" parent="Keypad/Col"]
+mesh = SubResource("Mesh_device")
+surface_material_override/0 = SubResource("Mat_keypad")
+
+[node name="Shape" type="CollisionShape3D" parent="Keypad/Col"]
+shape = SubResource("Shape_device")
+
+[node name="DisplayCase" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 0.7, 2)
+script = ExtResource("9_case_s")
+def = ExtResource("10_case_d")
+
+[node name="Col" type="StaticBody3D" parent="DisplayCase"]
+
+[node name="Mesh" type="MeshInstance3D" parent="DisplayCase/Col"]
+mesh = SubResource("Mesh_case")
+surface_material_override/0 = SubResource("Mat_case")
+
+[node name="Shape" type="CollisionShape3D" parent="DisplayCase/Col"]
+shape = SubResource("Shape_case")
+
+[node name="Vault" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 1.2, 0)
+script = ExtResource("11_breach_s")
+def = ExtResource("12_breach_d")
+
+[node name="Col" type="StaticBody3D" parent="Vault"]
+
+[node name="Mesh" type="MeshInstance3D" parent="Vault/Col"]
+mesh = SubResource("Mesh_vault")
+surface_material_override/0 = SubResource("Mat_vault")
+
+[node name="Shape" type="CollisionShape3D" parent="Vault/Col"]
+shape = SubResource("Shape_vault")
+
+[node name="MinigameHost" type="Node" parent="."]
+script = ExtResource("13_host")
+player_path = NodePath("../Player")
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 9)
+
+[node name="Debug" type="Node3D" parent="."]
+script = ExtResource("14_dbg")
+host_path = NodePath("../MinigameHost")
+player_path = NodePath("../Player")

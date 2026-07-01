@@ -6,7 +6,7 @@ class_name DisplayCase
 ## the smash commits the location to alert.
 ## See docs/tasks/06_heist_mechanics_obstacles.md (FR-06-4).
 
-signal minigame_requested(kind: StringName)
+# minigame_requested is declared on Obstacle (the base) — task 07 mounts the e-lock hack overlay on it.
 
 func _has_glasscutter(by: Node) -> bool:
 	# Glasscutter is task 09; duck-type an optional gadget until then. TODO[09].
@@ -34,7 +34,12 @@ func smash() -> void:
 
 func hack(_by: Node) -> void:
 	if not solved:
-		minigame_requested.emit(&"hack")   # TODO[07]: e-lock overlay; solved -> _mark_solved("hack")
+		minigame_requested.emit(&"hack")   # MinigameHost mounts the e-lock hack; result → apply_minigame_result
+
+## Host callback: a solved hack opens the case (the quiet route). Failure/abort leaves it shut.
+func apply_minigame_result(kind: StringName, success: bool) -> void:
+	if kind == &"hack" and success:
+		_mark_solved(&"hack")
 
 ## Default tap takes the safest available quiet route (key, then glasscutter, else request a hack).
 ## Smashing is a deliberate loud choice surfaced by the HUD (task 15).

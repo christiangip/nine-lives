@@ -34,6 +34,12 @@ with defined counter-play. Obstacles pair with minigames (07) but are never
 > consumables/held cards/gated loot → **08**, gadgets/weapons (glasscutter, stethoscope, EMP, cloner,
 > breach charges, light-shoot) → **09/10**, solution-set *consumption* + clue/obstacle placement →
 > **11**, Intel reveal → **13**.
+>
+> **Update (2026-07-01) — the `→ 07` half landed:** task 07 built the six minigame overlays and wired
+> them back: `Lock` (lockpick), `Safe` (dial), `DisplayCase` (e-lock hack), `HackTarget` keypad
+> (Mastermind), and `BreachPoint` (drill gauge/repair) now emit a `minigame_requested` signal (lifted to
+> the `Obstacle` base) and open via a polymorphic `apply_minigame_result(kind, success)`. The pure
+> obstacle seams above + their tests were untouched. Still deferred to **08/09/10/11/13** as noted.
 
 ### Phase 06.1 — Locks & access (M0 core)
 - [x] Pin-tumbler lock interactable + consumable picks + snap rule. *(`Lock.gd` + `PickPouch`; pure

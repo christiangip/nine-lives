@@ -93,8 +93,16 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
   + `inspector.tres` → `vault_keycard` gate). **Deferred with ↩ notes (blocked downstream):** minigame
   overlays → 07, inventory/consumables → 08, gadgets/weapons → 09/10, solution-set consumption + clue
   placement → 11, Intel reveal → 13. **Residual `[~]`:** F6 greybox sign-off (`ObstacleGreybox.tscn`).*
-- [ ] **07 — Minigames** · `07_minigames.md` · *(M0 core · M2 full)*
+- [~] **07 — Minigames** · `07_minigames.md` · *(M0 core · M2 full)*
   Lockpick, safe-crack, hack, keypad, pickpocket, drill/thermite tension manager.
+  *All six frameworks **code + automated DoD complete & verified green on Godot 4.6.3** (GUT **148/148**,
+  +36 task-07 tests). `Minigame` base + six subclasses in `game/systems/minigames/` with pure static
+  seams under thin overlay glue (keyboard+gamepad via `ui_*`); tunables in a new `MinigameConfigDef`
+  (15th `Content` registry `Content.minigames`) + a new `pickpocketing` attribute. A `MinigameHost`
+  maps `kind→overlay`, injects difficulty/attribute(TODO[12])/gear(TODO[09]), and routes results back
+  via `Obstacle.apply_minigame_result`. Closes the `↩ From 06` overlay slices (EventBus stayed frozen).
+  **Deferred (↩ noted):** pickpocket→NPC attach point (civilian roster → 05.3/11). **Residual `[~]`:**
+  F6 sign-off on `MinigameGreybox.tscn`.*
 - [ ] **08 — Loot & Inventory** · `08_loot_inventory.md` · *(M0)*
   Two-axis carry + hand slots, bagging, throwing, Drop Points, Escape, secured-loot-banks rule, multi-trip.
 
@@ -142,7 +150,7 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
 
 ```
 Foundation        [x01][x02]                        2 / 2
-Core stealth (M0) [x03][~04][~05·G][~06][07·c][08]   1 / 6
+Core stealth (M0) [x03][~04][~05·G][~06][~07][08]    1 / 6
 Spine (M1)        [11·b][12][13·m][15·m][16]         0 / 5
 Loud + breadth    [09][10][14]                       0 / 3
 Presentation      [17][18]                           0 / 2

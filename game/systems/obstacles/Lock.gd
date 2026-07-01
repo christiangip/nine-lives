@@ -44,10 +44,15 @@ func resolve_attempt(success: bool, roll: float = NAN, lockpicking_level: float 
 			pouch.consume()
 		pick_snapped.emit()
 
-## Instant tap starts an attempt. Without the task-07 overlay wired, this just requests it; the outcome
-## is delivered via resolve_attempt(). TODO[07]: mount the lockpick overlay and feed its result back.
+## Instant tap requests the lockpick overlay (task 07). The MinigameHost mounts it and feeds the
+## outcome back through apply_minigame_result → resolve_attempt.
 func interact(_by: Node) -> void:
 	if solved:
 		return
-	# TODO[07]: launch the lockpick minigame; on solved -> resolve_attempt(true), on fail -> resolve_attempt(false)
-	pass
+	minigame_requested.emit(&"lockpick")
+
+## Host callback: a solved overlay opens the lock; a failed one may snap a pick. Attribute-scaled snap
+## odds arrive once ProgressionManager lands (TODO[12]); resolve_attempt defaults them to 0 for now.
+func apply_minigame_result(kind: StringName, success: bool) -> void:
+	if kind == &"lockpick":
+		resolve_attempt(success)

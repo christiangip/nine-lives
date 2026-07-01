@@ -52,13 +52,23 @@ func begin_hack(by: Node) -> bool:
 	if not String(def.clue_id).is_empty() and Obstacle.actor_has_item(by, def.clue_id):
 		_complete(&"found_code")
 		return true
+	_hacker = by as Node3D
+	if device_kind() == "keypad":
+		# Keypads are a Mastermind deduction overlay (task 07), not an in-world fill timer.
+		minigame_requested.emit(&"keypad")   # result → apply_minigame_result
+		return false
 	hacking = true
 	progress = 0.0
-	_hacker = by as Node3D
 	return false
 
 func set_camera_action(action: String) -> void:
 	_camera_action = action
+
+## Host callback: a solved keypad deduction takes the panel offline. E-locks / cameras / time-locks use
+## the in-world proximity fill (begin_hack + tick) instead, so they never route through here.
+func apply_minigame_result(kind: StringName, success: bool) -> void:
+	if kind == &"keypad" and success and not solved:
+		_complete(&"keypad")
 
 ## Tick the in-progress hack given the hacker's current distance. Pure-ish (mutates progress); call it
 ## from _process or drive it directly in tests.

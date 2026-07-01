@@ -3,6 +3,13 @@
 **Milestone:** M0 (Guard only) · M2/M3 (full roster + combat) · **Depends on:** 04 · **Blocks:** 10, 11
 **Implements:** GDD §8.4 · **Decisions:** Q2 (combat behaviors), Q6 (Inspector reworked).
 
+> **↩ From 07 (Minigames):** the pickpocket **framework** is built (`PickpocketMinigame` — a timing
+> meter whose safe zone widens with the `pickpocketing` attribute) but has **no NPC to lift from yet**.
+> When civilians land (FR-05-6), make a pickpockable civilian an `Obstacle`-style requester: emit
+> `minigame_requested(&"pickpocket")`, override `apply_minigame_result(&"pickpocket", success)` to yield
+> a key/keycard on success, and react to the overlay's `failed("caught")` by nudging suspicion. Then come
+> back and tick "Pickpocket timing meter + suspicion-on-fail" in `07_minigames.md`.
+
 ## Overview
 Rule-driven, readable AI as lightweight state machines over `NavigationServer3D`.
 Fairness over emergent chaos. Guards are the M0 vertical; the rest of the roster

@@ -28,6 +28,14 @@ static func fraction(progress_s: float, total_s: float) -> float:
 	return clampf(progress_s / total_s, 0.0, 1.0)
 
 # --- Breach lifecycle ------------------------------------------------------
+## Instant tap requests the drill/thermite tension overlay (task 07). The DrillMinigame drives
+## begin_breach + repair and mirrors progress; C4/thermite tool choice is a loadout concern (task 09),
+## so the default request is the drill. Nothing to apply back — the breach owns its own completion.
+func interact(_by: Node) -> void:
+	if solved or running:
+		return
+	minigame_requested.emit(&"drill")
+
 func begin_breach(p_method: StringName, _by: Node = null) -> void:
 	if solved or def == null or not def.has_solution(p_method):
 		return

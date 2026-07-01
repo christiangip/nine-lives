@@ -10,6 +10,7 @@ class_name Obstacle
 
 signal obstacle_solved(by_method: StringName)   ## local; HUD readout is task 15, world stays EventBus-driven
 signal state_changed                             ## solved / powered / revealed flipped — for HUD + debug
+signal minigame_requested(kind: StringName)      ## ask the task-07 MinigameHost to mount a skill overlay
 
 ## Categories whose devices lose function when their power zone is cut (FR-06-8). Biometric locks are
 ## deliberately excluded — they gate the most lucrative content and are not trivially power-cut.
@@ -56,6 +57,13 @@ func difficulty() -> int:
 
 func accepts(method) -> bool:
 	return def != null and def.has_solution(method)
+
+# --- Minigame contract (driven by the task-07 MinigameHost) -----------------
+## Apply a finished skill overlay's outcome. Default no-op (e.g. the drill/breach owns its own
+## completion); Lock/Safe/DisplayCase/HackTarget override to open on success (or roll a pick snap on a
+## failed lockpick). Kept a small polymorphic seam so the host never branches on obstacle type/id.
+func apply_minigame_result(_kind: StringName, _success: bool) -> void:
+	pass
 
 # --- Powered-device contract (driven by FuseBox.cut_power) ------------------
 ## Default no-op; powered subclasses (HackTarget, LaserGrid, ControllableLight, MotionSensor) override.

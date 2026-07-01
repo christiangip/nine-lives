@@ -1,0 +1,10 @@
+[gd_scene load_steps=2 format=3]
+
+; Reusable minigame driver: drop it into a mission/level and call attach_all(root) (or attach(obstacle))
+; so obstacle minigame_requested signals mount the right overlay. Mission flow wires this in tasks 11/15.
+; See docs/tasks/07_minigames.md.
+
+[ext_resource type="Script" path="res://game/systems/minigames/MinigameHost.gd" id="1_host"]
+
+[node name="MinigameHost" type="Node"]
+script = ExtResource("1_host")
