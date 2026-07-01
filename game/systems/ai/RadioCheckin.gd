@@ -19,7 +19,7 @@ func can_fake() -> bool:
 	return fakes_used < max_fakeable
 
 ## Attempt to fake an "all clear". Returns true if it held; false (and trips a silent alarm via
-## EventBus) once the fakeable budget is exhausted. TODO[05].
+## EventBus) once the fakeable budget is exhausted.
 func try_fake() -> bool:
 	if can_fake():
 		fakes_used += 1

@@ -155,13 +155,18 @@ checkbox in the task list. Keep tests headless-safe (no editor-only deps).
   `game/scenes/player/DetectionGreybox.tscn` (walk a cone, hug shadow, recover by breaking LoS) — mark
   `[x]` after in-engine sign-off, mirroring task 03.
 - **05 — AI Actors:** **M0 guard core + Phase 05.2 coordination — code + automated DoD complete &
-  verified green** on Godot 4.6.3 (headless GUT **84/84**, +5 task-05 tests). Fleshed out
+  verified green** on Godot 4.6.3 (headless GUT **93/93**, +6 task-05 tests). Fleshed out
   `game/systems/ai/GuardAI.gd` (`CharacterBody3D`) into a state machine (PATROL/INVESTIGATE/SEARCH/
   COMBAT/DOWNED) driven by its child `DetectionSensor` via **pure deterministic seams**
-  (`next_waypoint_index`, `ai_state_for_detection`, `reached`, `tick_timer`, `investigate_next`/
-  `search_next`, `within_propagation_radius`) + thin steering glue: loops a waypoint route,
-  peels off to investigate `last_seen`/`last_heard`, does a local search, and **recovers** (drops
-  back to patrol when the lead goes stale / detection decays). `take_down()` drops a discoverable
+  (`next_waypoint_index`, `ai_state_for_detection`, `behavior_severity`, `reached`, `tick_timer`,
+  `investigate_next`/`search_next`, `search_offset`, `within_propagation_radius`) + thin steering
+  glue: loops a waypoint route, peels off to investigate `last_seen`/`last_heard`, does a local
+  **sweep** around the contact, and **recovers** (drops back to patrol when the lead goes stale).
+  **Post-review fix:** detection reactions are now **escalate-only** — a rising meter promotes the
+  guard, but decay-driven downgrades no longer yank it out of an in-progress investigate/search
+  (those wind down on their own timers, so FR-05-1's loop actually completes); non-combat leads
+  route through INVESTIGATE first so SEARCH sweeps a real ring (`search_radius`) rather than freezing
+  in place. Regression-locked by `test_guard_detection_reaction.gd`. `take_down()` drops a discoverable
   **`Body`** (`game/systems/ai/Body.gd`, group `&"body"`, `concealed` flag + drag/hide hook for 08)
   and arms a **`RadioCheckin`** (`game/systems/ai/RadioCheckin.gd`, fakeable-count → `alarm_tripped`).
   Guards scan their cone for un-concealed bodies (`body_discovered`) and **propagate** alerts to

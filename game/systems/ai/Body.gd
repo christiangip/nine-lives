@@ -19,12 +19,12 @@ func set_concealed(value: bool) -> void:
 	concealed = value
 
 ## Pure: should an observing guard raise the alarm on this body? Only an un-concealed body that
-## is inside the guard's cone with a clear line of sight is discoverable. TODO[05].
+## is inside the guard's cone with a clear line of sight is discoverable.
 static func raises_alarm(is_concealed: bool, in_cone: bool, has_los: bool) -> bool:
 	return not is_concealed and in_cone and has_los
 
 ## Called by a guard that has spotted this body. Latches so the alarm fires once; raises a
-## (silent) local alarm and announces the discovery for nearby guards to converge. TODO[05].
+## (silent) local alarm and announces the discovery for nearby guards to converge.
 func discover() -> void:
 	if discovered or concealed:
 		return

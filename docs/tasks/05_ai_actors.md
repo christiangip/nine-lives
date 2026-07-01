@@ -25,6 +25,11 @@ Fairness over emergent chaos. Guards are the M0 vertical; the rest of the roster
   route with a `waypoint_pause` glance; NavigationServer pathing for obstacle avoidance is a later
   refinement — open-floor greybox needs no nav-mesh bake.)*
 - [x] Investigate (go to last-known position) ↔ Search (local sweep) ↔ resume, tied to 04 states.
+  *(Detection reactions are **escalate-only**: a rising meter promotes the guard, but decay-driven
+  downgrades don't interrupt an in-progress investigate/search — those wind down on their own
+  timers, so the loop actually completes. Non-combat leads route through INVESTIGATE first (walk to
+  the contact) so SEARCH sweeps a real ring of points around it (`search_radius`), not in place.
+  Covered by `test_guard_detection_reaction.gd`.)*
 - [x] Takedown reaction; body spawn; discovery → alarm. *(`take_down()` → `Body` (group `&"body"`)
   + armed `RadioCheckin`; guards scan their cone for un-concealed bodies → `body_discovered`/`alarm_tripped`.)*
 
@@ -52,6 +57,8 @@ Fairness over emergent chaos. Guards are the M0 vertical; the rest of the roster
 - `test_body_discovery_alarm.gd` — an unhidden body within a cone raises the alarm; hidden does not.
 - `test_radio_checkin.gd` — exceeding the fakeable-checkin count escalates to alarm.
 - `test_enemydef_scaling.gd` — higher-tier `EnemyDef` yields larger cones/health/speed.
+- `test_guard_detection_reaction.gd` — *(added post-review)* the live `_on_detection_changed`
+  path: SEARCH/INVESTIGATE survive decay downgrades; escalation still promotes; combat latches.
 
 ## Definition of Done
 - [~] M0: Phase 05.1 done + its tests green (guard usable in the greybox). *(Code + automated DoD

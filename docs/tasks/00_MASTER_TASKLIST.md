@@ -76,7 +76,9 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
 - [~] **05 — AI Actors** · `05_ai_actors.md` · *(M0 = Guard only · M2/M3 = full roster + combat)*
   Guards, cameras, operator, dogs, civilians, inspector; state machines over NavigationServer.
   *M0 guard core + Phase 05.2 coordination **code + automated DoD complete & verified green on 4.6.3**
-  (GUT 84/84; +5 task-05 tests). `GuardAI` patrols/investigates/searches/recovers off `DetectionSensor`;
+  (GUT 93/93; +6 task-05 tests, incl. a post-review `test_guard_detection_reaction.gd`). Detection
+  reactions are **escalate-only** so decay downgrades don't abort an in-progress investigate/search,
+  and SEARCH now walks a real sweep ring (`search_radius`). `GuardAI` patrols/investigates/searches/recovers off `DetectionSensor`;
   takedown → discoverable `Body` + `RadioCheckin`; alert propagation. Tunables in a new `AIConfigDef`
   (`Content.ai`); `EnemyDef.scaled()` tiers. **Deferred (↩ noted on the blocking tasks):** 05.3 roster
   (cameras/dogs/civilians/inspector → 06/11), 05.4 combat AI (→ 10), 05.5 perf (→ 11). Residual: F6

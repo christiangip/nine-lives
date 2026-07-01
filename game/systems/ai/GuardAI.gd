@@ -10,7 +10,8 @@ class_name GuardAI
 
 enum AIState { PATROL, INVESTIGATE, SEARCH, COMBAT, DOWNED }
 
-const _GRAVITY := 9.8   ## fall accel; keeps the body grounded (not a gameplay tunable)
+const _GRAVITY := 9.8       ## fall accel; keeps the body grounded (not a gameplay tunable)
+const _SEARCH_POINTS := 4   ## sweep points visited around the search center (geometry, not a tunable)
 
 @export var def: EnemyDef                ## per-actor archetype (senses/health/speed); FR-05-9
 @export var ai_config: AIConfigDef       ## behavior tunables; falls back to Content.ai's &"default"
@@ -26,6 +27,8 @@ var _patrol_index: int = 0
 var _timer: float = 0.0                  ## multipurpose per-state countdown (pause/timeout/search)
 var _investigate_target: Vector3 = Vector3.ZERO
 var _has_investigate_target: bool = false
+var _search_center: Vector3 = Vector3.ZERO   ## anchor for the local SEARCH sweep (the lost-contact spot)
+var _search_point_index: int = 0
 
 func _ready() -> void:
 	add_to_group(&"guard")
@@ -74,13 +77,13 @@ func _resolve_waypoints() -> void:
 			_waypoints.append((c as Node3D).global_position)
 
 # --- Pure seams (deterministic; unit-tested headless) ----------------------
-## Next waypoint in a looping route. TODO[05].
+## Next waypoint in a looping route.
 func next_waypoint_index(current: int, count: int) -> int:
 	if count <= 0:
 		return 0
 	return (current + 1) % count
 
-## Map a DetectionSensor state to the guard's behavior state. TODO[05].
+## Map a DetectionSensor state to the guard's behavior state.
 func ai_state_for_detection(det_state: int) -> int:
 	match det_state:
 		DetectionSensor.DetectionState.SUSPICIOUS:
@@ -92,19 +95,29 @@ func ai_state_for_detection(det_state: int) -> int:
 		_:
 			return AIState.PATROL
 
-## Within `radius` of `target`? (arrival / discovery / propagation test). TODO[05].
+## Alertness rank of a behavior state (PATROL < INVESTIGATE < SEARCH < COMBAT). Used to gate
+## detection reactions to *escalation only* — decay-driven downgrades must not yank the guard
+## out of an in-progress search; its own state timers own the wind-down (FR-05-1).
+func behavior_severity(s: int) -> int:
+	match s:
+		AIState.INVESTIGATE: return 1
+		AIState.SEARCH: return 2
+		AIState.COMBAT: return 3
+		_: return 0   # PATROL (DOWNED is handled before this is ever consulted)
+
+## Within `radius` of `target`? (arrival / discovery / propagation test).
 func reached(from_pos: Vector3, target: Vector3, radius: float) -> bool:
 	return from_pos.distance_to(target) <= radius
 
-## Count a per-state timer down, floored at 0. TODO[05].
+## Count a per-state timer down, floored at 0.
 func tick_timer(t: float, dt: float) -> float:
 	return maxf(t - dt, 0.0)
 
-## Is a teammate (or event) at `other` close enough for this guard to react? (FR-05-2). TODO[05].
+## Is a teammate (or event) at `other` close enough for this guard to react? (FR-05-2).
 func within_propagation_radius(from_pos: Vector3, other: Vector3, radius: float) -> bool:
 	return from_pos.distance_to(other) <= radius
 
-## Resolution of an INVESTIGATE: arriving starts a local SEARCH; timing out gives up to PATROL. TODO[05].
+## Resolution of an INVESTIGATE: arriving starts a local SEARCH; timing out gives up to PATROL.
 func investigate_next(arrived: bool, timed_out: bool) -> int:
 	if arrived:
 		return AIState.SEARCH
@@ -112,9 +125,16 @@ func investigate_next(arrived: bool, timed_out: bool) -> int:
 		return AIState.PATROL
 	return AIState.INVESTIGATE
 
-## Resolution of a SEARCH: resume PATROL once the sweep time is spent. TODO[05].
+## Resolution of a SEARCH: resume PATROL once the sweep time is spent.
 func search_next(timed_out: bool) -> int:
 	return AIState.PATROL if timed_out else AIState.SEARCH
+
+## A local-sweep waypoint offset around the search center: a deterministic ring of points at
+## `radius`, so SEARCH actually walks the area (reads AIConfigDef.search_radius) instead of
+## freezing in place. `index` advances as each point is reached.
+func search_offset(index: int, radius: float) -> Vector3:
+	var a := TAU * float(posmod(index, _SEARCH_POINTS)) / float(_SEARCH_POINTS)
+	return Vector3(cos(a) * radius, 0.0, sin(a) * radius)
 
 # --- Tick ------------------------------------------------------------------
 func _physics_process(delta: float) -> void:
@@ -152,9 +172,17 @@ func _tick_investigate(delta: float) -> void:
 
 func _tick_search(delta: float) -> void:
 	_timer = tick_timer(_timer, delta)
-	_halt(delta)   # hold position and watch; the cone keeps sensing during the sweep window
 	if search_next(_timer <= 0.0) == AIState.PATROL:
-		_set_ai_state(AIState.PATROL)
+		_set_ai_state(AIState.PATROL)   # sweep window spent, nothing found → resume patrol
+		return
+	# Walk a ring of sweep points around the lost-contact spot so "Search" actually searches
+	# the area; the cone keeps sensing as it moves.
+	var target := _search_center + search_offset(_search_point_index, ai_config.search_radius)
+	if reached(global_position, target, ai_config.arrival_radius):
+		_search_point_index += 1
+		_halt(delta)
+	else:
+		_move_toward(target, def.move_speed * ai_config.investigate_speed_mult, delta)
 
 func _tick_combat(delta: float) -> void:
 	# TODO[10]: cover selection, suppress/peek, flank, advance. For M0 just converge on the
@@ -171,9 +199,16 @@ func _set_ai_state(s: int) -> void:
 	ai_state = s
 	match s:
 		AIState.INVESTIGATE: _begin_investigate()
-		AIState.SEARCH: _timer = ai_config.search_duration
+		AIState.SEARCH: _begin_search()
 		AIState.PATROL: _begin_patrol()
 		AIState.COMBAT: pass
+
+## Anchor the sweep at wherever we are now — SEARCH is entered on arriving at the lead
+## (via investigate_next) or on discovering a body, so this is the lost-contact spot.
+func _begin_search() -> void:
+	_search_center = global_position
+	_search_point_index = 0
+	_timer = ai_config.search_duration
 
 func _begin_investigate() -> void:
 	if not _has_investigate_target:
@@ -190,7 +225,7 @@ func _begin_patrol() -> void:
 	_timer = 0.0   # head straight to the current waypoint, then pause on arrival
 
 # --- Takedown / body / radio (FR-05-2, FR-05-3) ----------------------------
-## Non-lethal or lethal takedown: stop, drop a discoverable Body, arm the radio check-in. TODO[05].
+## Non-lethal or lethal takedown: stop, drop a discoverable Body, arm the radio check-in.
 func take_down(lethal: bool = false) -> void:
 	if ai_state == AIState.DOWNED:
 		return
@@ -229,8 +264,11 @@ func _scan_for_bodies() -> void:
 			continue
 		if Body.raises_alarm(body.concealed, in_cone, _has_los(origin, body.global_position)):
 			body.discover()
-			if ai_state == AIState.PATROL or ai_state == AIState.INVESTIGATE:
-				_set_ai_state(AIState.SEARCH)
+			# Head to the body and search there (unless already more alert, e.g. in combat).
+			if behavior_severity(AIState.INVESTIGATE) > behavior_severity(ai_state):
+				_investigate_target = body.global_position
+				_has_investigate_target = true
+				_set_ai_state(AIState.INVESTIGATE)
 
 func _has_los(from_pos: Vector3, to_pos: Vector3) -> bool:
 	var space := get_world_3d().direct_space_state
@@ -245,12 +283,25 @@ func _on_detection_changed(actor_id: int, det_state: int, _fill: float) -> void:
 	if ai_state == AIState.DOWNED:
 		return
 	if _sensor != null and actor_id == _sensor.get_instance_id():
-		var want := ai_state_for_detection(det_state)
-		if want != ai_state:
-			_has_investigate_target = false   # investigate the spot our own sensor tracked
-			_set_ai_state(want)
+		_react_to_own_detection(det_state)
 	elif det_state >= DetectionSensor.DetectionState.SEARCHING:
 		_propagate_from(actor_id)
+
+## React to *our own* sensor. Only escalates: a rising meter promotes the guard, but a
+## decaying meter (the norm once the player is lost) must NOT interrupt an in-progress
+## investigate/search — those wind down on their own timers (investigate_next/search_next),
+## which is how "investigate → local search → resume" actually completes (FR-05-1). A spot
+## goes straight to COMBAT; any lesser lead routes through INVESTIGATE first so the guard
+## walks to the contact before sweeping (rather than searching wherever it happens to stand).
+func _react_to_own_detection(det_state: int) -> void:
+	var want := ai_state_for_detection(det_state)
+	if behavior_severity(want) <= behavior_severity(ai_state):
+		return
+	if want == AIState.COMBAT:
+		_set_ai_state(AIState.COMBAT)
+	else:
+		_has_investigate_target = false   # investigate the spot our own sensor tracked
+		_set_ai_state(AIState.INVESTIGATE)
 
 func _on_player_spotted(by_actor_id: int) -> void:
 	if ai_state == AIState.DOWNED:

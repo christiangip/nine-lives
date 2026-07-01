@@ -9,7 +9,6 @@ arrival_radius = 0.6
 waypoint_pause = 1.0
 patrol_speed_mult = 0.6
 investigate_speed_mult = 1.0
-look_around_duration = 1.5
 investigate_timeout = 6.0
 search_duration = 5.0
 search_radius = 4.0

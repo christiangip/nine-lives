@@ -16,15 +16,16 @@ class_name AIConfigDef
 @export var investigate_speed_mult: float = 1.0  ## fraction of move_speed while investigating/searching
 
 # --- Investigate / search timing (s) ---------------------------------------
-@export var look_around_duration: float = 1.5   ## glance around on arriving at a waypoint
 @export var investigate_timeout: float = 6.0    ## give up walking to a stale last-known spot after this
 @export var search_duration: float = 5.0        ## local sweep length before resuming patrol
 @export var search_radius: float = 4.0          ## radius of the local sweep around the lost contact
 
 # --- Radio check-ins (FR-05-3) ---------------------------------------------
 @export var max_fakeable_checkins: int = 2   ## fakeable "all clear" replies before HQ escalates
+## checkin_delay/checkin_window feed the on-screen hold-to-fake prompt/timer, which is authored
+## in task 15 (HUD); they are intentionally not read by GuardAI yet. See docs/tasks/15_ui_hud_menus.md.
 @export var checkin_delay: float = 8.0       ## seconds after a takedown before the radio demands a check-in
-@export var checkin_window: float = 4.0      ## window to hold the fake-reply prompt (UI lands in task 15)
+@export var checkin_window: float = 4.0      ## window to hold the fake-reply prompt
 
 # --- Coordination / discovery ----------------------------------------------
 @export var alert_propagation_radius: float = 12.0   ## nearby guards within this raise on a spotting/search (FR-05-2)
