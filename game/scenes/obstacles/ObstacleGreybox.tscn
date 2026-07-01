@@ -1,14 +1,24 @@
-[gd_scene load_steps=32 format=3]
+[gd_scene load_steps=35 format=3]
 
 ; Dev-only greybox for the task-06 manual playtest (F6). Not wired into GameManager — mission flow is
 ; task 11. Each obstacle is an Obstacle (Interactable) Node3D with a StaticBody3D collider child, so the
-; player's interaction ray resolves it. Fully operable now (no task 07/08 needed):
-;   * FUSE BOX (yellow): tap to cut power — the e-lock (opens) and camera (offline) in its "wing_a" zone
-;     drop out; the red LASER in the "vault" zone stays live (zone-scoped).
-;   * E-LOCK (cyan): tap to start a hack, then STAY CLOSE — it fills over ~3s and opens; walk out of
+; player's interaction ray resolves it. The "Debug" node adds a crosshair + a live [F]-prompt line (the
+; label reads the real InputMap binding, so it stays correct even if "interact" is rebound) and floats a
+; state tag over each obstacle (real HUD is task 15). Move with WASD, look with the mouse, aim the + and
+; press/HOLD [F] — NOT E: E/Q are lean_right/lean_left (peek), a separate action. Fully operable now
+; (no task 07/08 needed):
+;   * FUSE BOX (yellow, zone "wing_a"): HOLD F to cut power — the e-lock (OPENS) and camera (OFF) drop
+;     out. It deliberately does NOT reach the laser (different zone) — proving power cuts are
+;     zone-scoped (FR-06-8), not global.
+;   * JUNCTION BOX (orange, zone "vault" — same FuseBox script, just the laser's zone): HOLD F to cut
+;     THIS one instead and watch the red LASER go dark (armed -> OFF). This is the laser's
+;     "disable at a junction box" counter-play (FR-06-6).
+;   * E-LOCK (cyan): tap F to start a hack, then STAY CLOSE — it fills over ~3s and OPENS; walk out of
 ;     range and it pauses, step back and it resumes.
-; Props pending downstream systems (labelled): LOCK + SAFE need the task-07 minigame overlay; the
-; KEYCARD DOOR needs a held card (task 08). Their counter-play logic is unit-tested + data-driven.
+; Props pending downstream systems (labelled on their tag): LOCK + SAFE need the task-07 minigame
+; overlay; the KEYCARD DOOR needs a held card (task 08); the laser's other counter-plays (reveal via
+; Thief Vision/aerosol, EMP) need their gadgets (tasks 08/09). Their counter-play logic is
+; unit-tested + data-driven.
 
 [ext_resource type="PackedScene" path="res://game/scenes/player/PlayerController.tscn" id="1_player"]
 [ext_resource type="Environment" path="res://game/assets/default_env.tres" id="2_env"]
@@ -19,12 +29,14 @@
 [ext_resource type="Resource" path="res://game/resources/obstacles/camera_ptz.tres" id="7_cam_d"]
 [ext_resource type="Script" path="res://game/systems/obstacles/FuseBox.gd" id="8_fuse_s"]
 [ext_resource type="Resource" path="res://game/resources/obstacles/fuse_box.tres" id="9_fuse_d"]
+[ext_resource type="Resource" path="res://game/resources/obstacles/junction_box.tres" id="17_junction_d"]
 [ext_resource type="Script" path="res://game/systems/obstacles/LaserGrid.gd" id="10_laser_s"]
 [ext_resource type="Resource" path="res://game/resources/obstacles/laser_grid.tres" id="11_laser_d"]
 [ext_resource type="Script" path="res://game/systems/obstacles/Safe.gd" id="12_safe_s"]
 [ext_resource type="Resource" path="res://game/resources/obstacles/safe_basic.tres" id="13_safe_d"]
 [ext_resource type="Script" path="res://game/systems/obstacles/KeycardDoor.gd" id="14_kc_s"]
 [ext_resource type="Resource" path="res://game/resources/obstacles/keycard_door.tres" id="15_kc_d"]
+[ext_resource type="Script" path="res://game/scenes/obstacles/ObstacleGreyboxDebug.gd" id="16_dbg"]
 
 [sub_resource type="BoxMesh" id="Mesh_floor"]
 size = Vector3(28, 0.4, 28)
@@ -70,6 +82,9 @@ albedo_color = Color(0.85, 0.72, 0.15, 1)
 
 [sub_resource type="StandardMaterial3D" id="Mat_laser"]
 albedo_color = Color(0.85, 0.15, 0.15, 1)
+
+[sub_resource type="StandardMaterial3D" id="Mat_junction"]
+albedo_color = Color(0.88, 0.5, 0.12, 1)
 
 [sub_resource type="StandardMaterial3D" id="Mat_safe"]
 albedo_color = Color(0.28, 0.3, 0.34, 1)
@@ -191,5 +206,23 @@ surface_material_override/0 = SubResource("Mat_laser")
 [node name="Shape" type="CollisionShape3D" parent="LaserGrid/Col"]
 shape = SubResource("Shape_laser")
 
+[node name="JunctionBox" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 1, -2)
+script = ExtResource("8_fuse_s")
+def = ExtResource("17_junction_d")
+
+[node name="Col" type="StaticBody3D" parent="JunctionBox"]
+
+[node name="Mesh" type="MeshInstance3D" parent="JunctionBox/Col"]
+mesh = SubResource("Mesh_device")
+surface_material_override/0 = SubResource("Mat_junction")
+
+[node name="Shape" type="CollisionShape3D" parent="JunctionBox/Col"]
+shape = SubResource("Shape_device")
+
 [node name="Player" parent="." instance=ExtResource("1_player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 9)
+
+[node name="Debug" type="Node3D" parent="."]
+script = ExtResource("16_dbg")
+player_path = NodePath("../Player")

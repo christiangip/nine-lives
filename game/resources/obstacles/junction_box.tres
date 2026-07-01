@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ObstacleDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/ObstacleDef.gd" id="1_obs"]
+
+[resource]
+script = ExtResource("1_obs")
+id = &"junction_box"
+display_name = "Junction Box"
+category = 10
+difficulty_tier = 1
+valid_solutions = Array[StringName]([&"cut_power"])
+noise_by_solution = {
+"power_cut": 8.0
+}
+prompt = "Disable Junction Box"
+hold_seconds = 0.5
+backup_seconds = 20.0
+power_zone = &"vault"
+params = {}
