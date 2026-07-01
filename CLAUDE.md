@@ -101,6 +101,23 @@ checkbox in the task list. Keep tests headless-safe (no editor-only deps).
   also need the manual playtest checklist signed off.
 - **Checkbox legend:** `[ ]` not started · `[~]` in progress · `[x]` DoD met.
 
+## Deferring blocked work
+Do everything a task **can** complete now; never fake or half-build a system that a **later** task owns.
+When a sub-item is genuinely blocked by a not-yet-built task, **defer it** — but leave a trail so it's not lost:
+
+- **In the current task:** keep the blocked sub-item unchecked (or its DoD `[~]`) and expose a clean
+  **hook/seam** for the future task to wire — a signal/method/duck-typed call + a `TODO[NN]:` tag naming
+  the blocking list. Don't branch core logic on it or stub a pretend version.
+- **In the blocking task's doc** (`docs/tasks/NN_….md`): add a banner at the top —
+  `> **↩ From MM (This Task):** …` — naming the exact hook to wire and ending with *"come back and tick
+  `<item>` in `MM_….md`."* That arrow is the greppable breadcrumb: `rg "↩ From"`.
+- **When the blocking task runs:** wire the hook, then go back and tick the original item + refresh its
+  progress note. A milestone gate (M0–M5) is met only once **every** task it spans — including these
+  deferred slices — has landed.
+
+*Example (task 06):* obstacles call the task-07 `Minigame` contract but ship no overlay — 06 kept the
+consequence logic tested behind a hook and added `↩ From 06` banners to `07`–`13` for the deferred halves.
+
 ## Task progress notes
 - **01 — Project Setup & Tooling:** authoring complete (9 autoloads incl. the new `SettingsManager`;
   `Main.tscn` → placeholder Main Menu; InputManager gamepad defaults + runtime rebind + `settings.cfg`
