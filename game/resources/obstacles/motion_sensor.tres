@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ObstacleDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/ObstacleDef.gd" id="1_obs"]
+
+[resource]
+script = ExtResource("1_obs")
+id = &"motion_sensor"
+display_name = "Motion Sensor"
+category = 6
+difficulty_tier = 2
+valid_solutions = Array[StringName]([&"move_slow", &"disable", &"cut_power"])
+noise_by_solution = {}
+prompt = "Disable Sensor"
+hold_seconds = 0.0
+power_zone = &"wing_b"
+params = {
+"speed_threshold": 1.5,
+"alarm_kind": "silent"
+}

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ObstacleDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/ObstacleDef.gd" id="1_obs"]
+
+[resource]
+script = ExtResource("1_obs")
+id = &"safe_basic"
+display_name = "Dial Safe"
+category = 2
+difficulty_tier = 2
+valid_solutions = Array[StringName]([&"safe_dial", &"found_combo"])
+noise_by_solution = {}
+prompt = "Crack Safe"
+hold_seconds = 0.0
+clue_id = &"safe_combo_clue"
+params = {}

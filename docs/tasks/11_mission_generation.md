@@ -9,6 +9,13 @@
 > them from `EnemyDef` here (`MissionGenerator.build`), then come back and tick 05.3/05.5 +
 > DoD-M3 in `05_ai_actors.md`.
 
+> **↩ From 06 (Obstacles):** every obstacle **publishes** its data — `Obstacle.solution_set()` +
+> `difficulty()` over `Content.obstacles` (16 `ObstacleDef` archetypes). Consume it here (this is
+> FR-06-10's consumer): place obstacles, **validate solvability** (≥1 reachable solution per gate;
+> never minigame-only except pin-tumbler locks), scope **power zones** (fuse ↔ device `power_zone`),
+> and **spawn the found clues/codes** (`clue_id`) that skip safes/keypads. Come back and tick
+> DoD-M2 ("consumed by the generator") in `06_…md`.
+
 ## Overview
 Seeded, hybrid-procedural assembly: hand-authored modular **sections** stitched by
 a rule-based assembler, then **populated** with loot/guards/cameras/objectives —

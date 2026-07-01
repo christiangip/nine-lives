@@ -9,6 +9,11 @@
 > Pursuit; responder/SWAT/specialist tiers) lands **here**. Drive it off `EnemyDef.loadout`
 > and `AIConfigDef`. Come back and tick 05.4 + DoD-M2 in `05_ai_actors.md` when done.
 
+> **↩ From 06 (Obstacles):** loud obstacle actions already emit the frozen `alarm_tripped("loud")` /
+> `noise_emitted` — `DisplayCase.smash`, `BreachPoint` C4, `ControllableLight.shoot`. Wire these into
+> the alarm-escalation timeline + Pursuit here, and provide the **firearm** that shoots out a
+> `ControllableLight` / camera (`.shoot()`). No new signals needed — the hooks are already on the bus.
+
 ## Overview
 When stealth breaks, the game becomes a first-person **cover-shooter escape
 gauntlet**. Per Q2 this is the fuller model: weapon depth, an armor layer, ammo

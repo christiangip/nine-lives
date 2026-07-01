@@ -1,0 +1,66 @@
+extends Obstacle
+class_name BreachPoint
+## A breachable barrier — vault door, reinforced wall (FR-06-9, GDD §9.6). Three loud/semi-loud tools:
+## DRILL (timed, noisy, can JAM and need a repair, upgradeable), THERMITE (timed burn, very loud, no
+## jam), or C4 (instant breach, max alarm). This is a tension manager, not a puzzle: a timer + jam
+## events + noise. Tool params (time/noise/jam, upgrades) come from the def / gear (task 09).
+## The on-screen drill gauge/repair prompt is task 07 (FR-07-8); the logic lives here.
+## See docs/tasks/06_heist_mechanics_obstacles.md (FR-06-9).
+
+signal breach_progress(fraction: float)
+signal jammed
+signal breached(method: StringName)
+
+var running: bool = false
+var is_jammed: bool = false
+var method: StringName = &"drill"
+var progress: float = 0.0
+
+# --- Pure seams (deterministic; unit-tested headless) ----------------------
+## Does the drill jam this tick? `roll` is a uniform draw in [0,1); `chance` already folds in delta. Pure.
+static func jam_check(roll: float, chance: float) -> bool:
+	return roll < chance
+
+## Fraction complete for a timer. Pure.
+static func fraction(progress_s: float, total_s: float) -> float:
+	if total_s <= 0.0:
+		return 1.0
+	return clampf(progress_s / total_s, 0.0, 1.0)
+
+# --- Breach lifecycle ------------------------------------------------------
+func begin_breach(p_method: StringName, _by: Node = null) -> void:
+	if solved or def == null or not def.has_solution(p_method):
+		return
+	method = p_method
+	if method == &"c4":
+		_trip_alarm("loud")            # instant + max alarm
+		_finish()
+		return
+	running = true
+	is_jammed = false
+	progress = 0.0
+	_emit_noise_for(method)            # the tool draws guards while it works
+
+func repair() -> void:
+	if is_jammed:
+		is_jammed = false
+
+func _process(delta: float) -> void:
+	if not running or is_jammed:
+		return
+	if method == &"drill" and _jam_chance() > 0.0 and jam_check(randf(), _jam_chance() * delta):
+		is_jammed = true
+		jammed.emit()
+		return
+	progress = minf(progress + delta, def.time_seconds)
+	breach_progress.emit(fraction(progress, def.time_seconds))
+	if progress >= def.time_seconds and def.time_seconds > 0.0:
+		_finish()
+
+func _jam_chance() -> float:
+	return float(def.params.get("jam_chance_per_sec", 0.0)) if def != null else 0.0
+
+func _finish() -> void:
+	running = false
+	_mark_solved(method)
+	breached.emit(method)

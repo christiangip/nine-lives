@@ -15,6 +15,7 @@ enum Kind { GUARD, CAMERA, OPERATOR, DOG, CIVILIAN, INSPECTOR, RESPONDER, TACTIC
 @export var health: int = 100
 @export var move_speed: float = 2.5
 @export var loadout: Array[StringName] = []   ## weapons for cover-shooter pursuit
+@export var carried_item: StringName = &""    ## keycard/key id yielded by pickpocket/takedown; the Inspector's must-have gate key (FR-06-3, ↩ from 05)
 @export var params: Dictionary = {}
 
 ## Returns a duplicate scaled by `mult` on the senses/health/speed axes — the data-driven

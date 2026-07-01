@@ -3,6 +3,11 @@
 **Milestone:** M1 (min: Job Map + Training + Workshop) · M3 (full) · **Depends on:** 12, 16 · **Blocks:** 20
 **Implements:** GDD §6 · **Decisions:** Q3 (Legacy Board naming), manifest-driven expandability.
 
+> **↩ From 06 (Obstacles):** the **Intel** reveal half of FR-06-10 / FR-06-7 lands where Intel is
+> purchased/previewed (Planning Table). Surface obstacle locations/difficulty/solutions from
+> `Content.obstacles`, and reveal otherwise-invisible **silent alarms** via `SilentAlarm.reveal()`.
+> Come back and tick DoD-M2 ("consumed by … Intel") in `06_…md`.
+
 ## Overview
 The between-mission hub and the safehouse-grows progression arc. Built as
 **manifest-driven stations** (`StationDef`): each is a scene + a registry entry, so

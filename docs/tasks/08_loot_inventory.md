@@ -8,6 +8,13 @@
 > system here (a body is a heavy two-handed haul), plus the Inspector keycard pickup. Come back
 > and tick the body-drag note in `05_ai_actors.md`.
 
+> **↩ From 06 (Obstacles):** obstacle counter-play duck-types the not-yet-built inventory via
+> `Obstacle.actor_has_item(by, id)` and a stand-in `PickPouch` (`game/systems/obstacles/PickPouch.gd`).
+> Back these with real inventory: **held keycards/keys/clues** (KeycardDoor/Safe/DisplayCase gating),
+> **consumable lockpicks** (`Lock` pouch), **data-loot download** into carry (`HackTarget` `data_loot`
+> device), and dragging a **knocked-out keyholder** to a `BiometricLock`. Tick the `TODO[08]` hooks
+> and the relevant boxes in `06_…md`.
+
 ## Overview
 The economic heartbeat of the micro-loop. A two-axis carry system + hand slots
 forces prioritization; physical pickup/bagging/throwing makes carrying the score a

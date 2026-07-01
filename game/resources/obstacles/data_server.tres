@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ObstacleDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/ObstacleDef.gd" id="1_obs"]
+
+[resource]
+script = ExtResource("1_obs")
+id = &"data_server"
+display_name = "Data Server"
+category = 4
+difficulty_tier = 3
+valid_solutions = Array[StringName]([&"hack", &"found_payload"])
+noise_by_solution = {}
+prompt = "Download Data"
+hold_seconds = 0.0
+time_seconds = 5.0
+proximity_range = 3.0
+params = {
+"device": "data_loot"
+}

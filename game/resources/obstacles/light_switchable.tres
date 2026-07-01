@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ObstacleDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/ObstacleDef.gd" id="1_obs"]
+
+[resource]
+script = ExtResource("1_obs")
+id = &"light_switchable"
+display_name = "Ceiling Light"
+category = 11
+difficulty_tier = 1
+valid_solutions = Array[StringName]([&"switch", &"shoot"])
+noise_by_solution = {
+"shoot": 10.0
+}
+prompt = "Switch Off Light"
+hold_seconds = 0.0
+power_zone = &"wing_b"
+params = {}

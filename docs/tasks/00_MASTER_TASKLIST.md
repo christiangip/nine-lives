@@ -83,8 +83,16 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
   (`Content.ai`); `EnemyDef.scaled()` tiers. **Deferred (↩ noted on the blocking tasks):** 05.3 roster
   (cameras/dogs/civilians/inspector → 06/11), 05.4 combat AI (→ 10), 05.5 perf (→ 11). Residual: F6
   sign-off on `GuardGreybox.tscn`.*
-- [ ] **06 — Heist Mechanics & Obstacles** · `06_heist_mechanics_obstacles.md` · *(M0 core · M2 full)*
+- [~] **06 — Heist Mechanics & Obstacles** · `06_heist_mechanics_obstacles.md` · *(M0 core · M2 full)*
   Locks, safes, keys/keycards, cases, hacking targets, lasers, sensors, biometrics, power, breaching.
+  *Obstacle catalogue **code + automated DoD complete & verified green on Godot 4.6.3** (GUT **112/112**,
+  +19 task-06 tests). Data-driven via a new `ObstacleDef` (13th `Content` registry `Content.obstacles`,
+  16 archetypes); 13 `Interactable` subclasses in `game/systems/obstacles/` with pure seams
+  (`snap_chance`/`step_progress`/`can_skip`/`FuseBox.affects` …); EventBus stayed frozen (groups +
+  existing `noise_emitted`/`alarm_tripped`). Unblocked the **05 Inspector keycard** (`EnemyDef.carried_item`
+  + `inspector.tres` → `vault_keycard` gate). **Deferred with ↩ notes (blocked downstream):** minigame
+  overlays → 07, inventory/consumables → 08, gadgets/weapons → 09/10, solution-set consumption + clue
+  placement → 11, Intel reveal → 13. **Residual `[~]`:** F6 greybox sign-off (`ObstacleGreybox.tscn`).*
 - [ ] **07 — Minigames** · `07_minigames.md` · *(M0 core · M2 full)*
   Lockpick, safe-crack, hack, keypad, pickpocket, drill/thermite tension manager.
 - [ ] **08 — Loot & Inventory** · `08_loot_inventory.md` · *(M0)*
@@ -134,7 +142,7 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
 
 ```
 Foundation        [x01][x02]                        2 / 2
-Core stealth (M0) [x03][~04][~05·G][06·c][07·c][08]  1 / 6
+Core stealth (M0) [x03][~04][~05·G][~06][07·c][08]   1 / 6
 Spine (M1)        [11·b][12][13·m][15·m][16]         0 / 5
 Loud + breadth    [09][10][14]                       0 / 3
 Presentation      [17][18]                           0 / 2

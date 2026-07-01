@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ObstacleDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/ObstacleDef.gd" id="1_obs"]
+
+[resource]
+script = ExtResource("1_obs")
+id = &"breach_vault"
+display_name = "Vault Door"
+category = 12
+difficulty_tier = 4
+valid_solutions = Array[StringName]([&"drill", &"thermite", &"c4"])
+noise_by_solution = {
+"drill": 12.0,
+"thermite": 16.0,
+"c4": 24.0
+}
+prompt = "Breach"
+hold_seconds = 0.0
+time_seconds = 12.0
+params = {
+"jam_chance_per_sec": 0.08
+}

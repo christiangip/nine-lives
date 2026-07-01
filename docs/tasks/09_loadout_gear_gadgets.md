@@ -3,6 +3,12 @@
 **Milestone:** M2 · **Depends on:** 02, 06 · **Blocks:** 10
 **Implements:** GDD §11 · **Decisions:** Q2 (weapons/armor), Q6 (no Disguise Kit).
 
+> **↩ From 06 (Obstacles):** obstacles expose gadget hooks that currently duck-type to `false` —
+> supply them as `GearDef`: **keycard cloner** (`KeycardDoor._can_clone`), **glasscutter**
+> (`DisplayCase.cut`), **biometric spoof** (`BiometricLock`), **EMP + aerosol** (`LaserGrid.emp/reveal`),
+> **stethoscope** (widens the safe-dial cue), and **breach charges** (drill/thermite/C4 `params` +
+> upgrades on `BreachPoint`). Come back and tick the `TODO[09]` hooks in `06_…md`.
+
 ## Overview
 Gear is data (`GearDef`): unlocked permanently via Workshop research (Legacy),
 equipped at the Armory within slot limits, consumables restocked with The Take.

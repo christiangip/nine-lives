@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ObstacleDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/ObstacleDef.gd" id="1_obs"]
+
+[resource]
+script = ExtResource("1_obs")
+id = &"biometric_lock"
+display_name = "Biometric Lock"
+category = 8
+difficulty_tier = 3
+valid_solutions = Array[StringName]([&"keyholder", &"spoof", &"alt_route"])
+noise_by_solution = {}
+prompt = "Biometric Lock"
+hold_seconds = 0.0
+required_item = &"cfo_biometrics"
+params = {}

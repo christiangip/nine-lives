@@ -181,3 +181,26 @@ checkbox in the task list. Keep tests headless-safe (no editor-only deps).
   (`_tick_combat` is a converge-only stub → task 10), **05.5** perf round-robin (→ 11). **Residual
   (`[~]`):** the manual F6 "feel" sign-off on `GuardGreybox.tscn` — mark M0 DoD `[x]` after it,
   mirroring tasks 03/04.
+- **06 — Heist Mechanics & Obstacles:** **obstacle catalogue — code + automated DoD complete &
+  verified green** on Godot 4.6.3 (headless GUT **112/112**, +19 task-06 tests). The puzzle-box
+  catalogue is data-driven: a new **`ObstacleDef`** (`id`, `category` enum, `difficulty_tier`,
+  `valid_solutions`, `noise_by_solution`, shared tunables + `params`) registered as the **13th
+  `Content` registry `Content.obstacles`** (16 authored `.tres` archetypes). 13 `Interactable`
+  subclasses in `game/systems/obstacles/` extend a small `Obstacle` base (def resolution + the
+  `solution_set()`/`difficulty()` query API that 11/13 will read + frozen-EventBus/group effects) via
+  **pure static seams**: `Lock.snap_chance`/`should_snap` (consumable `PickPouch`),
+  `HackTarget.in_proximity`/`step_progress` (proximity-lock pause/resume; camera loop-vs-disable; e-lock
+  power-cut), `Safe.can_skip` (combo-clue bypass), `FuseBox.affects`/`cut_power` (zone power-cut + backup
+  timer + `noise_emitted` investigate-draw), plus `KeycardDoor`/`LaserGrid`/`DisplayCase`/
+  `ControllableLight`/`BreachPoint`/`MotionSensor`/`PressurePlate`/`BiometricLock`/`SilentAlarm`.
+  **EventBus stayed frozen** (its contract test still passes) — zone power uses a `&"powered_device"`
+  group + `power_zone`, loud actions reuse `alarm_tripped("loud")`/`noise_emitted`, readability uses
+  local signals. **No magic numbers** — tunables live in `ObstacleDef`/`params`; added `lockpicking`/
+  `hacking` `AttributeDef`s. **Task-05 handoff closed:** `EnemyDef.carried_item` + `inspector.tres` carry
+  `&"vault_keycard"`, gating `keycard_door.tres` (FR-05-7). **Deferred (↩ notes added to the blocking
+  docs):** minigame overlays → 07 (obstacles call the existing `Minigame` contract; the outcome is an
+  input to the tested consequence seam — no fake solver), inventory/consumables/held-cards → 08,
+  gadgets/weapons (glasscutter/stethoscope/EMP/cloner/breach charges/light-shoot) → 09/10, solution-set
+  **consumption** + solvability + clue placement → 11 (FR-06-10), Intel reveal → 13. **Residual
+  (`[~]`):** the F6 "feel" sign-off on `game/scenes/obstacles/ObstacleGreybox.tscn` (the fuse→camera/
+  e-lock power-cut and the timed e-lock hack are operable now), mirroring tasks 03/04.

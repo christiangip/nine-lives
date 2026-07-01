@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EnemyDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/EnemyDef.gd" id="1_enemy"]
+
+[resource]
+script = ExtResource("1_enemy")
+id = &"inspector"
+kind = 5
+display_name = "Inspector"
+tier = 2
+vision_angle = 100.0
+vision_range = 16.0
+hearing_radius = 9.0
+health = 100
+move_speed = 2.6
+loadout = Array[StringName]([])
+carried_item = &"vault_keycard"
+params = {}

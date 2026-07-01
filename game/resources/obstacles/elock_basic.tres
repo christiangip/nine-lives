@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="ObstacleDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/ObstacleDef.gd" id="1_obs"]
+
+[resource]
+script = ExtResource("1_obs")
+id = &"elock_basic"
+display_name = "Electronic Lock"
+category = 4
+difficulty_tier = 2
+valid_solutions = Array[StringName]([&"hack", &"found_code", &"power_cut"])
+noise_by_solution = {}
+prompt = "Hack Lock"
+hold_seconds = 0.0
+time_seconds = 3.0
+proximity_range = 3.0
+power_zone = &"wing_a"
+clue_id = &"elock_code"
+params = {
+"device": "elock"
+}

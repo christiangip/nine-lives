@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ObstacleDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/ObstacleDef.gd" id="1_obs"]
+
+[resource]
+script = ExtResource("1_obs")
+id = &"keycard_door"
+display_name = "Keycard Door"
+category = 1
+difficulty_tier = 1
+valid_solutions = Array[StringName]([&"keycard", &"clone", &"alt_route"])
+noise_by_solution = {}
+prompt = "Use Keycard"
+hold_seconds = 0.0
+required_item = &"vault_keycard"
+params = {}

@@ -3,6 +3,14 @@
 **Milestone:** M0 (lockpick + hack) · M2 (full set) · **Depends on:** 02, 06 · **Blocks:** —
 **Implements:** GDD §9.8 · **Decisions:** scaled by attribute/gear; FP diegetic close-ups.
 
+> **↩ From 06 (Obstacles):** the obstacles are built and call the `Minigame` contract
+> (`solved`/`failed`/`aborted`) but ship **no overlay** — each resolves its alternates first and
+> treats the skill outcome as an input to a tested consequence seam. Build the overlays and feed
+> results back: `Lock.resolve_attempt(success)` (lockpick; snaps a `PickPouch` pick on fail),
+> `Safe`/`DisplayCase` (emit `minigame_requested` → dial / e-lock hack), the `HackTarget` timed
+> proximity hack (e-lock/keypad Mastermind/camera loop-vs-disable), and `BreachPoint` (drill
+> gauge + repair, FR-07-8). Come back and tick these + the relevant boxes in `06_…md`.
+
 ## Overview
 A small set of standardized, reusable minigame frameworks subclassing `Minigame`.
 Each scales by the relevant attribute + gear, snaps to a focused diegetic overlay,

@@ -42,7 +42,10 @@ Fairness over emergent chaos. Guards are the M0 vertical; the rest of the roster
 ### Phase 05.3 — Sensors-as-actors  *(deferred — needs mission population/keycards/inventory)*
 - [ ] Camera arc + monitoring feed / delayed auto-alarm; operator blind-window. *(↩ build in 11.)*
 - [ ] Guard dog scent sensor; civilian panic FSM; inspector roaming + keycard carry.
-  *(↩ inspector keycard waits on 06; population on 11. `EnemyDef.Kind` already enumerates all.)*
+  *(**Inspector keycard-carry DONE in 06 (2026-07-01):** `EnemyDef.carried_item` added +
+  `resources/enemies/inspector.tres` carries `&"vault_keycard"`, which gates `keycard_door.tres` —
+  taking the Inspector down / pickpocketing yields the gate key (FR-05-7). Still pending: the
+  **roaming** behavior + dog scent + civilian panic FSM (↩ population on 11). `EnemyDef.Kind` enumerates all.)*
 
 ### Phase 05.4 — Combat AI (M2, with 10)  *(deferred — hard-blocked by task 10)*
 - [ ] Cover selection, suppress/peek, flank, advance under Pursuit; responder/SWAT/specialist tiers.

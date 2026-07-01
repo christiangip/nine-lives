@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ObstacleDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/ObstacleDef.gd" id="1_obs"]
+
+[resource]
+script = ExtResource("1_obs")
+id = &"pressure_plate"
+display_name = "Pressure Plate"
+category = 7
+difficulty_tier = 2
+valid_solutions = Array[StringName]([&"avoid", &"weigh_down", &"disable"])
+noise_by_solution = {}
+prompt = "Disable Plate"
+hold_seconds = 0.0
+params = {
+"alarm_kind": "silent"
+}

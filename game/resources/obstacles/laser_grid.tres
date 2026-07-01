@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ObstacleDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/ObstacleDef.gd" id="1_obs"]
+
+[resource]
+script = ExtResource("1_obs")
+id = &"laser_grid"
+display_name = "Laser Grid"
+category = 5
+difficulty_tier = 2
+valid_solutions = Array[StringName]([&"avoid", &"junction_box", &"reveal", &"emp"])
+noise_by_solution = {}
+prompt = "Laser Grid"
+hold_seconds = 0.0
+power_zone = &"vault"
+params = {
+"alarm_kind": "loud"
+}
