@@ -15,5 +15,6 @@ hold_seconds = 0.0
 time_seconds = 5.0
 proximity_range = 3.0
 params = {
-"device": "data_loot"
+"device": "data_loot",
+"loot_id": "stolen_data"
 }

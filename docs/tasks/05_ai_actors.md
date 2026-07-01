@@ -39,6 +39,11 @@ Fairness over emergent chaos. Guards are the M0 vertical; the rest of the roster
   Covered by `test_guard_detection_reaction.gd`.)*
 - [x] Takedown reaction; body spawn; discovery → alarm. *(`take_down()` → `Body` (group `&"body"`)
   + armed `RadioCheckin`; guards scan their cone for un-concealed bodies → `body_discovered`/`alarm_tripped`.)*
+  **Drag/hide DONE in 08 (2026-07-01):** `Body` now `extends Interactable` (a runtime-spawned
+  `_spawn_body()` body gets a procedural collider + placeholder mesh so it's actually
+  raycastable); dragging it hands it to the carrier's `Inventory` (both hand slots, per GDD
+  §10.1's "heavy two-handed haul"), grants its `carried_item` (the Inspector's `vault_keycard`),
+  and `set_concealed()` toggles on pickup/putdown — closing FR-05-2's drag/hide half.
 
 ### Phase 05.2 — Radios & coordination
 - [x] Radio check-in fakeable-count escalation. *(`RadioCheckin.try_fake()`; the on-screen

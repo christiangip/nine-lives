@@ -1,0 +1,299 @@
+[gd_scene load_steps=48 format=3]
+
+; Dev-only greybox for the task-08 manual playtest (F6). Not wired into GameManager — mission
+; flow is task 11. Move with WASD, look with the mouse, aim the + and press/HOLD [F] to pick up
+; pocketable loot directly, bag loose cash/gold, drag the downed guard, or bank a haul at the
+; Drop Point / Escape. [T] throws the carried bag, [G] puts down a dragged body, [K] is a
+; debug-only "simulate a Catch" key. Fully operable now:
+;   * JEWELRY CASE (silver): pocketable, grabbed directly — no bagging needed.
+;   * CASH PILE / GOLD BAR: loose loot — the first [F] press bags it (occupies one hand); repeat
+;     near either to add more loose loot to the same bag (still one hand).
+;   * PAINTING (brown, SPECIAL tier, two-handed): delivering it to the Drop Point/Escape grants
+;     a Stash trophy hook (FR-08-9).
+;   * LOCK (gray door): consumable-pick counter-play — the Debug script hands it a real
+;     PickPouch (task 06's stand-in, now backed by real inventory) and requests the task-07
+;     lockpick overlay on interact.
+;   * DROP POINT (green crate) / ESCAPE (blue door): bank everything currently carried —
+;     immediately secured, survives a later Catch (press [K] to simulate one and watch the
+;     readout: Secured stays, In-hand zeroes).
+;   * GUARD (blue capsule, patrols the 3 waypoints; walk into its cone to get investigated —
+;     see GuardGreybox for the full detection loop): once downed (task 10 owns the real takedown
+;     input), its Body is draggable — dragging it grants vault_keycard (the Inspector keycard
+;     pickup, ↩ from 05) and demonstrates BiometricLock's keyholder duck-type (purple device;
+;     its required cfo_biometrics won't resolve against this guard's vault_keycard — it proves
+;     the mechanism, not a solvable puzzle here, since no "cfo" EnemyDef exists yet).
+
+[ext_resource type="PackedScene" path="res://game/scenes/player/PlayerController.tscn" id="1_player"]
+[ext_resource type="Environment" path="res://game/assets/default_env.tres" id="2_env"]
+[ext_resource type="Script" path="res://game/systems/inventory/LootPickup.gd" id="3_pickup_s"]
+[ext_resource type="Resource" path="res://game/resources/loot/jewelry_case.tres" id="4_jewelry_d"]
+[ext_resource type="Resource" path="res://game/resources/loot/cash_bundle.tres" id="5_cash_d"]
+[ext_resource type="Resource" path="res://game/resources/loot/gold_bar.tres" id="6_gold_d"]
+[ext_resource type="Resource" path="res://game/resources/loot/masterpiece_painting.tres" id="7_painting_d"]
+[ext_resource type="Script" path="res://game/systems/inventory/DropPoint.gd" id="8_drop_s"]
+[ext_resource type="Script" path="res://game/systems/inventory/Escape.gd" id="9_escape_s"]
+[ext_resource type="Script" path="res://game/systems/obstacles/BiometricLock.gd" id="10_bio_s"]
+[ext_resource type="Resource" path="res://game/resources/obstacles/biometric_lock.tres" id="11_bio_d"]
+[ext_resource type="Script" path="res://game/systems/obstacles/Lock.gd" id="12_lock_s"]
+[ext_resource type="Resource" path="res://game/resources/obstacles/lock_basic.tres" id="13_lock_d"]
+[ext_resource type="Script" path="res://game/systems/ai/GuardAI.gd" id="14_guard_s"]
+[ext_resource type="Script" path="res://game/systems/stealth/DetectionSensor.gd" id="15_sensor_s"]
+[ext_resource type="Script" path="res://game/systems/stealth/DetectionConeDebug.gd" id="16_cone_s"]
+[ext_resource type="Resource" path="res://game/resources/detection/default_detection.tres" id="17_det_d"]
+[ext_resource type="Resource" path="res://game/resources/enemies/inspector.tres" id="18_insp_d"]
+[ext_resource type="Resource" path="res://game/resources/ai/default_ai.tres" id="19_ai_d"]
+[ext_resource type="Script" path="res://game/scenes/inventory/InventoryGreyboxDebug.gd" id="20_dbg"]
+
+[sub_resource type="BoxMesh" id="Mesh_floor"]
+size = Vector3(40, 0.4, 40)
+
+[sub_resource type="BoxShape3D" id="Shape_floor"]
+size = Vector3(40, 0.4, 40)
+
+[sub_resource type="BoxMesh" id="Mesh_jewelry"]
+size = Vector3(0.3, 0.25, 0.3)
+
+[sub_resource type="BoxShape3D" id="Shape_jewelry"]
+size = Vector3(0.3, 0.25, 0.3)
+
+[sub_resource type="BoxMesh" id="Mesh_cash"]
+size = Vector3(0.4, 0.3, 0.4)
+
+[sub_resource type="BoxShape3D" id="Shape_cash"]
+size = Vector3(0.4, 0.3, 0.4)
+
+[sub_resource type="BoxMesh" id="Mesh_gold"]
+size = Vector3(0.5, 0.35, 0.3)
+
+[sub_resource type="BoxShape3D" id="Shape_gold"]
+size = Vector3(0.5, 0.35, 0.3)
+
+[sub_resource type="BoxMesh" id="Mesh_painting"]
+size = Vector3(1.2, 1.6, 0.1)
+
+[sub_resource type="BoxShape3D" id="Shape_painting"]
+size = Vector3(1.2, 1.6, 0.1)
+
+[sub_resource type="BoxMesh" id="Mesh_door"]
+size = Vector3(1.2, 2.2, 0.2)
+
+[sub_resource type="BoxShape3D" id="Shape_door"]
+size = Vector3(1.2, 2.2, 0.2)
+
+[sub_resource type="BoxMesh" id="Mesh_crate"]
+size = Vector3(1, 1, 1)
+
+[sub_resource type="BoxShape3D" id="Shape_crate"]
+size = Vector3(1, 1, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_device"]
+size = Vector3(0.6, 0.6, 0.6)
+
+[sub_resource type="BoxShape3D" id="Shape_device"]
+size = Vector3(0.6, 0.6, 0.6)
+
+[sub_resource type="CapsuleShape3D" id="Shape_guard"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="CapsuleMesh" id="Mesh_guard"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="Mat_jewelry"]
+albedo_color = Color(0.85, 0.85, 0.9, 1)
+
+[sub_resource type="StandardMaterial3D" id="Mat_cash"]
+albedo_color = Color(0.25, 0.65, 0.25, 1)
+
+[sub_resource type="StandardMaterial3D" id="Mat_gold"]
+albedo_color = Color(0.85, 0.7, 0.15, 1)
+
+[sub_resource type="StandardMaterial3D" id="Mat_painting"]
+albedo_color = Color(0.45, 0.28, 0.12, 1)
+
+[sub_resource type="StandardMaterial3D" id="Mat_lock"]
+albedo_color = Color(0.55, 0.55, 0.58, 1)
+
+[sub_resource type="StandardMaterial3D" id="Mat_droppoint"]
+albedo_color = Color(0.2, 0.85, 0.35, 1)
+
+[sub_resource type="StandardMaterial3D" id="Mat_biometric"]
+albedo_color = Color(0.55, 0.2, 0.65, 1)
+
+[sub_resource type="StandardMaterial3D" id="Mat_escape"]
+albedo_color = Color(0.2, 0.45, 0.85, 1)
+
+[sub_resource type="StandardMaterial3D" id="Mat_guard"]
+albedo_color = Color(0.2, 0.35, 0.78, 1)
+
+[node name="InventoryGreybox" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = ExtResource("2_env")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.643, -0.766, 0, 0.766, 0.643, 0, 8, 0)
+shadow_enabled = true
+
+[node name="Floor" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, 0)
+metadata/surface = "concrete"
+
+[node name="FloorMesh" type="MeshInstance3D" parent="Floor"]
+mesh = SubResource("Mesh_floor")
+
+[node name="FloorShape" type="CollisionShape3D" parent="Floor"]
+shape = SubResource("Shape_floor")
+
+[node name="JewelryCase" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0.15, 8)
+script = ExtResource("3_pickup_s")
+def = ExtResource("4_jewelry_d")
+
+[node name="Col" type="StaticBody3D" parent="JewelryCase"]
+
+[node name="Mesh" type="MeshInstance3D" parent="JewelryCase/Col"]
+mesh = SubResource("Mesh_jewelry")
+surface_material_override/0 = SubResource("Mat_jewelry")
+
+[node name="Shape" type="CollisionShape3D" parent="JewelryCase/Col"]
+shape = SubResource("Shape_jewelry")
+
+[node name="CashPile" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0.15, 8)
+script = ExtResource("3_pickup_s")
+def = ExtResource("5_cash_d")
+
+[node name="Col" type="StaticBody3D" parent="CashPile"]
+
+[node name="Mesh" type="MeshInstance3D" parent="CashPile/Col"]
+mesh = SubResource("Mesh_cash")
+surface_material_override/0 = SubResource("Mat_cash")
+
+[node name="Shape" type="CollisionShape3D" parent="CashPile/Col"]
+shape = SubResource("Shape_cash")
+
+[node name="GoldBar" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 0.2, 8)
+script = ExtResource("3_pickup_s")
+def = ExtResource("6_gold_d")
+
+[node name="Col" type="StaticBody3D" parent="GoldBar"]
+
+[node name="Mesh" type="MeshInstance3D" parent="GoldBar/Col"]
+mesh = SubResource("Mesh_gold")
+surface_material_override/0 = SubResource("Mat_gold")
+
+[node name="Shape" type="CollisionShape3D" parent="GoldBar/Col"]
+shape = SubResource("Shape_gold")
+
+[node name="Painting" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 8)
+script = ExtResource("3_pickup_s")
+def = ExtResource("7_painting_d")
+
+[node name="Col" type="StaticBody3D" parent="Painting"]
+
+[node name="Mesh" type="MeshInstance3D" parent="Painting/Col"]
+mesh = SubResource("Mesh_painting")
+surface_material_override/0 = SubResource("Mat_painting")
+
+[node name="Shape" type="CollisionShape3D" parent="Painting/Col"]
+shape = SubResource("Shape_painting")
+
+[node name="Lock" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 1.1, 8)
+script = ExtResource("12_lock_s")
+def = ExtResource("13_lock_d")
+
+[node name="Col" type="StaticBody3D" parent="Lock"]
+
+[node name="Mesh" type="MeshInstance3D" parent="Lock/Col"]
+mesh = SubResource("Mesh_door")
+surface_material_override/0 = SubResource("Mat_lock")
+
+[node name="Shape" type="CollisionShape3D" parent="Lock/Col"]
+shape = SubResource("Shape_door")
+
+[node name="DropPoint" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0.5, 0)
+script = ExtResource("8_drop_s")
+
+[node name="Col" type="StaticBody3D" parent="DropPoint"]
+
+[node name="Mesh" type="MeshInstance3D" parent="DropPoint/Col"]
+mesh = SubResource("Mesh_crate")
+surface_material_override/0 = SubResource("Mat_droppoint")
+
+[node name="Shape" type="CollisionShape3D" parent="DropPoint/Col"]
+shape = SubResource("Shape_crate")
+
+[node name="BiometricLock" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 1.1, -2)
+script = ExtResource("10_bio_s")
+def = ExtResource("11_bio_d")
+
+[node name="Col" type="StaticBody3D" parent="BiometricLock"]
+
+[node name="Mesh" type="MeshInstance3D" parent="BiometricLock/Col"]
+mesh = SubResource("Mesh_device")
+surface_material_override/0 = SubResource("Mat_biometric")
+
+[node name="Shape" type="CollisionShape3D" parent="BiometricLock/Col"]
+shape = SubResource("Shape_device")
+
+[node name="Patrol" type="Node3D" parent="."]
+
+[node name="WP0" type="Marker3D" parent="Patrol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, -6)
+
+[node name="WP1" type="Marker3D" parent="Patrol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 0, -6)
+
+[node name="WP2" type="Marker3D" parent="Patrol"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 0, -10)
+
+[node name="Guard" type="CharacterBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0.9, -6)
+script = ExtResource("14_guard_s")
+def = ExtResource("18_insp_d")
+ai_config = ExtResource("19_ai_d")
+patrol_path = NodePath("../Patrol")
+sensor_path = NodePath("Sensor")
+
+[node name="GuardShape" type="CollisionShape3D" parent="Guard"]
+shape = SubResource("Shape_guard")
+
+[node name="GuardMesh" type="MeshInstance3D" parent="Guard"]
+mesh = SubResource("Mesh_guard")
+surface_material_override/0 = SubResource("Mat_guard")
+
+[node name="Sensor" type="Node3D" parent="Guard"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+script = ExtResource("15_sensor_s")
+config = ExtResource("17_det_d")
+enemy_def = ExtResource("18_insp_d")
+
+[node name="ConeDebug" type="MeshInstance3D" parent="Guard/Sensor"]
+script = ExtResource("16_cone_s")
+
+[node name="Escape" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 1.1, -10)
+script = ExtResource("9_escape_s")
+
+[node name="Col" type="StaticBody3D" parent="Escape"]
+
+[node name="Mesh" type="MeshInstance3D" parent="Escape/Col"]
+mesh = SubResource("Mesh_door")
+surface_material_override/0 = SubResource("Mat_escape")
+
+[node name="Shape" type="CollisionShape3D" parent="Escape/Col"]
+shape = SubResource("Shape_door")
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 12)
+
+[node name="Debug" type="Node3D" parent="."]
+script = ExtResource("20_dbg")
+player_path = NodePath("../Player")

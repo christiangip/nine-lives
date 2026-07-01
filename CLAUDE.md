@@ -245,3 +245,36 @@ consequence logic tested behind a hook and added `↩ From 06` banners to `07`�
   added to `05`/`11`):** the **pickpocket→NPC** attach point (needs a pickpockable civilian → 05.3
   roster / 11 population); the framework ships complete with `failed("caught")` as the suspicion hook.
   **Residual (`[~]`):** the F6 "feel" sign-off on `MinigameGreybox.tscn`, mirroring 03/04.
+- **08 — Loot & Inventory:** **code + automated DoD complete & verified green** on Godot 4.6.3
+  (headless GUT **178/178**, +30 task-08 tests). A new **`game/systems/inventory/`** domain:
+  `Inventory` (`RefCounted`, owned by `PlayerController`) is the two-axis carry brain — weight/
+  volume/hand-slot caps (`can_pick_up`), pocketable-vs-bagged pickup routing, key-item tracking,
+  body-drag, throwing, and secure/lose bookkeeping — matching the pre-existing fixed-contract
+  `test_carry_system.gd` exactly. **Correction during review:** a carried `Bag` occupies one hand
+  slot (GDD §10.1 lists "gold bag" as a hand-slot example, not weightless-on-the-back), which
+  makes carrying a bag and dragging a `Body` naturally mutually exclusive under the 2-slot cap
+  with zero special-case code — `test_body_drag.gd` locks this in. `LootPickup`/`DropPoint`/
+  `Escape` are `Interactable`s; `DropPoint.secure_from()`/`receive_bag()` are pure banking seams
+  a real `ThrownBag` (`RigidBody3D`) physics landing and a headless test both call identically,
+  so FR-08-4's throwing is fully unit-tested with **zero physics simulation**. **EventBus stayed
+  frozen** — reuses the 4 pre-existing loot signals (`loot_picked_up`/`loot_secured`/
+  `carry_changed`/`objective_updated`) exactly as declared; everything else (pickup-rejected
+  feedback) is a local signal, matching `Obstacle.state_changed`/`Lock.pick_snapped`. **No magic
+  numbers:** new carry tunables live on the existing `PlayerConfigDef` (a single directly-
+  assigned resource, not Content-registered, matching how it's already used); a new
+  `strength.tres` `AttributeDef`. `RunManager.add_notoriety`/new `add_take()` now do real base
+  accumulation (`TODO[12]`/`TODO[14]` mark the multiplier/level-up/percentage enrichment those
+  tasks still own — the precedent `Lock.resolve_attempt`'s `lockpicking_level` parameter already
+  established); `ProgressionManager.add_to_stash()` backs FR-08-9. **Closed the task-05/06 duck-
+  type hooks without touching any obstacle code:** `Obstacle.gd`/`BiometricLock.gd`/`Lock.gd`/
+  `HackTarget.gd` were untouched except `HackTarget._complete()`'s one new `data_loot` branch —
+  `PlayerController` grew `has_item()`/`is_carrying_keyholder()`/`add_loot()`, exactly the shape
+  those duck-types were already calling. `Body` now `extends Interactable` (was bare `Node3D`) —
+  a runtime-spawned body previously had no collider/mesh at all (confirmed via
+  `GuardGreybox.tscn`'s decorative `Body0`, which also had none), so `_ready()` now builds a
+  procedural collider always and a placeholder mesh only if a scene author hasn't placed one.
+  Dev greybox `game/scenes/inventory/InventoryGreybox.tscn` (+ `InventoryGreyboxDebug.gd`, which
+  also wires a real `PickPouch` to the greybox's `Lock`, closing that task-06 stand-in here).
+  **Residual (`[~]`):** the F6 "feel" sign-off on `InventoryGreybox.tscn` — this session verified
+  the scene loads cleanly headlessly (same baseline renderer noise as `ObstacleGreybox.tscn`) but
+  could not drive interactive input; mark `[x]` after a human playtest pass, mirroring 04–07.

@@ -71,3 +71,10 @@ class_name PlayerConfigDef
 	"carpet": 0.45,
 }
 @export var surface_noise_default: float = 1.0
+
+# --- Carry (task 08; scaled by the "strength" attribute) -------------------
+@export var carry_weight_base: float = 40.0      ## kg, before Strength scaling
+@export var carry_volume_base: float = 20.0      ## L/slots, before Strength scaling
+@export var hand_penalty_per_slot: float = 0.25  ## FR-08-2 speed reduction per occupied hand slot
+@export var throw_base_distance: float = 6.0     ## m, before Strength scaling
+@export var throw_strength_bonus: float = 4.0    ## m added per full Strength effect unit

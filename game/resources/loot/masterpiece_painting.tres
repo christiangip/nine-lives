@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="LootDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/LootDef.gd" id="1_loot"]
+
+[resource]
+script = ExtResource("1_loot")
+id = &"masterpiece_painting"
+display_name = "Masterpiece Painting"
+tier = 3
+value = 120000
+weight = 6.0
+volume = 8.0
+needs_bagging = false
+hand_slots = 2
+special_hook = &"stash_trophy_painting"

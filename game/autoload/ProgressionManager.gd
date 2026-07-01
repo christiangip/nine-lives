@@ -26,3 +26,10 @@ func attribute_level(attr_id: StringName) -> int:
 
 func is_unlocked(gear_id: StringName) -> bool:
 	return gear_id in unlocked_gear
+
+## Register a delivered special/unique loot's hook id into the permanent Stash (FR-08-9, GDD
+## §10.5). Idempotent. The Stash UI/set-bonus logic is task 12/13's job; this is the append
+## task 08's secured-loot banking needs to make "delivering them unlocks... Stash trophies" real.
+func add_to_stash(hook_id: StringName) -> void:
+	if hook_id != &"" and hook_id not in stash:
+		stash.append(hook_id)

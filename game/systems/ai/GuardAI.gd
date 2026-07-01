@@ -240,6 +240,7 @@ func take_down(lethal: bool = false) -> void:
 func _spawn_body(lethal: bool) -> void:
 	var body := Body.new()
 	body.lethal = lethal
+	body.carried_item = def.carried_item if def != null else &""
 	var host := get_parent()
 	if host != null:
 		host.add_child(body)

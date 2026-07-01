@@ -40,6 +40,22 @@ with defined counter-play. Obstacles pair with minigames (07) but are never
 > (Mastermind), and `BreachPoint` (drill gauge/repair) now emit a `minigame_requested` signal (lifted to
 > the `Obstacle` base) and open via a polymorphic `apply_minigame_result(kind, success)`. The pure
 > obstacle seams above + their tests were untouched. Still deferred to **08/09/10/11/13** as noted.
+>
+> **Update (2026-07-01) — the `→ 08` half landed:** task 08 built the real inventory and backed
+> every duck-typed hook here with it, **without changing `Obstacle.gd`/`Lock.gd`/`KeycardDoor.gd`/
+> `Safe.gd`/`DisplayCase.gd`/`BiometricLock.gd`/`HackTarget.gd` at all** — the duck-types already
+> called exactly the right shape, so `PlayerController.has_item()`/`is_carrying_keyholder()`/
+> `add_loot()` (backed by the new `game/systems/inventory/Inventory.gd`) satisfy
+> `Obstacle.actor_has_item()`, `BiometricLock`'s keyholder check, and `HackTarget`'s `data_loot`
+> device unmodified. **Card storage:** the Inspector's `vault_keycard` (`carried_item`) is granted
+> the moment its downed `Body` is dragged (`game/systems/ai/Body.gd`, now `extends Interactable`).
+> **Consumable picks:** `PickPouch` stays exactly as authored — task 08 didn't fold it into
+> `Inventory` (picks are a consumable count, not `LootDef`-shaped loot); a real pouch is now handed
+> to any reachable `Lock` by the carrying scene. **Data-loot:** `data_server.tres` gained a
+> `params.loot_id`; `HackTarget._deliver_data_loot()` resolves it via `Content.loot` and grants it.
+> **Keyholder-drag:** dragging *any* downed `Body` and presenting it to a `BiometricLock` now
+> really checks `is_carrying_keyholder(def.required_item)` against that body's `carried_item`.
+> Still deferred to **09/10/11/13** as noted (gadgets, combat, generator placement, Intel).
 
 ### Phase 06.1 — Locks & access (M0 core)
 - [x] Pin-tumbler lock interactable + consumable picks + snap rule. *(`Lock.gd` + `PickPouch`; pure

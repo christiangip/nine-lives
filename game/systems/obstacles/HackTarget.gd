@@ -98,9 +98,25 @@ func _complete(method: StringName) -> void:
 		disabled = true
 	elif kind == "elock" or kind == "time_lock":
 		disabled = true   # the barrier opens
-	# data_loot: the download is added to inventory by task 08. TODO[08].
+	elif kind == "data_loot":
+		_deliver_data_loot()
 	_mark_solved(method)
 	hack_completed.emit(kind)
+
+## The download is added to the hacker's carry (↩ from 06, closes TODO[08]). Duck-typed exactly
+## like Obstacle.actor_has_item — this class doesn't know Inventory's shape, just that _hacker
+## might expose add_loot(LootDef). Resolves the LootDef from def.params.loot_id (data-driven, no
+## id branching in code); a missing/misconfigured param is a silent no-op, matching the rest of
+## this file's graceful-degradation style.
+func _deliver_data_loot() -> void:
+	if _hacker == null or not _hacker.has_method("add_loot"):
+		return
+	var loot_id := StringName(def.params.get("loot_id", ""))
+	if String(loot_id).is_empty() or Content == null or Content.loot == null:
+		return
+	var loot := Content.loot.get_def(loot_id) as LootDef
+	if loot != null:
+		_hacker.add_loot(loot)
 
 # --- Powered-device contract (FuseBox.cut_power) ---------------------------
 func set_powered(on: bool) -> void:

@@ -103,8 +103,21 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
   via `Obstacle.apply_minigame_result`. Closes the `↩ From 06` overlay slices (EventBus stayed frozen).
   **Deferred (↩ noted):** pickpocket→NPC attach point (civilian roster → 05.3/11). **Residual `[~]`:**
   F6 sign-off on `MinigameGreybox.tscn`.*
-- [ ] **08 — Loot & Inventory** · `08_loot_inventory.md` · *(M0)*
+- [~] **08 — Loot & Inventory** · `08_loot_inventory.md` · *(M0)*
   Two-axis carry + hand slots, bagging, throwing, Drop Points, Escape, secured-loot-banks rule, multi-trip.
+  *Code + automated DoD complete & **verified green on Godot 4.6.3** (GUT **178/178**, +30
+  task-08 tests). `Inventory` (`game/systems/inventory/`) is a pure-ish `RefCounted` carry brain
+  covering weight/volume/hand-slot caps, bagging, body-drag, throwing, and secure/lose
+  bookkeeping (owned by `PlayerController`); `DropPoint`/`Escape` bank through a pure seam a real
+  `ThrownBag` physics landing and a headless test both call identically, so FR-08-4's throwing
+  is fully unit-tested with zero physics. EventBus stayed frozen (reuses the 4 pre-existing loot
+  signals); tunables added to `PlayerConfigDef` + a new `strength` attribute; `RunManager.add_notoriety`/
+  new `add_take()` do real base accumulation (`TODO[12]`/`TODO[14]` mark the enrichment layer).
+  Closes the task-05 body-drag hook and task-06's `actor_has_item`/keyholder/data-loot duck-types
+  **without touching any obstacle code** — `PlayerController` grew the methods those duck-types
+  were already calling. Dev greybox `game/scenes/inventory/InventoryGreybox.tscn`. **Residual
+  `[~]`:** the in-editor F6 "feel" sign-off, mirroring tasks 04–07 (this session verified the
+  scene loads cleanly headlessly but couldn't drive interactive input).*
 
 ### Roguelite spine (M1)
 - [ ] **11 — Mission Generation** · `11_mission_generation.md` · *(M1 basic · M2 full)*
@@ -150,7 +163,7 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
 
 ```
 Foundation        [x01][x02]                        2 / 2
-Core stealth (M0) [x03][~04][~05·G][~06][~07][08]    1 / 6
+Core stealth (M0) [x03][~04][~05·G][~06][~07][~08]   1 / 6
 Spine (M1)        [11·b][12][13·m][15·m][16]         0 / 5
 Loud + breadth    [09][10][14]                       0 / 3
 Presentation      [17][18]                           0 / 2

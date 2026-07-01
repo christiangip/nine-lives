@@ -34,6 +34,7 @@ var lean_amount: float = 0.0          ## -1..+1, lerped (left..right)
 var carry_speed_mult: float = 1.0
 var can_climb: bool = true
 var can_use_vents: bool = true
+var inventory: Inventory   ## task 08 carry state; see game/systems/inventory/Inventory.gd
 
 # --- Internal --------------------------------------------------------------
 var _pitch: float = 0.0
@@ -70,6 +71,9 @@ func _ready() -> void:
 	if not EventBus.settings_changed.is_connected(_on_settings_changed):
 		EventBus.settings_changed.connect(_on_settings_changed)
 	stamina = _stamina_max()
+	inventory = Inventory.new()
+	inventory.weight_cap = config.carry_weight_base * (1.0 + attr_effect(&"strength"))
+	inventory.volume_cap = config.carry_volume_base * (1.0 + attr_effect(&"strength"))
 	# Don't mutate the shared scene resource — each instance gets its own capsule.
 	if _collider != null and _collider.shape != null:
 		_collider.shape = _collider.shape.duplicate()
@@ -143,6 +147,9 @@ func _physics_process(delta: float) -> void:
 	_update_lean(delta)
 	_update_footsteps(delta, Vector2(velocity.x, velocity.z).length(), _is_sprinting)
 	_update_interaction(delta)
+	_update_carry_penalty()
+	_update_throw_input()
+	_update_drop_input()
 
 # --- Stamina (FR-03-1) -----------------------------------------------------
 
@@ -400,6 +407,69 @@ func clear_carry_penalty() -> void:
 	carry_speed_mult = 1.0
 	can_climb = true
 	can_use_vents = true
+
+## Recompute + push the current hand-slot penalty into the FR-03-7 hook every physics tick
+## (cheap: Inventory's accounting is O(items held), not a search). Strength is resolved here
+## (PlayerController owns attribute reads) and passed down as a float, mirroring
+## Lock.resolve_attempt's lockpicking_level pattern — Inventory never touches ProgressionManager.
+func _update_carry_penalty() -> void:
+	if inventory == null:
+		return
+	var state := inventory.penalty_state(config.hand_penalty_per_slot, attr_effect(&"strength"))
+	apply_carry_penalty(state["speed_mult"], state["blocks_climb"], state["blocks_vents"])
+
+## FR-08-4: throw the actively-carried bag (Strength-gated distance) toward where the camera
+## is looking.
+func _update_throw_input() -> void:
+	if inventory == null or not Input.is_action_just_pressed(&"throw"):
+		return
+	if not inventory.can_throw_bag():
+		return
+	var bag := inventory.release_bag_for_throw()
+	if bag == null:
+		return
+	EventBus.carry_changed.emit(inventory.current_weight(), inventory.current_volume())
+	_spawn_thrown_bag(bag)
+
+func _spawn_thrown_bag(bag: Bag) -> void:
+	var thrown := ThrownBag.new()
+	thrown.bag = bag
+	thrown.thrower_inventory = inventory
+	get_tree().root.add_child(thrown)   # TODO[11]: use a proper mission/level root once 11 owns scene structure
+	var dist := Inventory.throw_distance(config.throw_base_distance, attr_effect(&"strength"), config.throw_strength_bonus)
+	var dir := -_camera.global_transform.basis.z
+	thrown.launch(_camera.global_position, dir * dist)
+
+## `drop_loot` currently only puts down a dragged Body (FR-05-2's drag/hide half). Dropping
+## bagged/pocketed loot back into the world is a nice-to-have beyond any FR-08 requirement.
+func _update_drop_input() -> void:
+	if inventory == null or not Input.is_action_just_pressed(&"drop_loot"):
+		return
+	if not inventory.is_carrying_body():
+		return
+	var body := inventory.put_down_body()
+	if body == null:
+		return
+	get_tree().root.add_child(body)   # TODO[11]: use a proper mission/level root once 11 owns scene structure
+	body.global_position = global_position + (-global_transform.basis.z * 1.0)
+	body.set_concealed(false)
+
+# --- Duck-typed bridges consumed by obstacles (↩ from 06, closes TODO[08]) --
+
+## Satisfies Obstacle.actor_has_item(by, id)'s duck-type (keycards/keys/found clues).
+func has_item(item_id: StringName) -> bool:
+	return inventory != null and inventory.has_item(item_id)
+
+## Satisfies BiometricLock._keyholder_present(by)'s duck-type: is the dragged Body the
+## required keyholder?
+func is_carrying_keyholder(item_id: StringName) -> bool:
+	return inventory != null and inventory.is_carrying_keyholder(item_id)
+
+## Grants a LootDef directly into carry, bypassing the world-pickup Interactable — used by
+## HackTarget's data_loot download (↩ from 06).
+func add_loot(loot: LootDef) -> void:
+	if inventory != null:
+		inventory.add_loot(loot)
 
 # --- Attributes / settings / helpers ---------------------------------------
 

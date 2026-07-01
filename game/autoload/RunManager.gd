@@ -18,7 +18,20 @@ func start_new_streak() -> void:
 	# TODO[11]: MissionGenerator.refresh_board(difficulty_floor=1)
 
 func add_notoriety(amount: int) -> void:
-	pass # TODO[12]: apply multipliers, check streak level-up -> offer 3 Edges
+	if amount <= 0:
+		return
+	notoriety += amount
+	EventBus.notoriety_gained.emit(amount, notoriety)
+	# TODO[12]: apply multipliers, check streak level-up -> offer 3 Edges (wraps/extends this
+	# base accumulation — task 08's secured-loot banking needs a real notoriety total now).
+
+## Per-Streak cash from secured loot (task 08). A straight passthrough for now.
+func add_take(amount: int) -> void:
+	if amount <= 0:
+		return
+	take += amount
+	# TODO[14]: FR-14-2 — Take = a % of secured cash value, not a 1:1 passthrough. This is the
+	# real base `take` accrual task 08's banking needs now; 14's "M2 wiring" scales it.
 
 func raise_heat(amount: float) -> void:
 	pass # TODO[12]: clamp, EventBus.heat_changed, escalate future contracts
