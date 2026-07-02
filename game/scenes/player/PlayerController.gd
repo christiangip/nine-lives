@@ -418,27 +418,44 @@ func _update_carry_penalty() -> void:
 	var state := inventory.penalty_state(config.hand_penalty_per_slot, attr_effect(&"strength"))
 	apply_carry_penalty(state["speed_mult"], state["blocks_climb"], state["blocks_vents"])
 
-## FR-08-4: throw the actively-carried bag (Strength-gated distance) toward where the camera
-## is looking.
+## FR-08-4/FR-08-2: throw the actively-carried bag OR dragged body (Strength-gated distance)
+## toward where the camera is looking. Bag and body are already mutually exclusive (hand-slot
+## accounting), so there's no ambiguity about which one `throw` acts on.
 func _update_throw_input() -> void:
 	if inventory == null or not Input.is_action_just_pressed(&"throw"):
 		return
-	if not inventory.can_throw_bag():
+	if inventory.can_throw_bag():
+		var bag := inventory.release_bag_for_throw()
+		if bag != null:
+			EventBus.carry_changed.emit(inventory.current_weight(), inventory.current_volume())
+			_spawn_thrown_bag(bag)
 		return
-	var bag := inventory.release_bag_for_throw()
-	if bag == null:
-		return
-	EventBus.carry_changed.emit(inventory.current_weight(), inventory.current_volume())
-	_spawn_thrown_bag(bag)
+	if inventory.is_carrying_body():
+		var body := inventory.put_down_body()
+		if body != null:
+			EventBus.carry_changed.emit(inventory.current_weight(), inventory.current_volume())
+			_spawn_thrown_body(body)
 
 func _spawn_thrown_bag(bag: Bag) -> void:
 	var thrown := ThrownBag.new()
 	thrown.bag = bag
 	thrown.thrower_inventory = inventory
+	thrown.thrower = self   # excluded from its own collisions — it spawns near our own capsule
 	get_tree().root.add_child(thrown)   # TODO[11]: use a proper mission/level root once 11 owns scene structure
 	var dist := Inventory.throw_distance(config.throw_base_distance, attr_effect(&"strength"), config.throw_strength_bonus)
 	var dir := -_camera.global_transform.basis.z
-	thrown.launch(_camera.global_position, dir * dist)
+	var spawn_pos := _camera.global_position + dir * config.throw_spawn_offset
+	thrown.launch(spawn_pos, dir * dist)
+
+func _spawn_thrown_body(body: Body) -> void:
+	var thrown := ThrownBody.new()
+	thrown.body = body
+	thrown.thrower = self   # excluded from its own collisions — it spawns near our own capsule
+	get_tree().root.add_child(thrown)   # TODO[11]: use a proper mission/level root once 11 owns scene structure
+	var dist := Inventory.throw_distance(config.body_throw_base_distance, attr_effect(&"strength"), config.body_throw_strength_bonus)
+	var dir := -_camera.global_transform.basis.z
+	var spawn_pos := _camera.global_position + dir * config.throw_spawn_offset
+	thrown.launch(spawn_pos, dir * dist)
 
 ## `drop_loot` currently only puts down a dragged Body (FR-05-2's drag/hide half). Dropping
 ## bagged/pocketed loot back into the world is a nice-to-have beyond any FR-08 requirement.

@@ -3,23 +3,39 @@ extends Node3D
 ## (crosshair + live interaction-prompt line) but reads carry-shaped state instead of
 ## obstacle-shaped state (LootPickup/DropPoint have no progress/solved-category machinery to
 ## reuse). Adds a running Carry Weight/Volume/Hands/Secured readout (the real HUD is task 15)
-## and a debug-only "simulate a Catch" key so FR-08-6 is manually verifiable without task 10's
-## real capture system existing yet. Also wires Lock.set_pouch() (task 06's PickPouch stand-in)
-## to a real pouch, closing that hook for this greybox. Not shipped; greybox aid only.
+## and an on-screen flash when an objective (the Escape) completes. Two debug-only keys: [K]
+## "simulate a Catch" (FR-08-6, since task 10's real capture system doesn't exist yet) and [L]
+## takedown-the-Guard (task 10 owns the real takedown *input*; this greybox needs some way to
+## reach task 08's drag/keycard-pickup half interactively). Also wires Lock.set_pouch() (task
+## 06's PickPouch stand-in) to a real pouch, and attaches the sibling MinigameHost to every
+## Obstacle in the scene (task 07's pattern — see MinigameGreyboxDebug.gd) so the Lock's
+## lockpick overlay actually mounts on interact. Not shipped; greybox aid only.
 ## See docs/tasks/08_loot_inventory.md.
 
 const _STARTING_PICKS: int = 3
+const _MESSAGE_SECONDS: float = 3.0
 
 @export var player_path: NodePath = ^"../Player"
+@export var host_path: NodePath = ^"../MinigameHost"
+@export var guard_path: NodePath = ^"../Guard"
 
 var _player: PlayerController
+var _guard: GuardAI
 var _prompt: Label
 var _carry_label: Label
+var _message_label: Label
+var _message_timer: float = 0.0
 
 func _ready() -> void:
 	_player = get_node_or_null(player_path) as PlayerController
+	_guard = get_node_or_null(guard_path) as GuardAI
+	var host := get_node_or_null(host_path) as MinigameHost
+	if host != null:
+		host.attach_all(get_parent())
 	_build_hud()
 	_wire_pick_pouch()
+	if not EventBus.objective_updated.is_connected(_on_objective_updated):
+		EventBus.objective_updated.connect(_on_objective_updated)
 
 func _build_hud() -> void:
 	var layer := CanvasLayer.new()
@@ -44,6 +60,15 @@ func _build_hud() -> void:
 	_carry_label.position = Vector2(16, 150)
 	layer.add_child(_carry_label)
 
+	_message_label = Label.new()
+	_message_label.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_message_label.position = Vector2(-200, 40)
+	_message_label.custom_minimum_size = Vector2(400, 40)
+	_message_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_message_label.add_theme_font_size_override("font_size", 28)
+	_message_label.add_theme_color_override("font_color", Color(0.3, 0.9, 0.4))
+	layer.add_child(_message_label)
+
 	_prompt = Label.new()
 	_prompt.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -62,8 +87,9 @@ func _help_text() -> String:
 			key = (ev as InputEventKey).as_text_physical_keycode().replace(" (Physical)", "")
 			break
 	return ("INVENTORY GREYBOX (F6) — walk up, aim the +, press [%s] to pick up / bag / drag / " +
-		"drop off.\n[T] throw the carried bag · [G] put down a dragged body · " +
-		"[K] simulate a Catch (debug only, not a real game input).") % key
+		"drop off / escape.\n[T] throw the carried bag OR dragged body · [G] gently put down a " +
+		"dragged body ·\n[K] simulate a Catch · [L] take down the Guard (both debug only, not " +
+		"real game input).") % key
 
 ## Closes the task-06 PickPouch stand-in for this greybox: hand a real pouch to any Lock sibling
 ## so its consumable-pick counter-play (FR-06-1) is exercisable here. General mission-wide
@@ -74,7 +100,11 @@ func _wire_pick_pouch() -> void:
 		if node is Lock:
 			(node as Lock).set_pouch(pouch)
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	if _message_timer > 0.0:
+		_message_timer -= delta
+		if _message_timer <= 0.0 and _message_label != null:
+			_message_label.text = ""
 	if _player == null:
 		return
 	if _prompt != null:
@@ -87,10 +117,26 @@ func _process(_delta: float) -> void:
 			inv.hand_slots_used(), inv.in_hand_value(), inv.secured_value(),
 		]
 
-## Debug-only "simulate a Catch" (FR-08-6) — a raw key check, not a real game action (mirroring
-## PlayerController's own pause-toggle convenience for the greybox playtest), since task 10's
-## real Pursuit/capture system doesn't exist yet.
+## Flash a message when an objective completes (the Escape) — the only feedback FR-08-5's
+## objective_updated emission gets until the real HUD (task 15) exists.
+func _on_objective_updated(objective_id: String, complete: bool) -> void:
+	if not complete or _message_label == null:
+		return
+	_message_label.text = "OBJECTIVE COMPLETE: %s (secured $%d)" % [objective_id, _player.inventory.secured_value() if _player != null and _player.inventory != null else 0]
+	_message_timer = _MESSAGE_SECONDS
+
+## Debug-only keys, not real game actions (mirroring PlayerController's own pause-toggle
+## convenience for the greybox playtest): [K] "simulate a Catch" (FR-08-6), since task 10's real
+## Pursuit/capture system doesn't exist yet; [L] takes down the Guard, since task 10 also owns
+## the real takedown *input* — without this there's no way to reach task 08's drag/keycard-pickup
+## half interactively at all.
 func _unhandled_key_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and (event as InputEventKey).keycode == KEY_K:
+	if not (event is InputEventKey and event.pressed):
+		return
+	var key := (event as InputEventKey).keycode
+	if key == KEY_K:
 		if _player != null and _player.inventory != null:
 			_player.inventory.lose_in_hand_on_catch()
+	elif key == KEY_L:
+		if _guard != null:
+			_guard.take_down(false)

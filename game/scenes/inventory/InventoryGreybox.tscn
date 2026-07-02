@@ -1,4 +1,4 @@
-[gd_scene load_steps=48 format=3]
+[gd_scene load_steps=49 format=3]
 
 ; Dev-only greybox for the task-08 manual playtest (F6). Not wired into GameManager — mission
 ; flow is task 11. Move with WASD, look with the mouse, aim the + and press/HOLD [F] to pick up
@@ -43,6 +43,7 @@
 [ext_resource type="Resource" path="res://game/resources/enemies/inspector.tres" id="18_insp_d"]
 [ext_resource type="Resource" path="res://game/resources/ai/default_ai.tres" id="19_ai_d"]
 [ext_resource type="Script" path="res://game/scenes/inventory/InventoryGreyboxDebug.gd" id="20_dbg"]
+[ext_resource type="Script" path="res://game/systems/minigames/MinigameHost.gd" id="21_host"]
 
 [sub_resource type="BoxMesh" id="Mesh_floor"]
 size = Vector3(40, 0.4, 40)
@@ -294,6 +295,11 @@ shape = SubResource("Shape_door")
 [node name="Player" parent="." instance=ExtResource("1_player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 12)
 
+[node name="MinigameHost" type="Node" parent="."]
+script = ExtResource("21_host")
+player_path = NodePath("../Player")
+
 [node name="Debug" type="Node3D" parent="."]
 script = ExtResource("20_dbg")
 player_path = NodePath("../Player")
+host_path = NodePath("../MinigameHost")

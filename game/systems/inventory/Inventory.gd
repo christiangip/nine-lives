@@ -207,6 +207,18 @@ func release_bag_for_throw() -> Bag:
 		_bag = null
 	return b
 
+## Re-adopt an already-assembled Bag (reclaiming a thrown bag that missed a Drop Point and
+## settled — DroppedBag calls this) as the active carried bag. The exact reverse of
+## release_bag_for_throw(). Fails if a bag is already held or no hand is free.
+func adopt_bag(bag: Bag) -> bool:
+	if bag == null or bag.is_empty() or _bag != null:
+		return false
+	if hand_slots_used() + BAG_HAND_SLOTS > MAX_HAND_SLOTS:
+		return false
+	_bag = bag
+	_in_hand_value += bag.total_value()
+	return true
+
 # --- FR-08-5/6: securing + loss (Drop Point / Escape / Catch) ---------------
 
 ## Bank ALL current in-hand value (pocketed + hand-slot loot + bag); clears the physical loot

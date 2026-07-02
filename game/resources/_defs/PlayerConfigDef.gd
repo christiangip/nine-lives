@@ -78,3 +78,6 @@ class_name PlayerConfigDef
 @export var hand_penalty_per_slot: float = 0.25  ## FR-08-2 speed reduction per occupied hand slot
 @export var throw_base_distance: float = 6.0     ## m, before Strength scaling
 @export var throw_strength_bonus: float = 4.0    ## m added per full Strength effect unit
+@export var throw_spawn_offset: float = 1.0      ## m in front of the camera a thrown object spawns (clears the player's own collider)
+@export var body_throw_base_distance: float = 3.0   ## m, before Strength scaling — a body is heavier/bulkier than a bag
+@export var body_throw_strength_bonus: float = 2.0  ## m added per full Strength effect unit

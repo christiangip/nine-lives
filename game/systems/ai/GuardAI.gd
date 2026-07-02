@@ -225,7 +225,9 @@ func _begin_patrol() -> void:
 	_timer = 0.0   # head straight to the current waypoint, then pause on arrival
 
 # --- Takedown / body / radio (FR-05-2, FR-05-3) ----------------------------
-## Non-lethal or lethal takedown: stop, drop a discoverable Body, arm the radio check-in.
+## Non-lethal or lethal takedown: stop, drop a discoverable Body, arm the radio check-in. The
+## spawned Body is the guard's physical remains from this point on, so the guard actor itself
+## (mesh/collision/sensor) is removed rather than left behind frozen in place alongside it.
 func take_down(lethal: bool = false) -> void:
 	if ai_state == AIState.DOWNED:
 		return
@@ -236,6 +238,7 @@ func take_down(lethal: bool = false) -> void:
 	_spawn_body(lethal)
 	if ai_config != null:
 		radio = RadioCheckin.new(ai_config.max_fakeable_checkins, global_position)
+	queue_free()
 
 func _spawn_body(lethal: bool) -> void:
 	var body := Body.new()
