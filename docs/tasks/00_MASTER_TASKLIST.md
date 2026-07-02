@@ -146,8 +146,19 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
   firing/damage-routing that consumes `Weapon`/`Armor` → 10; Armory/Fence/Workshop UI → 13; loadout↔save
   → 16; found-as-loot + loadout-into-mission → 11; HUD readout → 15. Residual `[~]`: DoD "round-trips
   through save / feeds 10" (blocked on 16/10).*
-- [ ] **10 — Going Loud, Combat & Pursuit** · `10_going_loud_pursuit.md` · *(M2)*
+- [~] **10 — Going Loud, Combat & Pursuit** · `10_going_loud_pursuit.md` · *(M2)*
   Alarm escalation timeline, cover-shooter (FP cover/lean, weapons, armor, ammo), responder/SWAT tiers, downs/capture, Get-Out-of-Jail.
+  *Code + automated DoD **complete & verified green on Godot 4.6.3** (headless GUT **222/222**, +22 task-10
+  tests). New `game/systems/pursuit/PursuitDirector.gd` runs phases 0→5 off `EventBus.alarm_tripped` (pure
+  seams; a new `PursuitConfigDef` / 17th `Content` registry `Content.pursuit`); `RunManager.raise_heat()` +
+  an alarm listener raise Heat + commit the Streak (FR-10-3). New `game/systems/combat/`: `Health` routes
+  damage Armor→Health→Downed→Caught with self-revive + the Get-Out-of-Jail check; `PlayerCombat` wraps
+  task-09 `Weapon.fire()` in an FP hit-scan. **Closes Phase 05.4:** `GuardAI._tick_combat` holds a standoff
+  and fires `EnemyDef.loadout`'s Weapon (new `responder`/`swat`/`specialist_*` `EnemyDef`s). Catch → hands
+  off to 12 (`end_streak`) → `goto_results` (FR-10-9). EventBus stayed frozen. **Deferred with ↩ From 10
+  banners:** reinforcement spawn placement + `Escape`→results transition → 11; Pursuit/Heat/ammo/health/armor
+  HUD → 15; Heat→payout-multiplier + Legacy-conversion formula → 12. **Residual `[~]`:** the F6 "feel"
+  sign-off on `game/scenes/pursuit/PursuitGreybox.tscn`, mirroring 03–09.*
 - [ ] **14 — Economy & Balancing** · `14_economy_balancing.md` · *(M2 wiring · M3 tuning)*
   Three currencies wired, Notoriety multipliers, Take spend (consumables/intel), tuning data tables, balance passes.
 
@@ -177,7 +188,7 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
 Foundation        [x01][x02]                        2 / 2
 Core stealth (M0) [x03][~04][~05·G][~06][~07][~08]   1 / 6
 Spine (M1)        [11·b][12][13·m][15·m][16]         0 / 5
-Loud + breadth    [~09][10][14]                      0 / 3
+Loud + breadth    [~09][~10][14]                     0 / 3
 Presentation      [17][18]                           0 / 2
 Live + release    [19][20][21]                       0 / 3
 Onboarding        [22]                               0 / 1

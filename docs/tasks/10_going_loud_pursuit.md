@@ -41,18 +41,38 @@ secured loot, not by holding the building. Raises Heat for the rest of the Strea
 
 ## Phases
 ### Phase 10.1 — Pursuit director
-- [ ] Phase state machine + response timers + spawn budget per phase; HUD Heat/Pursuit indicator (15).
-- [ ] Heat application + future-contract escalation handshake (12/11).
+- [x] Phase state machine + response timers + spawn budget per phase; ~~HUD Heat/Pursuit indicator (15)~~.
+  *`PursuitDirector` (`game/systems/pursuit/`) runs phases 0→5 off `EventBus.alarm_tripped` + a response
+  timer, re-emitting the frozen `pursuit_phase_changed`; pure seams `start_phase`/`next_phase`/
+  `spawn_budget_for`/`tier_for`; tunables in a new `PursuitConfigDef` (17th `Content` registry
+  `Content.pursuit`). Reinforcement PLACEMENT + the HUD indicator are deferred (↩ to 11/15).*
+- [x] Heat application + ~~future-contract escalation handshake (12/11)~~.
+  *`RunManager.raise_heat()` now clamps 0..1 + emits `heat_changed`; an alarm listener sets `committed`
+  and raises Heat by the config amount. The Heat→payout-multiplier + future-contract escalation stay
+  `TODO[11]/TODO[12]`.*
 
 ### Phase 10.2 — Combat core
-- [ ] FP cover/lean/blindfire; damage model (Health+Armor); hit reactions; downs/self-revive.
-- [ ] Capture state + Get-Out-of-Jail skill-check.
+- [x] FP cover/lean/blindfire; damage model (Health+Armor); hit reactions; downs/self-revive.
+  *`Health` (`game/systems/combat/`) routes damage Armor→Health→Downed with a self-revive window
+  (pure seams `route_damage`/`is_down`/`skill_check_pass`); `PlayerCombat` viewmodel wraps task-09
+  `Weapon.fire()` with a hit-scan + blindfire/suppression spread seams, mounted under `$Head/Hands`.*
+- [x] Capture state + Get-Out-of-Jail skill-check.
+  *`Health.capture(loadout, skill_input)` runs the one-time Get-Out-of-Jail timing check, consuming the
+  consumable on a pass (escape) else latching CAPTURED.*
 
 ### Phase 10.3 — Enemy escalation
-- [ ] Responder/SWAT/specialist tiers + spawn/approach logic (with 05.4).
+- [x] Responder/SWAT/specialist tiers + spawn/approach logic (with 05.4).
+  *Closes Phase 05.4: `GuardAI._tick_combat` now holds a standoff and fires `EnemyDef.loadout`'s Weapon
+  at the player (pure seams `combat_move_intent`/`should_fire`/`is_dead`; `apply_damage` downs the
+  guard). New `EnemyDef`s `responder`/`swat`/`specialist_shield`/`specialist_sniper` + an armed base
+  guard. Spawn PLACEMENT into a nav-meshed level is deferred to 11 (director computes the budget/tier).*
 
 ### Phase 10.4 — Resolution
-- [ ] Loud-escape win path; Catch → `streak_ended` → 12; results screen handoff (15).
+- [x] Loud-escape win path; Catch → `streak_ended` → 12; results screen handoff (15).
+  *Escape banking (task 08) is the loud-escape win (secured value safe by construction). On CAUGHT/
+  CAPTURED, `PlayerController` calls `RunManager.end_streak()` (12 owns the Legacy conversion) →
+  `GameManager.goto_results()`. The escape-triggers-results scene transition stays task 11's (already
+  bannered in `Escape.gd`).*
 
 ## Tests (GUT)
 - `test_pursuit_phases.gd` — alarm advances phases on the timer; silent alarm can jump ahead.
@@ -62,5 +82,13 @@ secured loot, not by holding the building. Raises Heat for the rest of the Strea
 - `test_secured_safe_on_loud_catch.gd` — a Catch during loud keeps already-secured value.
 
 ## Definition of Done
-- [ ] FR-10-1..9 satisfied; phases checked; tests green.
-- [ ] M2 manual: an alarm triggers a believable, escalating, survivable-but-scary escape.
+- [x] FR-10-1..9 satisfied; phases checked; tests green.
+  *Code + automated DoD complete & **verified green on Godot 4.6.3** (headless GUT **222/222**, +22
+  task-10 tests across the 5 named files). EventBus stayed frozen (the pursuit/heat/streak signals
+  already existed). FR-10-1..9 met; the remaining cross-task slices (reinforcement PLACEMENT → 11,
+  HUD indicators → 15, Heat→payout-multiplier + Legacy-conversion formula → 12) are deferred with
+  hooks, not stubbed.*
+- [~] M2 manual: an alarm triggers a believable, escalating, survivable-but-scary escape.
+  *Residual: the in-editor F6 "feel" sign-off on `game/scenes/pursuit/PursuitGreybox.tscn`
+  (press "gadget_use" to go loud → phases climb, guards fight back, damage → Downed → Caught),
+  mirroring tasks 03–09. Mark `[x]` after sign-off.*

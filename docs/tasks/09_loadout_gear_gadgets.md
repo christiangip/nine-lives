@@ -64,8 +64,10 @@ Disguise Kit.
 - [x] FR-09-1..8 satisfied; phases checked; tests green. *(The 09-owned data + models + validation are
   complete and unit-tested; downstream halves are deferred with `↩ From 09` banners — see Progress.)*
 - [~] Loadout round-trips through save; weapons/armor feed 10 correctly. *(Serialization
-  `to_dict()/from_dict()` round-trips and is tested; wiring it into `SaveManager` is **task 16**, and
-  the cover-shooter that consumes the `Weapon`/`Armor` models is **task 10**.)*
+  `to_dict()/from_dict()` round-trips and is tested; the cover-shooter now consumes the models —
+  **task 10 landed**: `PlayerCombat` builds Weapons from `Loadout.weapons()`, `PlayerController` builds
+  the `Health` pool from a new `Loadout.armor()`, and `GuardAI` fires `EnemyDef.loadout`'s Weapon. Only
+  residual: wiring `to_dict()/from_dict()` into `SaveManager` is **task 16**.)*
 
 ## Progress
 **09 — Loadout, Gear & Gadgets:** code + automated DoD **complete & verified green on Godot 4.6.3**

@@ -72,6 +72,9 @@ class_name PlayerConfigDef
 }
 @export var surface_noise_default: float = 1.0
 
+# --- Combat / survivability (task 10; max scaled by the "health" attribute) --
+@export var health_base: float = 100.0           ## base Health pool before the Health attribute scales it (§5.5)
+
 # --- Carry (task 08; scaled by the "strength" attribute) -------------------
 @export var carry_weight_base: float = 40.0      ## kg, before Strength scaling
 @export var carry_volume_base: float = 20.0      ## L/slots, before Strength scaling

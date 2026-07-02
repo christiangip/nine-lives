@@ -59,9 +59,14 @@ Fairness over emergent chaos. Guards are the M0 vertical; the rest of the roster
   taking the Inspector down / pickpocketing yields the gate key (FR-05-7). Still pending: the
   **roaming** behavior + dog scent + civilian panic FSM (↩ population on 11). `EnemyDef.Kind` enumerates all.)*
 
-### Phase 05.4 — Combat AI (M2, with 10)  *(deferred — hard-blocked by task 10)*
-- [ ] Cover selection, suppress/peek, flank, advance under Pursuit; responder/SWAT/specialist tiers.
-  *(↩ `GuardAI._tick_combat` is a converge-only stub; flesh out in `10_going_loud_pursuit.md`.)*
+### Phase 05.4 — Combat AI (M2, with 10)  *(landed in task 10)*
+- [x] Cover selection, suppress/peek, flank, advance under Pursuit; responder/SWAT/specialist tiers.
+  *Landed in `10_going_loud_pursuit.md`: `GuardAI._tick_combat` now holds a fighting standoff
+  (`combat_move_intent`), fires `EnemyDef.loadout`'s `Weapon` on a clear LoS in range (`should_fire`),
+  advances/backs off, and takes damage via `apply_damage` (downs → lethal `Body`). Tiers ship as
+  data — `responder`/`swat`/`specialist_shield`/`specialist_sniper` `EnemyDef`s — driven by a new
+  `PursuitConfigDef` (`Content.pursuit`). Full flank/suppression polish + real spawn placement ride
+  the task-11 population pass.*
 
 ### Phase 05.5 — Performance  *(deferred — profile against 11's dense populations)*
 - [ ] Round-robin AI ticks; sleep distant actors; budget for 60 FPS with dense populations.

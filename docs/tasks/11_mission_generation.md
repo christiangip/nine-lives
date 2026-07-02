@@ -9,6 +9,13 @@
 > them from `EnemyDef` here (`MissionGenerator.build`), then come back and tick 05.3/05.5 +
 > DoD-M3 in `05_ai_actors.md`.
 
+> **↩ From 10 (Going Loud):** `PursuitDirector` computes a **reinforcement budget + tier** per phase
+> and emits `reinforcements_requested(tier, count)` (a local signal), but Pursuit spawns have nowhere
+> to appear yet — there are no nav-meshed reinforcement sockets. Wire that signal to real spawn points
+> when generating a level (`MissionGenerator.build`), spawning the named `EnemyDef`s
+> (`responder`/`swat`/`specialist_*`). Also wire `Escape.interact` → the mission-end/results transition
+> (task 08 left it a `TODO[11]`). Then tick the 10.1 "spawn placement" note in `10_going_loud_pursuit.md`.
+
 > **↩ From 06 (Obstacles):** every obstacle **publishes** its data — `Obstacle.solution_set()` +
 > `difficulty()` over `Content.obstacles` (16 `ObstacleDef` archetypes). Consume it here (this is
 > FR-06-10's consumer): place obstacles, **validate solvability** (≥1 reachable solution per gate;

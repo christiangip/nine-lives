@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="PursuitConfigDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/PursuitConfigDef.gd" id="1_pursuit"]
+
+[resource]
+script = ExtResource("1_pursuit")
+id = &"default"
+phase_durations = Array[float]([0.0, 18.0, 22.0, 30.0, 40.0, 0.0])
+silent_skip_phase = 2
+heat_per_loud_alarm = 0.25
+heat_per_silent_alarm = 0.12
+spawn_budget = Array[int]([0, 1, 2, 3, 4, 5])
+tier_ladder = Array[StringName]([&"", &"guard", &"responder", &"responder", &"swat", &"specialist_shield"])
+guard_engage_range = 18.0
+guard_desired_range = 8.0
+guard_range_band = 0.25
+guard_advance_speed_mult = 1.0
+self_revive_window = 8.0
+revive_health_fraction = 0.5
+capture_radius = 2.5
+capture_count = 2
+jail_skill_tolerance = 0.15

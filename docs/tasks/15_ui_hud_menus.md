@@ -3,6 +3,12 @@
 **Milestone:** M1 (menus + HUD) · M2 (full Options) · **Depends on:** 16 · **Blocks:** —
 **Implements:** GDD §15 · **Decisions:** Q1 (FP-readability HUD), Q5 (commit messaging).
 
+> **↩ From 10 (Going Loud):** the going-loud signal data is live but has no HUD yet — build the
+> **Pursuit/Heat indicator** (`EventBus.pursuit_phase_changed` / `heat_changed`) and the loud-combat
+> **ammo/health/armor readout** (from `PlayerCombat.active_weapon()` ammo, `PlayerController.health`
+> current/max, and `health.armor.current`). Also surface the **Get-Out-of-Jail** timing bar the
+> `Health.capture(loadout, skill_input)` check reads. Then tick the HUD notes in `10_going_loud_pursuit.md`.
+
 ## Overview
 The player's contract with the game. Two big jobs: the **menu/slot system** (incl.
 the Continue-disabled logic) and the **in-mission HUD** that keeps first-person

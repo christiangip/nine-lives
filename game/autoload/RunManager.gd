@@ -13,6 +13,27 @@ var job_board: Array = []           ## available contracts (+ seeds)
 var committed: bool = false         ## true once an alarm is raised (strict saves)
 var _loadout: Loadout               ## the Streak's equipped gear (task 09); lazily created
 
+## Going loud raises Heat and commits the Streak (FR-10-3). Heat-per-alarm amounts live in
+## PursuitConfigDef (Content.pursuit) so there are no magic numbers here.
+func _ready() -> void:
+	if not EventBus.alarm_tripped.is_connected(_on_alarm_tripped):
+		EventBus.alarm_tripped.connect(_on_alarm_tripped)
+
+## An alarm (silent or loud) commits the Streak — no more mid-mission save-scumming (strict saves) —
+## and raises Heat for the remainder of the Streak. Task 10 owns this trigger; task 11/12 own Heat's
+## effect on future-contract security + the payout multiplier.
+func _on_alarm_tripped(kind: String, _position: Vector3) -> void:
+	committed = true
+	raise_heat(_heat_for_alarm(kind))
+
+func _heat_for_alarm(kind: String) -> float:
+	var cfg: PursuitConfigDef = null
+	if Content != null and Content.pursuit != null:
+		cfg = Content.pursuit.get_def(&"default") as PursuitConfigDef
+	if cfg == null:
+		cfg = PursuitConfigDef.new()
+	return cfg.heat_per_loud_alarm if kind == "loud" else cfg.heat_per_silent_alarm
+
 ## The per-Streak equipped Loadout (FR-09-8). The Armory (task 13) mutates it between missions and
 ## the save system (task 16) serializes it via loadout.to_dict()/from_dict(); PlayerController reads
 ## it for gadget queries. Lazily created so a fresh Streak always has a valid (empty) loadout.
@@ -42,8 +63,13 @@ func add_take(amount: int) -> void:
 	# TODO[14]: FR-14-2 — Take = a % of secured cash value, not a 1:1 passthrough. This is the
 	# real base `take` accrual task 08's banking needs now; 14's "M2 wiring" scales it.
 
+## Raise Heat toward the 0..1 ceiling and announce it (FR-10-3). Going loud / every alarm calls this.
 func raise_heat(amount: float) -> void:
-	pass # TODO[12]: clamp, EventBus.heat_changed, escalate future contracts
+	if amount <= 0.0:
+		return
+	heat = clampf(heat + amount, 0.0, 1.0)
+	EventBus.heat_changed.emit(heat)
+	# TODO[11]/TODO[12]: high Heat escalates later contracts' security and the Legacy payout multiplier.
 
 func end_streak(reason: String) -> int:
 	# Returns Legacy awarded. Conversion: notoriety * heat_multiplier.

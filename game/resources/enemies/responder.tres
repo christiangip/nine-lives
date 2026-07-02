@@ -4,13 +4,14 @@
 
 [resource]
 script = ExtResource("1_enemy")
-id = &"guard"
-kind = 0
-display_name = "Guard"
-vision_angle = 90.0
-vision_range = 14.0
+id = &"responder"
+kind = 6
+display_name = "Responder"
+tier = 2
+vision_angle = 95.0
+vision_range = 15.0
 hearing_radius = 8.0
-health = 100
-move_speed = 2.5
-loadout = Array[StringName]([&"suppressed_pistol"])
+health = 120
+move_speed = 2.8
+loadout = Array[StringName]([&"smg"])
 params = {}

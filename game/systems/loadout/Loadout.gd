@@ -180,6 +180,15 @@ func weapons() -> Array[GearDef]:
 			out.append(g)
 	return out
 
+## The equipped body-armor def (an APPAREL piece carrying plate params), or null — for task 10 to
+## build the Armor pool from. Branches on a param, never an id (a new plate ships as data).
+func armor() -> GearDef:
+	for gid in _equipped.get(GearDef.Slot.APPAREL, []):
+		var g := _def(gid)
+		if g != null and float(g.param(&"plate_hp", 0.0)) > 0.0:
+			return g
+	return null
+
 # --- FR-09-8: pre-mission validation + serialization ------------------------
 
 ## Every equipped piece is unlocked and every slot is within capacity. Called pre-mission (FR-09-8);

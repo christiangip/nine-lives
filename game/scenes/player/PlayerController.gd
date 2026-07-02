@@ -37,6 +37,10 @@ var can_use_vents: bool = true
 var inventory: Inventory   ## task 08 carry state; see game/systems/inventory/Inventory.gd
 var loadout: Loadout       ## task 09 equipped gear; the Streak's, or a fresh empty fallback
 
+# --- Combat / survivability hooks (task 10) --------------------------------
+var health: Health         ## damage/down/capture brain (built from the loadout's Armor)
+var _combat: PlayerCombat  ## FP firing controller, mounted under the Hands node
+
 # --- Internal --------------------------------------------------------------
 var _pitch: float = 0.0
 var _pitch_min: float = -1.55
@@ -76,6 +80,8 @@ func _ready() -> void:
 	inventory.weight_cap = config.carry_weight_base * (1.0 + attr_effect(&"strength"))
 	inventory.volume_cap = config.carry_volume_base * (1.0 + attr_effect(&"strength"))
 	loadout = _resolve_loadout()
+	_build_health()
+	_mount_combat()
 	# Don't mutate the shared scene resource — each instance gets its own capsule.
 	if _collider != null and _collider.shape != null:
 		_collider.shape = _collider.shape.duplicate()
@@ -109,6 +115,8 @@ func _physics_process(delta: float) -> void:
 		# Convenience for the greybox playtest; full pause/menu is task 15.
 		Input.mouse_mode = (Input.MOUSE_MODE_VISIBLE if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
 			else Input.MOUSE_MODE_CAPTURED)
+	if health != null:
+		health.tick(delta)
 	_apply_gamepad_look(delta)
 	_update_toggle_inputs()
 	_update_stance_input()
@@ -133,6 +141,7 @@ func _physics_process(delta: float) -> void:
 	if _is_sprinting:
 		target_speed = config.sprint_speed
 	target_speed *= carry_speed_mult
+	target_speed *= _armor_speed_mult()   # heavy armor trades agility for protection (task 09/10)
 
 	var accel := config.accel if on_floor else config.accel * config.air_control
 	var friction := config.friction if on_floor else config.friction * config.air_control
@@ -522,6 +531,45 @@ func _resolve_loadout() -> Loadout:
 	if run != null and run.has_method("loadout"):
 		return run.loadout()
 	return Loadout.new()
+
+# --- Combat / survivability (task 10) --------------------------------------
+
+## Build the Health pool from the base config (scaled by the Health attribute, §5.5) and the loadout's
+## Armor plate pool, if any. Downs/Catches route through Health.state_changed → the resolution flow.
+func _build_health() -> void:
+	var armor_gear: GearDef = loadout.armor() if loadout != null else null
+	var armor: Armor = Armor.new(armor_gear) if armor_gear != null else null
+	health = Health.new(config.health_base * (1.0 + attr_effect(&"health")), armor)
+	health.state_changed.connect(_on_health_state_changed)
+
+## Mount the FP firing controller under the Hands node so it aims down the look direction (FR-10-4).
+func _mount_combat() -> void:
+	if _hands == null:
+		return
+	_combat = PlayerCombat.new()
+	_hands.add_child(_combat)
+
+## Incoming damage entry point — hostiles (GuardAI combat) call this. Routes armor→health via Health.
+func apply_damage(damage: float) -> void:
+	if health != null:
+		health.take_damage(damage)
+
+## Move-speed multiplier from equipped armor weight (never freezes; Armor.agility_mult floors it).
+func _armor_speed_mult() -> float:
+	if health != null and health.armor != null:
+		return health.armor.speed_mult()
+	return 1.0
+
+## A Down that lapses (CAUGHT) or a surround (CAPTURED) is the Catch (§8.7): hand off to task 12 for
+## Notoriety→Legacy conversion, then to the results screen (task 11/15). FR-10-6/FR-10-9.
+func _on_health_state_changed(new_state: int) -> void:
+	if new_state == Health.State.CAUGHT or new_state == Health.State.CAPTURED:
+		var run := Services.run()
+		if run != null and run.has_method("end_streak"):
+			run.end_streak("caught")   # returns Legacy; the conversion formula is task 12's (TODO[12])
+		var gm := Services.game()
+		if gm != null and gm.has_method("goto_results"):
+			gm.goto_results({"outcome": "caught"})
 
 # --- Attributes / settings / helpers ---------------------------------------
 

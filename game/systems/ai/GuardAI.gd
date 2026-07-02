@@ -30,12 +30,18 @@ var _has_investigate_target: bool = false
 var _search_center: Vector3 = Vector3.ZERO   ## anchor for the local SEARCH sweep (the lost-contact spot)
 var _search_point_index: int = 0
 
+# --- Combat (task 10) ------------------------------------------------------
+var _hp: float = 0.0                          ## current health; set from EnemyDef.health (FR-10-5)
+var _weapon: Weapon                           ## built lazily from EnemyDef.loadout[0]
+var _pursuit_cfg: PursuitConfigDef            ## combat tunables (ranges/speed); Content.pursuit &"default"
+
 func _ready() -> void:
 	add_to_group(&"guard")
 	if def == null and Content != null and Content.enemies != null:
 		def = Content.enemies.get_def(&"guard") as EnemyDef
 	if def == null:
 		def = EnemyDef.new()   # data-driven defaults; avoids magic-number speeds in logic
+	_hp = float(def.health)
 	if ai_config == null and Content != null and Content.ai != null:
 		ai_config = Content.ai.get_def(&"default") as AIConfigDef
 	if ai_config == null:
@@ -136,6 +142,25 @@ func search_offset(index: int, radius: float) -> Vector3:
 	var a := TAU * float(posmod(index, _SEARCH_POINTS)) / float(_SEARCH_POINTS)
 	return Vector3(cos(a) * radius, 0.0, sin(a) * radius)
 
+## Combat standoff steering (FR-10-4/FR-10-5): keep a fighting distance. Returns +1 = advance (too far),
+## -1 = retreat (too close), 0 = hold (within `band` fraction of `desired`). Pure.
+func combat_move_intent(dist: float, desired: float, band: float) -> int:
+	var near := desired * (1.0 - band)
+	var far := desired * (1.0 + band)
+	if dist > far:
+		return 1
+	if dist < near:
+		return -1
+	return 0
+
+## Fire only with a clear line of sight and inside engagement range. Pure. (FR-10-5)
+func should_fire(has_los: bool, dist: float, engage_range: float) -> bool:
+	return has_los and dist <= engage_range
+
+## A guard is out of the fight when its health is spent. Pure. (FR-10-6 mirror for hostiles)
+func is_dead(hp: float) -> bool:
+	return hp <= 0.0
+
 # --- Tick ------------------------------------------------------------------
 func _physics_process(delta: float) -> void:
 	if ai_state == AIState.DOWNED:
@@ -184,13 +209,85 @@ func _tick_search(delta: float) -> void:
 	else:
 		_move_toward(target, def.move_speed * ai_config.investigate_speed_mult, delta)
 
+## COMBAT (task 10, closes Phase 05.4): hold a fighting distance and shoot the player on a clear line
+## of sight, advancing when the lead is lost or too far and backing off when crowded. Uses the pure
+## standoff seams above + EnemyDef.loadout's Weapon (which emits the frozen noise ring on each shot).
 func _tick_combat(delta: float) -> void:
-	# TODO[10]: cover selection, suppress/peek, flank, advance. For M0 just converge on the
-	# last-known position so a spotted player is pressured in the greybox.
-	if _sensor != null:
-		_move_toward(_sensor.last_seen_position, def.move_speed, delta)
-	else:
-		_halt(delta)
+	var cfg := _pursuit_config()
+	var w := _combat_weapon()
+	if w != null:
+		w.tick(delta)
+	var player := _nearest_player()
+	# No target in view: chase the last-known spot so a spotted player stays pressured.
+	if player == null:
+		if _sensor != null:
+			_move_toward(_sensor.last_seen_position, def.move_speed * cfg.guard_advance_speed_mult, delta)
+		else:
+			_halt(delta)
+		return
+	var target := player.global_position
+	var dist := global_position.distance_to(target)
+	var has_los := _sensor != null and _has_los(_sensor.global_position, target)
+	if should_fire(has_los, dist, cfg.guard_engage_range):
+		_fire_at(player)
+	var speed := def.move_speed * cfg.guard_advance_speed_mult
+	# Without LoS, close in on the last-known spot; with LoS, keep a standoff distance.
+	if not has_los:
+		_move_toward(_sensor.last_seen_position, speed, delta)
+		return
+	match combat_move_intent(dist, cfg.guard_desired_range, cfg.guard_range_band):
+		1: _move_toward(target, speed, delta)                                   # advance
+		-1: _move_toward(global_position + (global_position - target), speed, delta)  # back off
+		_: _face_and_hold(target, delta)                                        # hold the line and shoot
+
+## Damage from the player's weapon (PlayerCombat hit-scan calls this). Downs the guard when spent —
+## a lethal takedown so the body reads as a shooting casualty. (FR-10-5/FR-10-6)
+func apply_damage(damage: float) -> void:
+	if ai_state == AIState.DOWNED or damage <= 0.0:
+		return
+	_hp -= damage
+	if is_dead(_hp):
+		take_down(true)
+
+func _fire_at(player: Node3D) -> void:
+	var w := _combat_weapon()
+	if w == null or not w.can_fire():
+		return
+	var flat := Vector3(player.global_position.x, global_position.y, player.global_position.z)
+	if flat.distance_to(global_position) > 0.05:
+		look_at(flat, Vector3.UP)
+	var shot := w.fire(global_position)
+	if not shot.is_empty() and player.has_method("apply_damage"):
+		player.apply_damage(float(shot["damage"]))
+
+func _combat_weapon() -> Weapon:
+	if _weapon == null and def != null and not def.loadout.is_empty() \
+			and Content != null and Content.gear != null:
+		var gd := Content.gear.get_def(def.loadout[0]) as GearDef
+		if gd != null:
+			_weapon = Weapon.new(gd)
+	return _weapon
+
+func _pursuit_config() -> PursuitConfigDef:
+	if _pursuit_cfg == null:
+		if Content != null and Content.pursuit != null:
+			_pursuit_cfg = Content.pursuit.get_def(&"default") as PursuitConfigDef
+		if _pursuit_cfg == null:
+			_pursuit_cfg = PursuitConfigDef.new()
+	return _pursuit_cfg
+
+func _nearest_player() -> Node3D:
+	if not is_inside_tree():
+		return null
+	var ps := get_tree().get_nodes_in_group(&"player")
+	return ps[0] as Node3D if not ps.is_empty() else null
+
+## Face a point and stop moving (hold position while keeping the cone on the target).
+func _face_and_hold(target: Vector3, delta: float) -> void:
+	var flat := Vector3(target.x, global_position.y, target.z)
+	if flat.distance_to(global_position) > 0.05:
+		look_at(flat, Vector3.UP)
+	_halt(delta)
 
 # --- State entry -----------------------------------------------------------
 func _set_ai_state(s: int) -> void:

@@ -27,6 +27,7 @@ var ai: ContentRegistry
 var obstacles: ContentRegistry
 var minigames: ContentRegistry
 var loadout: ContentRegistry
+var pursuit: ContentRegistry
 
 var _registries: Dictionary = {}    ## StringName -> ContentRegistry
 
@@ -53,6 +54,7 @@ func _build() -> void:
 	obstacles = _make(&"obstacles", ObstacleDef, "obstacles")   # heist obstacles (task 06)
 	minigames = _make(&"minigames", MinigameConfigDef, "minigames")   # minigame tunables (task 07)
 	loadout = _make(&"loadout", LoadoutConfigDef, "loadout")   # loadout slot/weapon/armor tunables (task 09)
+	pursuit = _make(&"pursuit", PursuitConfigDef, "pursuit")   # going-loud pursuit/combat tunables (task 10)
 
 func _make(key: StringName, def_script: GDScript, folder: String, json_files: Array = []) -> ContentRegistry:
 	var reg := ContentRegistry.new(def_script, [_RESOURCE_ROOT.path_join(folder)], json_files)
