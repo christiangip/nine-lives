@@ -161,6 +161,7 @@ func _physics_process(delta: float) -> void:
 	_update_carry_penalty()
 	_update_throw_input()
 	_update_drop_input()
+	_update_takedown_input()
 
 # --- Stamina (FR-03-1) -----------------------------------------------------
 
@@ -453,6 +454,35 @@ func _update_throw_input() -> void:
 		if body != null:
 			EventBus.carry_changed.emit(inventory.current_weight(), inventory.current_volume())
 			_spawn_thrown_body(body)
+
+## Stealth takedown (the `takedown` action, default V): drop the nearest guard we're close to and
+## roughly facing → a non-lethal `take_down(false)`, which leaves a concealable Body carrying the
+## guard's item (e.g. the Inspector's vault keycard). Range/behind-ness is lenient for the greybox;
+## a full sneak-from-behind gate rides with task 05's polish. Closes the unconsumed input action.
+func _update_takedown_input() -> void:
+	if not Input.is_action_just_pressed(&"takedown"):
+		return
+	var guard := _takedown_target()
+	if guard != null and guard.has_method("take_down"):
+		guard.take_down(false)
+
+func _takedown_target() -> Node:
+	var forward := -global_transform.basis.z
+	var best: Node = null
+	var best_d := 2.2   # takedown reach (m); greybox-lenient
+	for g in get_tree().get_nodes_in_group(&"guard"):
+		if not (g is Node3D):
+			continue
+		var to: Vector3 = (g as Node3D).global_position - global_position
+		to.y = 0.0
+		var d := to.length()
+		if d > best_d or d < 0.05:
+			continue
+		if forward.dot(to / d) < 0.25:   # roughly in front of us
+			continue
+		best = g
+		best_d = d
+	return best
 
 ## Where runtime-spawned bags/bodies get parented. Task 11's MissionController joins the
 ## &"mission_root" group; fall back to the scene tree root for greyboxes/tests (closes TODO[11]).

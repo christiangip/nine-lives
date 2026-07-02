@@ -111,6 +111,12 @@ func _place_hazards() -> void:
 		var def := _layout.sections[i].def
 		if def.security_tier < 2:
 			continue
+		# A high-security wing reliably watches its main floor: one camera at a patrol/objective anchor.
+		var watch := def.anchors_of(&"patrol")
+		if watch.is_empty():
+			watch = def.anchors_of(&"objective")
+		if not watch.is_empty() and _rng.randf() < maxf(_camera_density, 0.5):
+			_add_hazard(&"camera_ptz", i, watch[0].get("pos", Vector3.ZERO))
 		for a in def.anchors_of(&"cover"):
 			if _rng.randf() < _camera_density:
 				_add_hazard(&"camera_ptz", i, a.get("pos", Vector3.ZERO))

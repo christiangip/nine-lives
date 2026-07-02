@@ -120,7 +120,7 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
   scene loads cleanly headlessly but couldn't drive interactive input).*
 
 ### Roguelite spine (M1)
-- [~] **11 — Mission Generation** · `11_mission_generation.md` · *(M1 basic · M2 full)*
+- [x] **11 — Mission Generation** · `11_mission_generation.md` · *(M1 basic · M2 full)*
   Prefab sockets, seeded assembler, solvability validation, population, objectives, modifiers, setpieces.
   *Code + automated DoD (M1 **and** M2) **complete & verified green on Godot 4.6.3** (GUT **245/245**, +23
   task-11 tests). Two-stage: `MissionGenerator.generate_layout()` → a pure, seed-reproducible `MissionLayout`
@@ -130,8 +130,9 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
   authored + Museum/Warehouse. **Closed the ↩ hooks:** Escape→results + reinforcement spawns (10), obstacle
   solvability consumed (06 FR-06-10), MinigameHost.attach_all (07), found-as-loot + loadout-validate (09),
   PlayerController `&"mission_root"` parenting. **Deferred (refreshed ↩):** deep 05.3 AI roster + 05.5 perf;
-  real art→18; daily contracts→20; Job Map UI→13/15. **Residual `[~]`:** F6 "feel" sign-off on
-  `MissionGreybox.tscn` (loads + builds cleanly headlessly), mirroring 04–10.*
+  real art→18; daily contracts→20; Job Map UI→13/15. **F6 "feel" playtest signed off 2026-07-02**
+  (`MissionGreybox.tscn`; that pass added guard cones/colours + a dev loadout/HUD and wired the unused
+  `takedown` action). DoD met → `[x]`.*
 - [ ] **12 — Progression: Streak & Legacy** · `12_progression_streak_legacy.md` · *(M1)*
   Notoriety, Streak Levels, Edges (draw-3), Heat, conversion-on-Catch, permanent Legacy, attributes.
 - [ ] **13 — Hideout & Stations** · `13_hideout_stations.md` · *(M1 min · M3 full)*
@@ -156,7 +157,7 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
   firing/damage-routing that consumes `Weapon`/`Armor` → 10; Armory/Fence/Workshop UI → 13; loadout↔save
   → 16; found-as-loot + loadout-into-mission → 11; HUD readout → 15. Residual `[~]`: DoD "round-trips
   through save / feeds 10" (blocked on 16/10).*
-- [~] **10 — Going Loud, Combat & Pursuit** · `10_going_loud_pursuit.md` · *(M2)*
+- [x] **10 — Going Loud, Combat & Pursuit** · `10_going_loud_pursuit.md` · *(M2)*
   Alarm escalation timeline, cover-shooter (FP cover/lean, weapons, armor, ammo), responder/SWAT tiers, downs/capture, Get-Out-of-Jail.
   *Code + automated DoD **complete & verified green on Godot 4.6.3** (headless GUT **222/222**, +22 task-10
   tests). New `game/systems/pursuit/PursuitDirector.gd` runs phases 0→5 off `EventBus.alarm_tripped` (pure
@@ -167,8 +168,9 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
   and fires `EnemyDef.loadout`'s Weapon (new `responder`/`swat`/`specialist_*` `EnemyDef`s). Catch → hands
   off to 12 (`end_streak`) → `goto_results` (FR-10-9). EventBus stayed frozen. **Deferred with ↩ From 10
   banners:** reinforcement spawn placement + `Escape`→results transition → 11; Pursuit/Heat/ammo/health/armor
-  HUD → 15; Heat→payout-multiplier + Legacy-conversion formula → 12. **Residual `[~]`:** the F6 "feel"
-  sign-off on `game/scenes/pursuit/PursuitGreybox.tscn`, mirroring 03–09.*
+  HUD → 15; Heat→payout-multiplier + Legacy-conversion formula → 12. **F6 "feel" playtest signed off
+  2026-07-02** (going-loud/combat/pursuit verified inside `MissionGreybox.tscn` — L=go-loud, LMB fire,
+  reinforcements spawn, damage→Downed→Caught). DoD met → `[x]`.*
 - [ ] **14 — Economy & Balancing** · `14_economy_balancing.md` · *(M2 wiring · M3 tuning)*
   Three currencies wired, Notoriety multipliers, Take spend (consumables/intel), tuning data tables, balance passes.
 
@@ -197,12 +199,12 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
 ```
 Foundation        [x01][x02]                        2 / 2
 Core stealth (M0) [x03][~04][~05·G][~06][~07][~08]   1 / 6
-Spine (M1)        [~11][12][13·m][15·m][16]          0 / 5
-Loud + breadth    [~09][~10][14]                     0 / 3
+Spine (M1)        [x11][12][13·m][15·m][16]          1 / 5
+Loud + breadth    [~09][x10][14]                     1 / 3
 Presentation      [17][18]                           0 / 2
 Live + release    [19][20][21]                       0 / 3
 Onboarding        [22]                               0 / 1
-                                          TOTAL  2 / 22 lists
+                                          TOTAL  4 / 22 lists
 Milestones        [ ] M0  [ ] M1  [ ] M2  [ ] M3  [ ] M4  [ ] M5
 ```
 

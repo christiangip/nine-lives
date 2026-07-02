@@ -1,19 +1,14 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://da8258qadi582"]
 
-; Dev-only greybox for the task-11 manual playtest (F6). The driver builds a generated Bank mission
-; from a fixed seed on _ready (MissionGenerator.build → MissionController realizes floors/guards/
-; obstacles/loot/drops/escape + spawns the player). Walk it: slip past a cone, pick/keycard the vault
-; gate, bag loot → a Drop Point, then Escape to end the mission. See docs/tasks/11_mission_generation.md.
+[ext_resource type="Script" uid="uid://bxj6nijiocy52" path="res://game/scenes/mission/MissionGreyboxDebug.gd" id="1_driver"]
+[ext_resource type="Environment" uid="uid://ctcd4chavk0k8" path="res://game/assets/default_env.tres" id="2_env"]
 
-[ext_resource type="Script" path="res://game/scenes/mission/MissionGreyboxDebug.gd" id="1_driver"]
-[ext_resource type="Environment" path="res://game/assets/default_env.tres" id="2_env"]
-
-[node name="MissionGreybox" type="Node3D"]
+[node name="MissionGreybox" type="Node3D" unique_id=1549769155]
 script = ExtResource("1_driver")
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=439126179]
 environment = ExtResource("2_env")
 
-[node name="Sun" type="DirectionalLight3D" parent="."]
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=54939718]
 transform = Transform3D(1, 0, 0, 0, 0.643, -0.766, 0, 0.766, 0.643, 0, 12, 0)
 shadow_enabled = true

@@ -100,6 +100,8 @@ loadout-validate-into-mission (09), PlayerController thrown-body `&"mission_root
 **Still deferred (refreshed ↩ notes):** deep 05.3 AI behaviors (dogs/operator/civilian-wander — the
 civilian ships as a pickpockable keycard marker) + 05.5 perf profiling; real art prefabs → 18; daily
 contracts → 20; Job Map UI → 13/15; Heat→payout multiplier → 12.
-**Residual `[~]`:** the in-editor F6 "feel" sign-off on `MissionGreybox.tscn` (loads + builds cleanly
-headlessly — 6 sections / 6 guards / 2 gates / player — but interactive walk-through needs a human),
-mirroring tasks 04–10.
+**F6 "feel" playtest signed off 2026-07-02** on `MissionGreybox.tscn` — a generated Bank plays end to end
+(slip a cone, pick/clone the vault gate, bag loot → Drop Point, Escape). That pass hardened the greybox
+*realization* for legibility/testability: guard cones + colours (gold = the keycard Inspector), a dev
+Loadout (weapon + cloner + gadgets), a stand-in debug HUD, an `L`=go-loud key, and it wired the previously
+unconsumed `takedown` input action. **Task 11 DoD met → `[x]`.**

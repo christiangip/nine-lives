@@ -89,7 +89,7 @@ secured loot, not by holding the building. Raises Heat for the rest of the Strea
   already existed). FR-10-1..9 met; the remaining cross-task slices (reinforcement PLACEMENT → 11,
   HUD indicators → 15, Heat→payout-multiplier + Legacy-conversion formula → 12) are deferred with
   hooks, not stubbed.*
-- [~] M2 manual: an alarm triggers a believable, escalating, survivable-but-scary escape.
-  *Residual: the in-editor F6 "feel" sign-off on `game/scenes/pursuit/PursuitGreybox.tscn`
-  (press "gadget_use" to go loud → phases climb, guards fight back, damage → Downed → Caught),
-  mirroring tasks 03–09. Mark `[x]` after sign-off.*
+- [x] M2 manual: an alarm triggers a believable, escalating, survivable-but-scary escape.
+  *F6 "feel" **signed off 2026-07-02** — verified inside `game/scenes/mission/MissionGreybox.tscn`
+  (the task-11 slice): `L` forces go-loud → phases climb, `LMB` fires the equipped weapon, reinforcements
+  spawn at sockets, and damage runs Downed → Caught.*

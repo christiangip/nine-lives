@@ -111,7 +111,8 @@ func _build_sections(world: Node3D) -> void:
 		tile.position = ps.center_world(CELL) + Vector3(0, 0.06, 0)
 		var mat := StandardMaterial3D.new()
 		var t := clampf(float(ps.def.security_tier) / 3.0, 0.0, 1.0)
-		mat.albedo_color = Color(0.25 + t * 0.5, 0.35 - t * 0.2, 0.4 - t * 0.25, 1.0)
+		# Blue-grey (low security) → amber (high security). Avoids clashing with the red Escape box.
+		mat.albedo_color = Color(0.3 + t * 0.5, 0.35 + t * 0.12, 0.55 - t * 0.4, 1.0)
 		tile.material_override = mat
 		world.add_child(tile)
 
@@ -145,8 +146,12 @@ func _spawn_guard(world: Node3D, enemy_id: StringName, pos: Vector3, skill_mult:
 	var cm := CapsuleMesh.new()
 	cm.radius = 0.35; cm.height = 1.8
 	mesh.mesh = cm
+	var gmat := StandardMaterial3D.new()
+	# Gold = a keycard carrier (the Inspector); blue = a regular guard — so the vault-key holder is findable.
+	gmat.albedo_color = Color(0.9, 0.72, 0.12) if carried_item != &"" else Color(0.2, 0.35, 0.78)
+	mesh.material_override = gmat
 	guard.add_child(mesh)
-	# detection sensor child (auto-found by GuardAI)
+	# detection sensor child (auto-found by GuardAI) + a debug cone wedge so the player can read it
 	var sensor := Node3D.new()
 	sensor.name = "Sensor"
 	sensor.set_script(load("res://game/systems/stealth/DetectionSensor.gd"))
@@ -155,6 +160,10 @@ func _spawn_guard(world: Node3D, enemy_id: StringName, pos: Vector3, skill_mult:
 	var det_cfg := _detection_config()
 	if det_cfg != null:
 		sensor.set("config", det_cfg)
+	var cone := MeshInstance3D.new()
+	cone.name = "ConeDebug"
+	cone.set_script(load("res://game/systems/stealth/DetectionConeDebug.gd"))
+	sensor.add_child(cone)
 	guard.add_child(sensor)
 	guard.sensor_path = NodePath("Sensor")
 	# a short local patrol so the guard actually walks (greybox; real routes via anchors is task 18)
@@ -204,8 +213,9 @@ func _build_loot(world: Node3D) -> void:
 		_add_labeled_marker(world, "Consumable_%s" % c.get("gear_id", &""), c.get("pos", Vector3.ZERO),
 			Vector3(0.35, 0.35, 0.35), Color(0.4, 0.8, 0.9))
 	for civ in layout.civilians:
+		# Cyan box — clearly not a guard (blue capsule) or the gold Inspector; carries a keycard.
 		var m := _add_labeled_marker(world, "Civilian", civ.get("pos", Vector3.ZERO),
-			Vector3(0.4, 1.7, 0.4), Color(0.85, 0.85, 0.85))
+			Vector3(0.4, 1.7, 0.4), Color(0.1, 0.75, 0.8))
 		m.add_to_group(&"civilian")
 		m.set_meta("carried_item", civ.get("carried_item", &""))
 
