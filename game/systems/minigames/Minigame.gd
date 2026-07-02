@@ -20,7 +20,7 @@ signal aborted
 @export var difficulty: int = 1
 var config: MinigameConfigDef
 var attribute_level: int = 0        ## the relevant attribute's level (Lockpicking / Hacking / …). TODO[12]
-var gear_params: Dictionary = {}    ## gadget bonuses (stethoscope, hacking rig, …). TODO[09]
+var gear_params: Dictionary = {}    ## gadget bonuses (stethoscope, hacking rig, …); fed by task 09 loadout
 
 var _finished: bool = false         ## latches on the first outcome so each signal fires once
 var _did_pause: bool = false        ## only unpause if this instance actually paused
@@ -35,7 +35,7 @@ func _resolve_config() -> void:
 		config = MinigameConfigDef.new()   # headless / no-registry fallback: schema defaults
 
 ## Inject the run context before begin(): the obstacle's difficulty tier, the player's relevant
-## attribute level (TODO[12] ProgressionManager), and any gear bonuses (TODO[09] loadout).
+## attribute level (TODO[12] ProgressionManager), and any gear bonuses (task 09 loadout).
 func configure(p_difficulty: int, p_attribute_level: int = 0, p_gear: Dictionary = {}) -> void:
 	difficulty = maxi(1, p_difficulty)
 	attribute_level = maxi(0, p_attribute_level)
@@ -55,7 +55,7 @@ func begin(_ctx: Dictionary = {}) -> void:
 static func scaled(base: float, level: float, per_level: float) -> float:
 	return base + level * per_level
 
-## Does the loadout carry a gadget flag (e.g. &"stethoscope")? Empty until task 09 wires gear. Pure.
+## Does the loadout carry a gadget flag (e.g. &"stethoscope")? Fed by task 09's Loadout.gear_flags(). Pure.
 func has_gear(flag: StringName) -> bool:
 	return bool(gear_params.get(String(flag), false))
 

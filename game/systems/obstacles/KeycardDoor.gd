@@ -13,7 +13,8 @@ static func opens_with(has_card: bool, can_clone: bool) -> bool:
 	return has_card or can_clone
 
 func _can_clone(by: Node) -> bool:
-	# Keycard cloner is task 09; duck-type an optional gadget until then. TODO[09].
+	# Keycard cloner gadget (task 09): the player answers can_clone_keycard() from its equipped Loadout.
+	# Still duck-typed so this obstacle keeps zero hard dependency on the loadout system.
 	return by != null and by.has_method("can_clone_keycard") and by.can_clone_keycard(def.required_item)
 
 func can_interact(by: Node) -> bool:

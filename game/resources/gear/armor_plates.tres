@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="GearDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/GearDef.gd" id="1_gear"]
+
+[resource]
+script = ExtResource("1_gear")
+id = &"armor_plates"
+display_name = "Armor Plates"
+slot = 5
+tier = 1
+slot_cost = 1
+consumable = false
+research_cost = 65
+params = {
+"gadget_flag": &"armor_plates",
+"plate_hp": 50.0,
+"plates": 2,
+"weight_kg": 6.0
+}

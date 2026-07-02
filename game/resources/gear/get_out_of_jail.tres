@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="GearDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/GearDef.gd" id="1_gear"]
+
+[resource]
+script = ExtResource("1_gear")
+id = &"get_out_of_jail"
+display_name = "Get-Out-of-Jail"
+slot = 4
+tier = 1
+slot_cost = 1
+consumable = true
+research_cost = 100
+restock_cost = 0
+max_count = 1
+params = {
+"gadget_flag": &"get_out_of_jail",
+"skill_check": true
+}

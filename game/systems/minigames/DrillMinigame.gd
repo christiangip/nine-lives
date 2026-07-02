@@ -25,6 +25,7 @@ func begin(ctx: Dictionary = {}) -> void:
 	_breach.breach_progress.connect(_on_progress)
 	_breach.jammed.connect(_on_jammed)
 	_breach.breached.connect(_on_breached)
+	_breach.equip_tool(ctx.get("breach_gear", {}))   # apply the loadout breach tool's upgrades (task 09)
 	_build_ui()
 	_breach.begin_breach(_method, ctx.get("by"))
 

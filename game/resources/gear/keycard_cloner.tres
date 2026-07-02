@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="GearDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/GearDef.gd" id="1_gear"]
+
+[resource]
+script = ExtResource("1_gear")
+id = &"keycard_cloner"
+display_name = "Keycard Cloner"
+slot = 0
+tier = 2
+slot_cost = 1
+consumable = false
+research_cost = 60
+params = {
+"gadget_flag": &"keycard_cloner"
+}

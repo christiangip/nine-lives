@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="GearDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/GearDef.gd" id="1_gear"]
+
+[resource]
+script = ExtResource("1_gear")
+id = &"rifle"
+display_name = "Assault Rifle"
+slot = 3
+tier = 3
+slot_cost = 1
+consumable = false
+research_cost = 90
+params = {
+"damage": 35.0,
+"ammo_capacity": 20,
+"suppressed": false,
+"noise_radius": 34.0,
+"spread_base": 1.5,
+"recoil_per_shot": 1.8,
+"recoil_recovery": 6.0,
+"fire_interval": 0.1
+}

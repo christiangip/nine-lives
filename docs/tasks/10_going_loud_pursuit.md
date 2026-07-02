@@ -14,6 +14,14 @@
 > the alarm-escalation timeline + Pursuit here, and provide the **firearm** that shoots out a
 > `ControllableLight` / camera (`.shoot()`). No new signals needed — the hooks are already on the bus.
 
+> **↩ From 09 (Loadout/Gear):** the `Weapon` and `Armor` MODELS ship in `game/systems/loadout/`
+> (built from `GearDef.params`, equipped via the Streak's `RunManager.loadout()`). This task builds the
+> **in-world combat** that consumes them: mount a viewmodel that calls `Weapon.fire()` (returns
+> damage/spread/noise; it already emits the `noise_emitted` ring, so FR-10-4's Marksmanship-scaled
+> spread reads `Weapon.current_spread(marks_effect)`), route damage through `Armor.absorb()` →
+> Health for FR-10-6, and consume the `get_out_of_jail` utility for FR-10-7. Come back and tick
+> Phase 09.3/09.4's "→ 10" halves + the 09 DoD's second bullet in `09_…md` when combat lands.
+
 ## Overview
 When stealth breaks, the game becomes a first-person **cover-shooter escape
 gauntlet**. Per Q2 this is the fuller model: weapon depth, an armor layer, ammo

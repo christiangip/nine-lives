@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="GearDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/GearDef.gd" id="1_gear"]
+
+[resource]
+script = ExtResource("1_gear")
+id = &"shotgun"
+display_name = "Shotgun"
+slot = 3
+tier = 2
+slot_cost = 1
+consumable = false
+research_cost = 75
+params = {
+"damage": 60.0,
+"ammo_capacity": 6,
+"suppressed": false,
+"noise_radius": 32.0,
+"spread_base": 6.0,
+"recoil_per_shot": 3.0,
+"recoil_recovery": 5.0,
+"fire_interval": 0.6
+}

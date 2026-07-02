@@ -7,6 +7,12 @@ static func make_loot(weight: float, volume: float, value: int = 100) -> LootDef
 	l.weight = weight; l.volume = volume; l.value = value
 	return l
 
+## Build an off-registry GearDef for pure-seam tests (task 09).
+static func make_gear(id: StringName, slot: int, cost: int = 1, params: Dictionary = {}) -> GearDef:
+	var g := GearDef.new()
+	g.id = id; g.slot = slot; g.slot_cost = cost; g.params = params
+	return g
+
 ## Best-effort recursive delete of a temp directory + its files (for test teardown).
 static func rm_dir(dir: String) -> void:
 	var d := DirAccess.open(dir)

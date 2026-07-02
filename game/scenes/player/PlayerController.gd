@@ -35,6 +35,7 @@ var carry_speed_mult: float = 1.0
 var can_climb: bool = true
 var can_use_vents: bool = true
 var inventory: Inventory   ## task 08 carry state; see game/systems/inventory/Inventory.gd
+var loadout: Loadout       ## task 09 equipped gear; the Streak's, or a fresh empty fallback
 
 # --- Internal --------------------------------------------------------------
 var _pitch: float = 0.0
@@ -74,6 +75,7 @@ func _ready() -> void:
 	inventory = Inventory.new()
 	inventory.weight_cap = config.carry_weight_base * (1.0 + attr_effect(&"strength"))
 	inventory.volume_cap = config.carry_volume_base * (1.0 + attr_effect(&"strength"))
+	loadout = _resolve_loadout()
 	# Don't mutate the shared scene resource — each instance gets its own capsule.
 	if _collider != null and _collider.shape != null:
 		_collider.shape = _collider.shape.duplicate()
@@ -361,7 +363,8 @@ func _update_footsteps(delta: float, horizontal_speed: float, is_running: bool) 
 	if _step_accum < interval:
 		return
 	_step_accum = 0.0
-	var reduction := clampf(attr_effect(&"silence"), 0.0, config.max_silence_reduction)
+	# Silence reduction stacks the trained attribute with soft-soled gear (FR-09-7), clamped once.
+	var reduction := clampf(attr_effect(&"silence") + _gear_silence_bonus(), 0.0, config.max_silence_reduction)
 	noise_level = compute_noise_radius(stance, is_running, _current_surface_tag(), reduction)
 	emit_noise(noise_level, "footstep")
 
@@ -376,6 +379,12 @@ func compute_noise_radius(stance_id: int, is_running: bool, surface_tag: String,
 	r *= surface_mult(surface_tag)
 	r *= (1.0 - clampf(silence_reduction, 0.0, config.max_silence_reduction))
 	return maxf(0.0, r)
+
+## Extra Silence reduction from equipped soft-soled gear (FR-09-7); 0.0 if none/loadout absent.
+func _gear_silence_bonus() -> float:
+	if loadout == null:
+		return 0.0
+	return float(loadout.gadget_param(&"soft_soled_gear", &"silence_bonus", 0.0))
 
 func surface_mult(surface_tag: String) -> float:
 	if surface_tag == "":
@@ -487,6 +496,32 @@ func is_carrying_keyholder(item_id: StringName) -> bool:
 func add_loot(loot: LootDef) -> void:
 	if inventory != null:
 		inventory.add_loot(loot)
+
+# --- Gadget queries consumed by obstacles (↩ from 06, closes TODO[09]) ------
+# These are the exact duck-types KeycardDoor/DisplayCase/BiometricLock already call — now they
+# answer truthfully from the equipped Loadout, so a researched+equipped gadget actually works.
+
+## KeycardDoor._can_clone: the keycard cloner gadget is equipped (clones a nearby legit card).
+func can_clone_keycard(_required_item: StringName) -> bool:
+	return loadout != null and loadout.has_gadget(&"keycard_cloner")
+
+## DisplayCase._has_glasscutter: the silent glasscutter is equipped.
+func has_glasscutter() -> bool:
+	return loadout != null and loadout.has_gadget(&"glasscutter")
+
+## BiometricLock._has_spoof: the rare biometric spoof gadget is equipped.
+func has_biometric_spoof() -> bool:
+	return loadout != null and loadout.has_gadget(&"biometric_spoof")
+
+# --- Loadout resolution ----------------------------------------------------
+
+## Use the Streak's loadout (so gear equipped at the Armory carries into the mission), falling back
+## to a fresh empty Loadout headlessly / before a Streak exists.
+func _resolve_loadout() -> Loadout:
+	var run := Services.run()
+	if run != null and run.has_method("loadout"):
+		return run.loadout()
+	return Loadout.new()
 
 # --- Attributes / settings / helpers ---------------------------------------
 

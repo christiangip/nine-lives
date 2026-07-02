@@ -15,6 +15,8 @@ var running: bool = false
 var is_jammed: bool = false
 var method: StringName = &"drill"
 var progress: float = 0.0
+var _speed_mult: float = 1.0   ## breach-gear upgrade: >1 drills faster (task 09, FR-09-3)
+var _jam_mult: float = 1.0     ## breach-gear upgrade: <1 jams less often (task 09, FR-09-3)
 
 # --- Pure seams (deterministic; unit-tested headless) ----------------------
 ## Does the drill jam this tick? `roll` is a uniform draw in [0,1); `chance` already folds in delta. Pure.
@@ -35,6 +37,13 @@ func interact(_by: Node) -> void:
 	if solved or running:
 		return
 	minigame_requested.emit(&"drill")
+
+## Apply the equipped breach tool's upgrade params (↩ from 06, closes the FR-06-9 "gear/upgrades → 09"
+## note): a faster drill (`speed_mult`) and/or reduced jam chance (`jam_mult`). Identity (1.0) when no
+## gear is equipped, so the base tuning and every existing task-06 test are unchanged.
+func equip_tool(gear_params: Dictionary) -> void:
+	_speed_mult = maxf(0.0, float(gear_params.get("speed_mult", 1.0)))
+	_jam_mult = maxf(0.0, float(gear_params.get("jam_mult", 1.0)))
 
 func begin_breach(p_method: StringName, _by: Node = null) -> void:
 	if solved or def == null or not def.has_solution(p_method):
@@ -60,13 +69,13 @@ func _process(delta: float) -> void:
 		is_jammed = true
 		jammed.emit()
 		return
-	progress = minf(progress + delta, def.time_seconds)
+	progress = minf(progress + delta * _speed_mult, def.time_seconds)
 	breach_progress.emit(fraction(progress, def.time_seconds))
 	if progress >= def.time_seconds and def.time_seconds > 0.0:
 		_finish()
 
 func _jam_chance() -> float:
-	return float(def.params.get("jam_chance_per_sec", 0.0)) if def != null else 0.0
+	return (float(def.params.get("jam_chance_per_sec", 0.0)) if def != null else 0.0) * _jam_mult
 
 func _finish() -> void:
 	running = false

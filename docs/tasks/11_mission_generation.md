@@ -21,6 +21,13 @@
 > civilian the `&"pickpocket"` requester seam (see `↩ From 07` in `05_ai_actors.md`). Then tick the
 > pickpocket line in `07_minigames.md`.
 
+> **↩ From 09 (Loadout/Gear):** the loadout is validated pre-mission (`Loadout.validate()` on the
+> Streak's `RunManager.loadout()`) — call it before entering the mission (FR-09-8). Also **scatter
+> consumables as loot** (FR-09-6 "some found as loot": `emp`/`smoke`/`throwing_coins`/`thermite` ×
+> count) at loot anchors, routing them into `Loadout` on pickup, and give civilians a pickpockable
+> keycard so the `keycard_cloner` gadget has a target. Come back and tick the "found-as-loot /
+> loadout-into-mission" notes in `09_…md`.
+
 ## Overview
 Seeded, hybrid-procedural assembly: hand-authored modular **sections** stitched by
 a rule-based assembler, then **populated** with loot/guards/cameras/objectives —

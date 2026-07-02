@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="LoadoutConfigDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/LoadoutConfigDef.gd" id="1_loadout"]
+
+[resource]
+script = ExtResource("1_loadout")
+id = &"default"
+slot_capacity = {
+0: 3,
+1: 1,
+2: 3,
+3: 2,
+4: 2,
+5: 2
+}
+default_capacity = 1
+suppressor_noise_factor = 0.25
+spread_per_recoil = 1.0
+marksmanship_spread_reduction = 0.5
+armor_regen_delay = 4.0
+armor_regen_per_sec = 20.0
+armor_speed_penalty_per_kg = 0.01

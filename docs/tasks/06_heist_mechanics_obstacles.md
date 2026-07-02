@@ -61,7 +61,8 @@ with defined counter-play. Obstacles pair with minigames (07) but are never
 - [x] Pin-tumbler lock interactable + consumable picks + snap rule. *(`Lock.gd` + `PickPouch`; pure
   `snap_chance()`/`should_snap()`, tested. The pick **overlay** is task 07.)*
 - [x] Keys/keycards data + door gating; keycard cloner gadget hook. *(`KeycardDoor.gd` +
-  `keycard_door.tres`, `required_item` gate + `opens_with()`; cloner + card storage duck-typed → 08/09.)*
+  `keycard_door.tres`, `required_item` gate + `opens_with()`; card storage wired by 08, **cloner
+  gadget wired by 09** (`keycard_cloner.tres` → `PlayerController.can_clone_keycard()`).)*
 
 ### Phase 06.2 — Electronic security (M0 core: one hack target)
 - [x] Hack interactable with proximity-lock + time; camera loop vs disable; e-locks; data-loot download.
@@ -72,7 +73,8 @@ with defined counter-play. Obstacles pair with minigames (07) but are never
 
 ### Phase 06.3 — Detection hardware (M0: laser; M2: rest)
 - [x] Laser grid + junction-box disable + reveal (Thief Vision/aerosol) + EMP. *(`LaserGrid.gd`:
-  `set_powered()` junction/fuse, `reveal()`, `emp()`; aerosol/EMP gadgets → 09, Casing reveal → 08.)*
+  `set_powered()` junction/fuse, `reveal()`, `emp()`; **aerosol/EMP gadgets delivered by 09**
+  (`aerosol.tres`/`emp.tres`; in-world active-throw → 10/11), Casing reveal → 08.)*
 - [x] Motion sensors, pressure plates, biometric/magnetic locks (+ knocked-out-keyholder route).
   *(`MotionSensor`/`PressurePlate`/`BiometricLock` + pure trip/unlock seams; keyholder-drag → 08.)*
 - [x] Silent alarms + Intel reveal. *(`SilentAlarm.gd`: `cross()`→silent alarm, `reveal()` flag; the
@@ -84,13 +86,15 @@ with defined counter-play. Obstacles pair with minigames (07) but are never
 - [x] Light shoot/switch → shadow expansion (feeds 04 light sampling). *(`ControllableLight.gd`:
   switch (silent)/`shoot()` (loud) → `&"shadow"` group; the weapon that shoots it is task 10.)*
 - [x] Drill/thermite/C4 breaching with jam/timer/noise; upgrade params. *(`BreachPoint.gd`: pure
-  `jam_check()`/`fraction()` + noise; C4 instant-loud; gauge overlay → 07, gear/upgrades → 09.)*
+  `jam_check()`/`fraction()` + noise; C4 instant-loud; gauge overlay → 07; **gear/upgrades wired by 09**
+  via `BreachPoint.equip_tool()` ← `drill`/`thermite`/`c4` `GearDef` params, tested in `test_breach_gear.gd`.)*
 
 ### Phase 06.5 — Safes & cases
 - [x] Safe dial obstacle + combo-clue spawning + stethoscope. *(`Safe.gd`: pure `can_skip()` combo
   bypass, tested. Dial + stethoscope **overlay** → 07; physical clue **placement** → 11.)*
 - [x] Display case with all four open methods + per-case risk. *(`DisplayCase.gd`: key/hack/
-  glasscutter(silent)/smash(loud+alarm); glasscutter gadget → 09.)*
+  glasscutter(silent)/smash(loud+alarm); **glasscutter gadget wired by 09** (`glasscutter.tres` →
+  `PlayerController.has_glasscutter()`).)*
 
 ## Tests (GUT)
 - `test_lock_snap.gd` — failure can snap a pick; Lockpicking attribute reduces snap odds.

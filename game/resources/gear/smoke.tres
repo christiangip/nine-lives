@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="GearDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/GearDef.gd" id="1_gear"]
+
+[resource]
+script = ExtResource("1_gear")
+id = &"smoke"
+display_name = "Smoke Grenade"
+slot = 2
+tier = 1
+slot_cost = 1
+consumable = true
+research_cost = 30
+restock_cost = 15
+max_count = 4
+params = {
+"gadget_flag": &"smoke",
+"duration": 10.0
+}

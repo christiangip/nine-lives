@@ -3,6 +3,12 @@
 **Milestone:** M1 · **Depends on:** 02 · **Blocks:** 13, 15
 **Implements:** GDD §15.4–15.5, §16.3–16.4 · **Decisions:** **Q5 strict integrity**.
 
+> **↩ From 09 (Loadout/Gear):** the Streak's equipped loadout is already round-trippable —
+> `RunManager.loadout().to_dict()` / `from_dict()` (tested in `test_loadout_gear.gd`). Fold that dict
+> into the **Streak** section of the save schema (§16 "current Streak") so the equipped set + consumable
+> counts survive save/load, then come back and tick the 09 DoD's second bullet ("round-trips through
+> save") in `09_…md`.
+
 ## Overview
 Ten slots, autosave, and the **strict** roguelite integrity policy that protects
 the stakes: missions are atomic, clean abort only while undetected, and quitting

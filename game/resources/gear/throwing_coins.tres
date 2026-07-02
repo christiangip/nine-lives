@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="GearDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/GearDef.gd" id="1_gear"]
+
+[resource]
+script = ExtResource("1_gear")
+id = &"throwing_coins"
+display_name = "Throwing Coins"
+slot = 2
+tier = 1
+slot_cost = 1
+consumable = true
+research_cost = 0
+restock_cost = 2
+max_count = 20
+params = {
+"gadget_flag": &"throwing_coins",
+"lure_radius": 6.0
+}

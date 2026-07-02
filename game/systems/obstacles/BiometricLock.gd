@@ -16,6 +16,7 @@ func _keyholder_present(by: Node) -> bool:
 	return by != null and by.has_method("is_carrying_keyholder") and by.is_carrying_keyholder(def.required_item)
 
 func _has_spoof(by: Node) -> bool:
+	# Biometric spoof gadget (task 09): the player answers from its equipped Loadout. Still duck-typed.
 	return by != null and by.has_method("has_biometric_spoof") and by.has_biometric_spoof()
 
 func can_interact(by: Node) -> bool:

@@ -9,7 +9,8 @@ class_name DisplayCase
 # minigame_requested is declared on Obstacle (the base) — task 07 mounts the e-lock hack overlay on it.
 
 func _has_glasscutter(by: Node) -> bool:
-	# Glasscutter is task 09; duck-type an optional gadget until then. TODO[09].
+	# Glasscutter gadget (task 09): the player answers has_glasscutter() from its equipped Loadout.
+	# Still duck-typed so this obstacle keeps zero hard dependency on the loadout system.
 	return by != null and by.has_method("has_glasscutter") and by.has_glasscutter()
 
 # --- Open methods ----------------------------------------------------------

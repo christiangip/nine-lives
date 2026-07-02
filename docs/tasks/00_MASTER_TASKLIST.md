@@ -132,8 +132,20 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
   10-slot schema, autosave, `scan_slots()`, load/delete, strict mid-mission policy, migration.
 
 ### Going loud + breadth (M2/M3)
-- [ ] **09 — Loadout, Gear & Gadgets** · `09_loadout_gear_gadgets.md` · *(M2)*
+- [~] **09 — Loadout, Gear & Gadgets** · `09_loadout_gear_gadgets.md` · *(M2)*
   Gear catalog as data, slot rules, consumables/restock, weapons & attachments, armor.
+  *Code + automated DoD **complete & verified green on Godot 4.6.3** (GUT **200/200**, +22 task-09
+  tests). New `game/systems/loadout/`: `Loadout` (per-slot caps from a new `LoadoutConfigDef` /
+  `Content.loadout`, research-gated equip via `ProgressionManager`, consumable `restock()` spending The
+  Take, `validate()` + `to_dict/from_dict`), plus pure-ish `Weapon` (ammo/reload/recoil-spread/mods +
+  the **suppressed-vs-loud noise seam** feeding 04) and `Armor` (plate absorb/regen + weight→agility)
+  models built from `GearDef.params`. 26 `GearDef` `.tres` (no Disguise Kit, Q6). **Closed every
+  `↩ From 06` gadget hook** (glasscutter/cloner/spoof via `PlayerController`; stethoscope/hacking-rig
+  via `MinigameHost`; drill/thermite/C4 upgrades via new `BreachPoint.equip_tool()`) with zero
+  obstacle-consequence changes. EventBus stayed frozen. **Deferred with ↩ From 09 banners:** combat
+  firing/damage-routing that consumes `Weapon`/`Armor` → 10; Armory/Fence/Workshop UI → 13; loadout↔save
+  → 16; found-as-loot + loadout-into-mission → 11; HUD readout → 15. Residual `[~]`: DoD "round-trips
+  through save / feeds 10" (blocked on 16/10).*
 - [ ] **10 — Going Loud, Combat & Pursuit** · `10_going_loud_pursuit.md` · *(M2)*
   Alarm escalation timeline, cover-shooter (FP cover/lean, weapons, armor, ammo), responder/SWAT tiers, downs/capture, Get-Out-of-Jail.
 - [ ] **14 — Economy & Balancing** · `14_economy_balancing.md` · *(M2 wiring · M3 tuning)*
@@ -165,7 +177,7 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
 Foundation        [x01][x02]                        2 / 2
 Core stealth (M0) [x03][~04][~05·G][~06][~07][~08]   1 / 6
 Spine (M1)        [11·b][12][13·m][15·m][16]         0 / 5
-Loud + breadth    [09][10][14]                       0 / 3
+Loud + breadth    [~09][10][14]                      0 / 3
 Presentation      [17][18]                           0 / 2
 Live + release    [19][20][21]                       0 / 3
 Onboarding        [22]                               0 / 1

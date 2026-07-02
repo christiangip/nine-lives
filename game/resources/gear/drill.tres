@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="GearDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/GearDef.gd" id="1_gear"]
+
+[resource]
+script = ExtResource("1_gear")
+id = &"drill"
+display_name = "Breaching Drill"
+slot = 1
+tier = 1
+slot_cost = 1
+consumable = false
+research_cost = 0
+params = {
+"gadget_flag": &"drill",
+"method": &"drill",
+"speed_mult": 1.0,
+"jam_mult": 1.0
+}

@@ -11,6 +11,15 @@ var take: int = 0                   ## per-streak cash currency
 var edges: Array[StringName] = []   ## chosen temporary perks
 var job_board: Array = []           ## available contracts (+ seeds)
 var committed: bool = false         ## true once an alarm is raised (strict saves)
+var _loadout: Loadout               ## the Streak's equipped gear (task 09); lazily created
+
+## The per-Streak equipped Loadout (FR-09-8). The Armory (task 13) mutates it between missions and
+## the save system (task 16) serializes it via loadout.to_dict()/from_dict(); PlayerController reads
+## it for gadget queries. Lazily created so a fresh Streak always has a valid (empty) loadout.
+func loadout() -> Loadout:
+	if _loadout == null:
+		_loadout = Loadout.new()
+	return _loadout
 
 func start_new_streak() -> void:
 	notoriety = 0; streak_level = 1; streak_length = 0

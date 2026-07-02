@@ -102,7 +102,21 @@ func _build_ctx(obstacle: Node, ctx: Dictionary) -> Dictionary:
 		var p := get_node_or_null(player_path)
 		if p != null:
 			full["hacker"] = p
+	# Inject the equipped BREACH tool (method + upgrade params) so the drill overlay uses the loadout's
+	# drill/thermite/C4 rather than the default drill (↩ from 06, closes TODO[09]).
+	if obstacle is BreachPoint and not full.has("method"):
+		var lo := _player_loadout()
+		var tool: GearDef = lo.breach_tool() if lo != null else null
+		if tool != null:
+			full["method"] = tool.param(&"method", &"drill")
+			full["breach_gear"] = tool.params
 	return full
+
+func _player_loadout() -> Loadout:
+	var p := get_node_or_null(player_path)
+	if p != null and p.get("loadout") != null:
+		return p.loadout as Loadout
+	return null
 
 ## TODO[12]: read ProgressionManager for the attribute level. 0 until progression lands.
 func _attribute_level_for(kind: StringName) -> int:
@@ -113,8 +127,13 @@ func _attribute_level_for(kind: StringName) -> int:
 		return int(ProgressionManager.attribute_level(attr))
 	return 0
 
-## TODO[09]: pull gadget flags (stethoscope, hacking rig …) from the player's loadout. Empty until then.
+## Gadget flags (stethoscope, hacking rig, drill upgrades …) from the player's equipped Loadout, so
+## overlays widen cues / ease difficulty for the right gear (closes TODO[09]). Empty if there's no
+## player/loadout (headless). Reads via a duck-typed `loadout` accessor to avoid a hard dependency.
 func _gear_params() -> Dictionary:
+	var p := get_node_or_null(player_path)
+	if p != null and p.get("loadout") != null:
+		return p.loadout.gear_flags()
 	return {}
 
 func _on_solved(kind: StringName) -> void:

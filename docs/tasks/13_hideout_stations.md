@@ -8,6 +8,13 @@
 > `Content.obstacles`, and reveal otherwise-invisible **silent alarms** via `SilentAlarm.reveal()`.
 > Come back and tick DoD-M2 ("consumed by … Intel") in `06_…md`.
 
+> **↩ From 09 (Loadout/Gear):** the `Loadout` brain + gear catalogue (`Content.gear`, 26 `GearDef`)
+> exist; this task builds their **station front-ends**. **Armory:** equip/unequip against `Loadout`
+> (`can_equip`/`equip`/`validate`, per-slot caps from `Content.loadout`) on the Streak's
+> `RunManager.loadout()`. **Workshop:** spend Legacy → append to `ProgressionManager.unlocked_gear`
+> (the research gate `Loadout.can_equip` already enforces). **Fence:** call `Loadout.restock(gear, qty)`
+> (spends The Take). Come back and tick Phase 09.1/09.2's "→ 13" halves in `09_…md`.
+
 ## Overview
 The between-mission hub and the safehouse-grows progression arc. Built as
 **manifest-driven stations** (`StationDef`): each is a scene + a registry entry, so

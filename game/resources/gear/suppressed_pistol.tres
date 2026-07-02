@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="GearDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/GearDef.gd" id="1_gear"]
+
+[resource]
+script = ExtResource("1_gear")
+id = &"suppressed_pistol"
+display_name = "Suppressed Pistol"
+slot = 3
+tier = 1
+slot_cost = 1
+consumable = false
+research_cost = 50
+params = {
+"damage": 25.0,
+"ammo_capacity": 12,
+"suppressed": true,
+"noise_radius": 24.0,
+"spread_base": 1.0,
+"recoil_per_shot": 1.0,
+"fire_interval": 0.2
+}

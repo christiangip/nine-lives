@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="GearDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/GearDef.gd" id="1_gear"]
+
+[resource]
+script = ExtResource("1_gear")
+id = &"soft_soled_gear"
+display_name = "Soft-Soled Gear"
+slot = 5
+tier = 1
+slot_cost = 1
+consumable = false
+research_cost = 30
+params = {
+"gadget_flag": &"soft_soled_gear",
+"silence_bonus": 0.15
+}

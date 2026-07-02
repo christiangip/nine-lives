@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="GearDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/GearDef.gd" id="1_gear"]
+
+[resource]
+script = ExtResource("1_gear")
+id = &"emp"
+display_name = "EMP Charge"
+slot = 2
+tier = 1
+slot_cost = 1
+consumable = true
+research_cost = 40
+restock_cost = 20
+max_count = 4
+params = {
+"gadget_flag": &"emp",
+"duration": 8.0
+}
