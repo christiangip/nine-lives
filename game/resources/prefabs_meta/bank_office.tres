@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="SectionDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/SectionDef.gd" id="1_sec"]
+
+[resource]
+script = ExtResource("1_sec")
+id = &"bank_office"
+display_name = "Office Block"
+kind = 1
+footprint = Vector2i(3, 2)
+socket_count = 3
+security_tier = 1
+anchors = Array[Dictionary]([{
+"type": &"loot",
+"pos": Vector3(1, 0, 1)
+}, {
+"type": &"patrol",
+"pos": Vector3(2, 0, 1)
+}, {
+"type": &"cover",
+"pos": Vector3(0.5, 0, 0.5)
+}, {
+"type": &"drop",
+"pos": Vector3(0.5, 0, 1.5)
+}])

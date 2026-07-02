@@ -88,5 +88,7 @@ cloner/biometric-spoof via `PlayerController` loadout queries, stethoscope/hacki
 `BreachPoint.equip_tool()` (identity when no gear → the 112 task-06 tests are unchanged). **Deferred
 (↩ banners added to the blocking docs):** cover-shooter firing/damage-routing/Downed + the alarm
 timeline consuming these models → **10**; Armory/Fence/Workshop station UI + restock/research screens →
-**13**; loadout↔`SaveManager` serialization → **16**; found-as-loot + loadout-into-mission + active-
-throw gadgets → **11**; armor/ammo HUD readout → **15**.
+**13**; loadout↔`SaveManager` serialization → **16**; ~~found-as-loot + loadout-into-mission~~ **landed
+with task 11** (consumables scatter at loot anchors; `GameManager.enter_mission` calls `Loadout.validate()`
+and the player reads `RunManager.loadout()`); in-mission active-throw gadgets still ride with 11's
+population polish; armor/ammo HUD readout → **15**.

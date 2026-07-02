@@ -45,7 +45,13 @@ func loadout() -> Loadout:
 func start_new_streak() -> void:
 	notoriety = 0; streak_level = 1; streak_length = 0
 	heat = 0.0; take = 0; edges.clear(); committed = false
-	# TODO[11]: MissionGenerator.refresh_board(difficulty_floor=1)
+	refresh_board()
+
+## (Re)fill the Job Map from MissionGenerator, escalating with Streak length + Heat (FR-11-10). Called
+## on a fresh Streak and after each completed contract. The difficulty floor rises with streak_length.
+func refresh_board() -> void:
+	if MissionGenerator != null:
+		job_board = MissionGenerator.refresh_board(1 + streak_length, heat)
 
 func add_notoriety(amount: int) -> void:
 	if amount <= 0:
@@ -69,7 +75,8 @@ func raise_heat(amount: float) -> void:
 		return
 	heat = clampf(heat + amount, 0.0, 1.0)
 	EventBus.heat_changed.emit(heat)
-	# TODO[11]/TODO[12]: high Heat escalates later contracts' security and the Legacy payout multiplier.
+	# High Heat escalates later contracts' security via refresh_board(streak_len, heat) — task 11 (done).
+	# TODO[12]: Heat still owes the Legacy payout multiplier (end_streak conversion).
 
 func end_streak(reason: String) -> int:
 	# Returns Legacy awarded. Conversion: notoriety * heat_multiplier.

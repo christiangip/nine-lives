@@ -16,9 +16,9 @@ func can_interact(by: Node) -> bool:
 	return by != null and by.get("inventory") != null
 
 ## Banks whatever's carried (same arithmetic as DropPoint), then marks the escape objective
-## complete. TODO[11]: MissionController (task 11) is what actually ends the mission/transitions
-## the scene on this signal — task 08 only fires it + banks value, per the ARCHITECTURE.md
-## handoff (MissionGenerator-built levels own mission flow).
+## complete. Task 11's MissionController listens for this objective_updated("escape", true) and
+## ends the mission → GameManager.goto_results (per the ARCHITECTURE.md handoff: MissionGenerator-
+## built levels own mission flow; task 08 only fires the signal + banks value).
 func interact(by: Node) -> void:
 	var inv = by.get("inventory") if by != null else null
 	if inv != null:

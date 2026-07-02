@@ -454,12 +454,18 @@ func _update_throw_input() -> void:
 			EventBus.carry_changed.emit(inventory.current_weight(), inventory.current_volume())
 			_spawn_thrown_body(body)
 
+## Where runtime-spawned bags/bodies get parented. Task 11's MissionController joins the
+## &"mission_root" group; fall back to the scene tree root for greyboxes/tests (closes TODO[11]).
+func _mission_root() -> Node:
+	var root := get_tree().get_first_node_in_group(&"mission_root")
+	return root if root != null else get_tree().root
+
 func _spawn_thrown_bag(bag: Bag) -> void:
 	var thrown := ThrownBag.new()
 	thrown.bag = bag
 	thrown.thrower_inventory = inventory
 	thrown.thrower = self   # excluded from its own collisions — it spawns near our own capsule
-	get_tree().root.add_child(thrown)   # TODO[11]: use a proper mission/level root once 11 owns scene structure
+	_mission_root().add_child(thrown)
 	var dist := Inventory.throw_distance(config.throw_base_distance, attr_effect(&"strength"), config.throw_strength_bonus)
 	var dir := -_camera.global_transform.basis.z
 	var spawn_pos := _camera.global_position + dir * config.throw_spawn_offset
@@ -469,7 +475,7 @@ func _spawn_thrown_body(body: Body) -> void:
 	var thrown := ThrownBody.new()
 	thrown.body = body
 	thrown.thrower = self   # excluded from its own collisions — it spawns near our own capsule
-	get_tree().root.add_child(thrown)   # TODO[11]: use a proper mission/level root once 11 owns scene structure
+	_mission_root().add_child(thrown)
 	var dist := Inventory.throw_distance(config.body_throw_base_distance, attr_effect(&"strength"), config.body_throw_strength_bonus)
 	var dir := -_camera.global_transform.basis.z
 	var spawn_pos := _camera.global_position + dir * config.throw_spawn_offset
@@ -485,7 +491,7 @@ func _update_drop_input() -> void:
 	var body := inventory.put_down_body()
 	if body == null:
 		return
-	get_tree().root.add_child(body)   # TODO[11]: use a proper mission/level root once 11 owns scene structure
+	_mission_root().add_child(body)
 	body.global_position = global_position + (-global_transform.basis.z * 1.0)
 	body.set_concealed(false)
 

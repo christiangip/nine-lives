@@ -54,27 +54,52 @@ always producing a *fair, legible, solvable* stealth space. Reproducible by seed
 
 ## Phases
 ### Phase 11.1 — Prefab contract & a hand level (M1)
-- [ ] Define socket/anchor metadata + `prefabs_meta` resources; author 4–6 sections + the M0 greybox.
-- [ ] Minimal assembler: linear stitch + populate + `validate_layout()`.
+- [x] Define socket/anchor metadata + `prefabs_meta` resources; author 4–6 sections + the M0 greybox.
+      *(New `SectionDef` (footprint/socket_count/anchors) → `Content.sections`; 6 Bank sections in
+      `prefabs_meta/`; `MissionGreybox.tscn`.)*
+- [x] Minimal assembler: linear stitch + populate + `validate_layout()`.
 
 ### Phase 11.2 — Rule-based assembler (M2)
-- [ ] Graph-based layout (branching, alternate entries), overlap avoidance, socket matching.
-- [ ] Designer rule DSL for placement constraints.
+- [x] Graph-based layout (branching, alternate entries), overlap avoidance, socket matching.
+      *(`MissionAssembler`: grid placement is overlap-free by construction; sockets matched-or-capped;
+      one M2 cross-link adds a loop/alternate route.)*
+- [x] Designer rule DSL for placement constraints.
+      *(Declarative data, not a parser: `ArchetypeDef.security_flavor` + `ModifierDef.effects` + anchor
+      types drive the populator — e.g. the Mark-in-high-security-wing rule keys off `security_tier`.)*
 
 ### Phase 11.3 — Population & objectives
-- [ ] Loot/guard/camera/lock scatter within rules; objective + bonus placement; setpiece insertion.
-- [ ] Modifier application + Tier/Heat parameterization.
+- [x] Loot/guard/camera/lock scatter within rules; objective + bonus placement; setpiece insertion.
+- [x] Modifier application + Tier/Heat parameterization.
 
 ### Phase 11.4 — Board & seeds
-- [ ] `refresh_board()` with escalation; seed plumbing; reproducibility.
+- [x] `refresh_board()` with escalation; seed plumbing; reproducibility.
 
-## Tests (GUT)
-- `test_layout_solvable.gd` — for a fixed seed set, entry→objective→escape nav path exists and is stealth-viable (gates CI).
-- `test_no_overlap.gd` — assembled sections never overlap; all sockets matched or capped.
-- `test_seed_reproducible.gd` — same seed → identical layout + population.
-- `test_population_rules.gd` — Mark spawns in a high-security wing; ≥1 alternate entry exists.
-- `test_board_escalation.gd` — higher Streak length/Heat raises the board's difficulty floor.
+## Tests (GUT) — all green (245/245 suite on Godot 4.6.3)
+- [x] `test_layout_solvable.gd` — 24 seeds × 3 archetypes: `validate()` proves entry→objective→escape +
+      reachable Drop Point; a key stranded behind its own door fails (validate isn't a rubber stamp). Gates CI.
+- [x] `test_no_overlap.gd` — assembled sections never share a cell; all sockets matched or capped.
+- [x] `test_seed_reproducible.gd` — same seed → identical `layout.to_dict()`; same (floor,heat) → identical board.
+- [x] `test_population_rules.gd` — Mark in a high-security wing; ≥1 alternate entry; patrols/loot/drops/civilian populate.
+- [x] `test_board_escalation.gd` — higher Streak length/Heat raises the board's difficulty floor.
+- [x] `test_mission_content.gd` (unit canary) — the `.tres` sections/archetypes/objectives/modifiers hydrate.
 
 ## Definition of Done
-- [ ] M1: basic generator + one hand level + solvability test green.
-- [ ] M2: full assembler/population/modifiers/setpieces; the slice archetype generates cleanly across seeds.
+- [x] M1: basic generator + one hand level + solvability test green.
+- [x] M2: full assembler/population/modifiers/setpieces; the slice archetype generates cleanly across seeds.
+
+## Progress (2026-07-02)
+**Code + automated DoD complete & verified green on Godot 4.6.3 (GUT 245/245, +23 task-11 tests).**
+Two-stage design: `generate_layout(contract)` builds a pure `MissionLayout` (assemble → populate) tested
+headlessly; `build(contract)` realizes it into a `MissionController` Node3D tree GameManager swaps in.
+Solvability is graph reachability with a key/clue fix-point (`MissionValidator`) — no NavMesh bake.
+New `game/systems/missiongen/` (Layout/PlacedSection/Assembler/Populator/Validator/Board); new `SectionDef`
++ `Contract` schemas; `Content.sections` (18th registry); Bank fully authored + Museum/Warehouse (shared
+greybox sections pending art, task 18). **Closed the ↩ hooks:** Escape→results + reinforcement spawning
+(10), obstacle solvability consumed (06, FR-06-10), MinigameHost.attach_all (07), found-as-loot +
+loadout-validate-into-mission (09), PlayerController thrown-body `&"mission_root"` parenting.
+**Still deferred (refreshed ↩ notes):** deep 05.3 AI behaviors (dogs/operator/civilian-wander — the
+civilian ships as a pickpockable keycard marker) + 05.5 perf profiling; real art prefabs → 18; daily
+contracts → 20; Job Map UI → 13/15; Heat→payout multiplier → 12.
+**Residual `[~]`:** the in-editor F6 "feel" sign-off on `MissionGreybox.tscn` (loads + builds cleanly
+headlessly — 6 sections / 6 guards / 2 gates / player — but interactive walk-through needs a human),
+mirroring tasks 04–10.

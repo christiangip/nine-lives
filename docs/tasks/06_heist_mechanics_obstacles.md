@@ -111,5 +111,7 @@ with defined counter-play. Obstacles pair with minigames (07) but are never
   in-editor **F6 "feel" sign-off** on `game/scenes/obstacles/ObstacleGreybox.tscn`, mirroring 03/04/05.)*
 - [~] M2: full catalogue data-driven and consumed by the generator + Intel. *(Catalogue is fully
   data-driven — `ObstacleDef`/`Content.obstacles`, 16 archetypes — and every obstacle **publishes**
-  its `difficulty()` + `solution_set()`. **Consumption** by the generator (11) + Intel (13) is
-  deferred with ↩ notes; overlays = 07, consumables/gadgets = 08/09/10.)*
+  its `difficulty()` + `solution_set()`. **Generator consumption landed with task 11** — `MissionValidator`
+  reads `solution_set()`/`difficulty()` for the solvability proof (FR-06-10) and the populator places gates
+  from `Content.obstacles`. Intel reveal (13) is the remaining `[~]` half; overlays = 07 (done),
+  consumables/gadgets = 08/09/10 (done).)*

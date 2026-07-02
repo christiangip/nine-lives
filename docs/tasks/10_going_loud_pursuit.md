@@ -45,7 +45,8 @@ secured loot, not by holding the building. Raises Heat for the rest of the Strea
   *`PursuitDirector` (`game/systems/pursuit/`) runs phases 0→5 off `EventBus.alarm_tripped` + a response
   timer, re-emitting the frozen `pursuit_phase_changed`; pure seams `start_phase`/`next_phase`/
   `spawn_budget_for`/`tier_for`; tunables in a new `PursuitConfigDef` (17th `Content` registry
-  `Content.pursuit`). Reinforcement PLACEMENT + the HUD indicator are deferred (↩ to 11/15).*
+  `Content.pursuit`). Reinforcement PLACEMENT **landed with task 11** (`MissionController` wires
+  `reinforcements_requested` → spawns the named `EnemyDef`s at reinforce anchors); the HUD indicator → 15.*
 - [x] Heat application + ~~future-contract escalation handshake (12/11)~~.
   *`RunManager.raise_heat()` now clamps 0..1 + emits `heat_changed`; an alarm listener sets `committed`
   and raises Heat by the config amount. The Heat→payout-multiplier + future-contract escalation stay
@@ -71,8 +72,8 @@ secured loot, not by holding the building. Raises Heat for the rest of the Strea
 - [x] Loud-escape win path; Catch → `streak_ended` → 12; results screen handoff (15).
   *Escape banking (task 08) is the loud-escape win (secured value safe by construction). On CAUGHT/
   CAPTURED, `PlayerController` calls `RunManager.end_streak()` (12 owns the Legacy conversion) →
-  `GameManager.goto_results()`. The escape-triggers-results scene transition stays task 11's (already
-  bannered in `Escape.gd`).*
+  `GameManager.goto_results()`. The escape-triggers-results scene transition **landed with task 11** —
+  `MissionController` listens for `objective_updated("escape", true)` → `GameManager.goto_results`.*
 
 ## Tests (GUT)
 - `test_pursuit_phases.gd` — alarm advances phases on the timer; silent alarm can jump ahead.

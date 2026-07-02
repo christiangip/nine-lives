@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ModifierDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/ModifierDef.gd" id="1_mod"]
+
+[resource]
+script = ExtResource("1_mod")
+id = &"extra_patrols"
+display_name = "Extra Patrols"
+description = "Additional roaming guards walk the floor."
+difficulty_delta = 1
+reward_multiplier = 1.15
+effects = {
+"patrol_count_mult": 1.5
+}

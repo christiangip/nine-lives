@@ -28,6 +28,7 @@ var obstacles: ContentRegistry
 var minigames: ContentRegistry
 var loadout: ContentRegistry
 var pursuit: ContentRegistry
+var sections: ContentRegistry
 
 var _registries: Dictionary = {}    ## StringName -> ContentRegistry
 
@@ -41,8 +42,7 @@ func _build() -> void:
 	gear = _make(&"gear", GearDef, "gear")
 	edges = _make(&"edges", EdgeDef, "edges")
 	perks = _make(&"perks", PerkDef, "perks")
-	archetypes = _make(&"archetypes", ArchetypeDef, "archetypes",
-		[_DATA_ROOT.path_join("sample_archetype_bank.json")])
+	archetypes = _make(&"archetypes", ArchetypeDef, "archetypes")   # real .tres archetypes (task 11 superseded the task-02 sample JSON)
 	objectives = _make(&"objectives", ObjectiveDef, "objectives")
 	modifiers = _make(&"modifiers", ModifierDef, "modifiers")
 	enemies = _make(&"enemies", EnemyDef, "enemies")
@@ -55,6 +55,7 @@ func _build() -> void:
 	minigames = _make(&"minigames", MinigameConfigDef, "minigames")   # minigame tunables (task 07)
 	loadout = _make(&"loadout", LoadoutConfigDef, "loadout")   # loadout slot/weapon/armor tunables (task 09)
 	pursuit = _make(&"pursuit", PursuitConfigDef, "pursuit")   # going-loud pursuit/combat tunables (task 10)
+	sections = _make(&"sections", SectionDef, "prefabs_meta")   # modular section prefab-contracts (task 11)
 
 func _make(key: StringName, def_script: GDScript, folder: String, json_files: Array = []) -> ContentRegistry:
 	var reg := ContentRegistry.new(def_script, [_RESOURCE_ROOT.path_join(folder)], json_files)

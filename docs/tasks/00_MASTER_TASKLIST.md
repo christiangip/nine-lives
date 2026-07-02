@@ -120,8 +120,18 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
   scene loads cleanly headlessly but couldn't drive interactive input).*
 
 ### Roguelite spine (M1)
-- [ ] **11 — Mission Generation** · `11_mission_generation.md` · *(M1 basic · M2 full)*
+- [~] **11 — Mission Generation** · `11_mission_generation.md` · *(M1 basic · M2 full)*
   Prefab sockets, seeded assembler, solvability validation, population, objectives, modifiers, setpieces.
+  *Code + automated DoD (M1 **and** M2) **complete & verified green on Godot 4.6.3** (GUT **245/245**, +23
+  task-11 tests). Two-stage: `MissionGenerator.generate_layout()` → a pure, seed-reproducible `MissionLayout`
+  (assemble → populate), validated headlessly by `MissionValidator` (graph reachability + key/clue fix-point —
+  the CI solvability gate); `build()` realizes it into a `MissionController` tree GameManager swaps in. New
+  `game/systems/missiongen/`, `SectionDef`+`Contract` schemas, `Content.sections` (18th registry), Bank fully
+  authored + Museum/Warehouse. **Closed the ↩ hooks:** Escape→results + reinforcement spawns (10), obstacle
+  solvability consumed (06 FR-06-10), MinigameHost.attach_all (07), found-as-loot + loadout-validate (09),
+  PlayerController `&"mission_root"` parenting. **Deferred (refreshed ↩):** deep 05.3 AI roster + 05.5 perf;
+  real art→18; daily contracts→20; Job Map UI→13/15. **Residual `[~]`:** F6 "feel" sign-off on
+  `MissionGreybox.tscn` (loads + builds cleanly headlessly), mirroring 04–10.*
 - [ ] **12 — Progression: Streak & Legacy** · `12_progression_streak_legacy.md` · *(M1)*
   Notoriety, Streak Levels, Edges (draw-3), Heat, conversion-on-Catch, permanent Legacy, attributes.
 - [ ] **13 — Hideout & Stations** · `13_hideout_stations.md` · *(M1 min · M3 full)*
@@ -187,7 +197,7 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
 ```
 Foundation        [x01][x02]                        2 / 2
 Core stealth (M0) [x03][~04][~05·G][~06][~07][~08]   1 / 6
-Spine (M1)        [11·b][12][13·m][15·m][16]         0 / 5
+Spine (M1)        [~11][12][13·m][15·m][16]          0 / 5
 Loud + breadth    [~09][~10][14]                     0 / 3
 Presentation      [17][18]                           0 / 2
 Live + release    [19][20][21]                       0 / 3

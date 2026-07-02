@@ -76,7 +76,7 @@ func _on_transition_requested(target: String, payload: Dictionary) -> void:
 		"results":
 			goto_results(payload)
 		"mission":
-			pass # TODO[11]: enter_mission() once a built contract is supplied via payload
+			enter_mission(payload.get("contract"))
 		_:
 			push_warning("GameManager: unknown transition target '%s'" % target)
 
@@ -110,8 +110,38 @@ func continue_game(slot: int) -> void:
 	active_slot = slot
 	# TODO[16]: SaveManager.load_slot(slot) -> goto_hideout()
 
-func enter_mission(_contract: Resource) -> void:
-	pass # TODO[11]: MissionGenerator.build(contract) -> transition_to(MISSION) -> swap
+## Build a contract into a live mission and swap into it (task 11, FR-11-3). Validates the Streak
+## loadout first (FR-09-8) and refuses to enter if the generator can't produce a solvable layout.
+func enter_mission(contract) -> void:
+	var c := contract as Contract
+	if c == null:
+		push_warning("GameManager.enter_mission: no contract supplied")
+		return
+	# FR-09-8: validate the Streak's equipped loadout before entering (the Armory fixes it, task 13).
+	var run := Services.run()
+	if run != null and run.has_method("loadout"):
+		var lo = run.loadout()
+		if lo != null and lo.has_method("validate") and not lo.validate():
+			push_warning("GameManager.enter_mission: Streak loadout is invalid (over capacity / locked gear)")
+	var root := MissionGenerator.build(c)
+	if root == null:
+		push_error("GameManager.enter_mission: mission build failed; staying put")
+		return
+	transition_to(State.MISSION)
+	_swap_to_built_scene(root)
+
+## Swap an already-built Node (a MissionController) in as the current scene, sharing the fade seam.
+func _swap_to_built_scene(root: Node) -> void:
+	_ensure_fade_layer()
+	var tree := get_tree()
+	var tween := create_tween()
+	tween.tween_property(_fade_rect, "color:a", 1.0, FADE_TIME)
+	tween.tween_callback(func() -> void:
+		if tree.current_scene != null:
+			tree.current_scene.queue_free()
+		tree.root.add_child(root)
+		tree.current_scene = root)
+	tween.tween_property(_fade_rect, "color:a", 0.0, FADE_TIME)
 
 func return_to_hideout() -> void:
 	goto_hideout()

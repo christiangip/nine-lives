@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ObjectiveDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/ObjectiveDef.gd" id="1_obj"]
+
+[resource]
+script = ExtResource("1_obj")
+id = &"bonus_no_trace"
+kind = 4
+display_name = "Bonus: Leave No Trace"
+params = {
+"no_alarm": true
+}
+is_bonus = true
+notoriety_reward = 80

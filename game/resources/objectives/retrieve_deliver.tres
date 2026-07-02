@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ObjectiveDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/ObjectiveDef.gd" id="1_obj"]
+
+[resource]
+script = ExtResource("1_obj")
+id = &"retrieve_deliver"
+kind = 3
+display_name = "Retrieve & Deliver"
+params = {
+"deliver_to": "drop"
+}
+is_bonus = false
+notoriety_reward = 150

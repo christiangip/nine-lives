@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ModifierDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/ModifierDef.gd" id="1_mod"]
+
+[resource]
+script = ExtResource("1_mod")
+id = &"tight_security"
+display_name = "Tight Security"
+description = "More cameras, tougher locks, keener guards."
+difficulty_delta = 2
+reward_multiplier = 1.3
+effects = {
+"camera_density_add": 0.3,
+"lock_difficulty_add": 1,
+"guard_skill_mult": 1.15
+}

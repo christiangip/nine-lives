@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ModifierDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/ModifierDef.gd" id="1_mod"]
+
+[resource]
+script = ExtResource("1_mod")
+id = &"silent_alarm_heavy"
+display_name = "Silent-Alarm Heavy"
+description = "Tellers and cases are wired thick with silent alarms."
+difficulty_delta = 2
+reward_multiplier = 1.25
+effects = {
+"silent_alarm_mult": 2.0
+}

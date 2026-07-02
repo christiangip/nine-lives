@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ModifierDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/ModifierDef.gd" id="1_mod"]
+
+[resource]
+script = ExtResource("1_mod")
+id = &"blackout"
+display_name = "Blackout"
+description = "The grid is down: darker halls, but backup power arms extra alarms."
+difficulty_delta = 1
+reward_multiplier = 1.2
+effects = {
+"lights_off": true,
+"silent_alarm_mult": 1.5
+}
