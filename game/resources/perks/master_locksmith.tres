@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="PerkDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/PerkDef.gd" id="1_perk"]
+
+[resource]
+script = ExtResource("1_perk")
+id = &"master_locksmith"
+display_name = "Master Locksmith"
+description = "All lock minigames are easier."
+legacy_cost = 400
+prerequisites = Array[StringName]([])
+modifiers = {
+"lockpick_ease": 0.15
+}

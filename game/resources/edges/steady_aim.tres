@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EdgeDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/EdgeDef.gd" id="1_edge"]
+
+[resource]
+script = ExtResource("1_edge")
+id = &"steady_aim"
+display_name = "Steady Aim"
+description = "20% tighter weapon spread when loud."
+rarity = 1
+tags = Array[StringName]([])
+modifiers = {
+"spread_mult": -0.2
+}

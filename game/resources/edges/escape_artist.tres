@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EdgeDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/EdgeDef.gd" id="1_edge"]
+
+[resource]
+script = ExtResource("1_edge")
+id = &"escape_artist"
+display_name = "Escape Artist"
+description = "Wider Get-Out-of-Jail timing window."
+rarity = 3
+tags = Array[StringName]([])
+modifiers = {
+"jail_tolerance_add": 0.1
+}

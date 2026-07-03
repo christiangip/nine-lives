@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EdgeDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/EdgeDef.gd" id="1_edge"]
+
+[resource]
+script = ExtResource("1_edge")
+id = &"featherweight"
+display_name = "Featherweight"
+description = "Bulky loot no longer slows you down."
+rarity = 1
+tags = Array[StringName]([&"mule"])
+modifiers = {
+"bulky_slowdown_mult": -1.0
+}

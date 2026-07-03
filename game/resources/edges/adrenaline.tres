@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EdgeDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/EdgeDef.gd" id="1_edge"]
+
+[resource]
+script = ExtResource("1_edge")
+id = &"adrenaline"
+display_name = "Adrenaline"
+description = "A 3s sprint burst on the first time you are spotted each mission."
+rarity = 1
+tags = Array[StringName]([])
+modifiers = {
+"first_spot_sprint_seconds": 3.0
+}

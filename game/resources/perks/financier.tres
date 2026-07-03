@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="PerkDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/PerkDef.gd" id="1_perk"]
+
+[resource]
+script = ExtResource("1_perk")
+id = &"financier"
+display_name = "Financier"
+description = "+10% Legacy from every Catch conversion."
+legacy_cost = 450
+prerequisites = Array[StringName]([])
+modifiers = {
+"legacy_conversion_mult": 0.1
+}

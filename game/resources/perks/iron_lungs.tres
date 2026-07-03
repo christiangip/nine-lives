@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="PerkDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/PerkDef.gd" id="1_perk"]
+
+[resource]
+script = ExtResource("1_perk")
+id = &"iron_lungs"
+display_name = "Iron Lungs"
+description = "Permanently +15% Stamina."
+legacy_cost = 200
+prerequisites = Array[StringName]([])
+modifiers = {
+"stamina_mult": 0.15
+}

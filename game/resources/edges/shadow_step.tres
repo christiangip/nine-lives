@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EdgeDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/EdgeDef.gd" id="1_edge"]
+
+[resource]
+script = ExtResource("1_edge")
+id = &"shadow_step"
+display_name = "Shadow Step"
+description = "Move 20% faster while crouched."
+rarity = 2
+tags = Array[StringName]([&"ghost"])
+modifiers = {
+"crouch_speed_mult": 0.2
+}

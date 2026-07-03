@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EdgeDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/EdgeDef.gd" id="1_edge"]
+
+[resource]
+script = ExtResource("1_edge")
+id = &"lightfoot"
+display_name = "Lightfoot"
+description = "Footstep noise radius reduced 20%."
+rarity = 0
+tags = Array[StringName]([&"ghost"])
+modifiers = {
+"footstep_noise_mult": -0.2
+}

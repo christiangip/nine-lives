@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EdgeDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/EdgeDef.gd" id="1_edge"]
+
+[resource]
+script = ExtResource("1_edge")
+id = &"fence_connections"
+display_name = "Fence Connections"
+description = "+10% Notoriety from secured loot."
+rarity = 1
+tags = Array[StringName]([&"mule"])
+modifiers = {
+"notoriety_mult": 0.1
+}

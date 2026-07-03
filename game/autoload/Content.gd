@@ -29,6 +29,7 @@ var minigames: ContentRegistry
 var loadout: ContentRegistry
 var pursuit: ContentRegistry
 var sections: ContentRegistry
+var progression: ContentRegistry
 
 var _registries: Dictionary = {}    ## StringName -> ContentRegistry
 
@@ -56,6 +57,7 @@ func _build() -> void:
 	loadout = _make(&"loadout", LoadoutConfigDef, "loadout")   # loadout slot/weapon/armor tunables (task 09)
 	pursuit = _make(&"pursuit", PursuitConfigDef, "pursuit")   # going-loud pursuit/combat tunables (task 10)
 	sections = _make(&"sections", SectionDef, "prefabs_meta")   # modular section prefab-contracts (task 11)
+	progression = _make(&"progression", ProgressionConfigDef, "progression")   # streak/legacy tunables (task 12)
 
 func _make(key: StringName, def_script: GDScript, folder: String, json_files: Array = []) -> ContentRegistry:
 	var reg := ContentRegistry.new(def_script, [_RESOURCE_ROOT.path_join(folder)], json_files)

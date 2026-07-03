@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="PerkDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/PerkDef.gd" id="1_perk"]
+
+[resource]
+script = ExtResource("1_perk")
+id = &"nimble"
+display_name = "Nimble"
+description = "Permanently +8% move speed."
+legacy_cost = 200
+prerequisites = Array[StringName]([])
+modifiers = {
+"move_speed_mult": 0.08
+}

@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ProgressionConfigDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/ProgressionConfigDef.gd" id="1_prog"]
+
+[resource]
+script = ExtResource("1_prog")
+id = &"default"
+streak_level_thresholds = Array[int]([1000, 2500, 4500, 7000, 10000, 13500, 17500, 22000, 27000])
+edge_choices_per_level = 3
+edge_rarity_weights = Array[float]([1.0, 0.5, 0.2, 0.05])
+objective_notoriety = 1000
+bonus_stealth = 0.5
+bonus_no_alarm = 0.3
+bonus_no_kill = 0.3
+bonus_speed = 0.25
+bonus_full_clear = 0.5
+heat_multiplier_base = 1.0
+heat_multiplier_slope = 1.0
+legacy_floor = 150
+default_par_seconds = 300.0

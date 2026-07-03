@@ -40,6 +40,7 @@ var _reinforce_points: Array = []        ## world Vector3s
 var _reinforce_cursor: int = 0
 var _realized := false
 var _finished := false
+var _start_msec: int = 0                 ## Time.get_ticks_msec() at mission start (feeds the speed bonus)
 
 ## Called by MissionGenerator.build() before this node enters the tree.
 func setup(p_layout: MissionLayout, p_contract: Contract) -> void:
@@ -48,6 +49,7 @@ func setup(p_layout: MissionLayout, p_contract: Contract) -> void:
 
 func _ready() -> void:
 	add_to_group(&"mission_root")
+	_start_msec = Time.get_ticks_msec()
 	if not EventBus.objective_updated.is_connected(_on_objective_updated):
 		EventBus.objective_updated.connect(_on_objective_updated)
 	if not EventBus.loot_secured.is_connected(_on_loot_secured):
@@ -295,12 +297,34 @@ func _finish(outcome: String) -> void:
 	if _finished:
 		return
 	_finished = true
+	# Performance flags for the Notoriety multiplier stack (task 12, FR-12-1): time vs par, whether
+	# any lethal takedown happened, and whether the bonus objective was cleared. RunManager derives
+	# no_alarm / stealth from its own per-mission tracking.
 	var summary := {"outcome": outcome, "secured_value": secured_value,
-		"objective_id": String(contract.objective_id) if contract != null else ""}
+		"objective_id": String(contract.objective_id) if contract != null else "",
+		"elapsed_seconds": float(Time.get_ticks_msec() - _start_msec) / 1000.0,
+		"no_kill": _lethal_body_count() == 0,
+		"full_clear": _bonus_objective_cleared()}
 	EventBus.mission_completed.emit(summary)
 	var gm := Services.game()
 	if gm != null and gm.has_method("goto_results"):
 		gm.goto_results(summary)
+
+## Number of lethal Bodies left in the world (guards killed rather than choked out) — 0 earns the
+## no-kill bonus. Reads the frozen &"body" group + Body.lethal (no new signal needed).
+func _lethal_body_count() -> int:
+	var count := 0
+	for b in get_tree().get_nodes_in_group(&"body"):
+		if b is Body and b.lethal:
+			count += 1
+	return count
+
+## The optional bonus objective (if the contract has one) was completed — the "full clear". With no
+## bonus objective there is nothing extra to miss, so it counts as a full clear.
+func _bonus_objective_cleared() -> bool:
+	if contract == null or contract.bonus_objective_id == &"":
+		return true
+	return bool(objectives_done.get(String(contract.bonus_objective_id), false))
 
 # --- Small build helpers ---------------------------------------------------
 func _add_marker_body(parent: Node3D, size: Vector3, color: Color) -> void:
