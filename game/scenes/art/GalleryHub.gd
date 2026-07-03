@@ -8,6 +8,7 @@ extends Control
 const GALLERIES := [
 	{"title": "★ Bank Test (walkthrough)", "count": 12, "path": "res://game/scenes/art/bank_test.tscn"},
 	{"title": "★ Prefabs — Bank set", "count": 12, "path": "res://game/scenes/art/gallery_prefabs.tscn"},
+	{"title": "★ Characters", "count": 8, "path": "res://game/scenes/art/gallery_characters.tscn"},
 	{"title": "Modular Buildings", "count": 108, "path": "res://game/scenes/art/gallery_modular_buildings.tscn"},
 	{"title": "City Commercial", "count": 41, "path": "res://game/scenes/art/gallery_city_commercial.tscn"},
 	{"title": "Factory", "count": 143, "path": "res://game/scenes/art/gallery_factory.tscn"},

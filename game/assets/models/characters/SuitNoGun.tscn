@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3]
+
+; Suit character with the pistol hidden (stealth/civilian variant). Inherits the
+; Suit.gltf rig + all animations; only the Pistol mesh is toggled off.
+
+[ext_resource type="PackedScene" uid="uid://r0bkg778t8xd" path="res://game/assets/models/characters/Suit.gltf" id="1_suit"]
+
+[node name="SuitNoGun" instance=ExtResource("1_suit")]
+
+[node name="Pistol" parent="CharacterArmature/Skeleton3D" index="0"]
+visible = false

@@ -24,6 +24,8 @@ extends Node3D
 	set(value):
 		if value and Engine.is_editor_hint():
 			_build()
+## Play each model's idle animation at run time (for rigged models e.g. characters).
+@export var play_animations: bool = false
 ## Show a human-scale reference capsule beside every row so sizing is legible.
 @export var show_scale_ref: bool = true
 ## Reference height (m). Matches the player's standing collider (default_player.tres).
@@ -66,6 +68,8 @@ func _build() -> void:
 		add_child(holder)
 		if Engine.is_editor_hint():
 			holder.owner = get_tree().edited_scene_root
+		elif play_animations:
+			_play_idle(holder)
 		var aabb := _aabb_of(holder)
 		var inst := holder.get_child(0) if holder.get_child_count() > 0 else null
 		if inst is Node3D:
@@ -146,6 +150,26 @@ func _aabb_of(root: Node3D) -> AABB:
 		else:
 			acc = acc.merge(world)
 	return acc
+
+## Loops the model's idle animation (falls back to its first clip) if it is rigged.
+func _play_idle(root: Node) -> void:
+	for ap in root.find_children("*", "AnimationPlayer", true, false):
+		var player := ap as AnimationPlayer
+		var pick := ""
+		for candidate in ["Idle", "Idle_Neutral"]:
+			if player.has_animation(candidate):
+				pick = candidate
+				break
+		if pick == "":
+			var list := player.get_animation_list()
+			if list.size() > 0:
+				pick = list[0]
+		if pick != "":
+			var anim := player.get_animation(pick)
+			if anim != null:
+				anim.loop_mode = Animation.LOOP_LINEAR
+			player.play(pick)
+		return
 
 func _add_label(holder: Node3D, text: String, y: float) -> void:
 	var label := Label3D.new()

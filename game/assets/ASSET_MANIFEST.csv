@@ -12,3 +12,5 @@ game/assets/models/environment/scifi_megakit/,model,Quaternius Modular SciFi Meg
 game/assets/models/props/furniture_kenney/,model,Kenney Furniture Kit,https://kenney.nl/assets/furniture-kit,CC0,Kenney,office/interior furniture,false,140 glb self-contained
 game/assets/models/props/furniture_quaternius/,model,Quaternius LowPoly Furniture,https://quaternius.com,CC0,Quaternius,interior furniture (alt set),false,20 obj+mtl vertex-colored
 game/assets/models/props/server_rack/,model,Poly Pizza,https://poly.pizza,CC-BY,Jeremy Eyring,server room prop,false,server rack by Jeremy Eyring [CC-BY] via Poly Pizza - attribution required (CREDITS.md)
+# --- Characters (2026-07-03): Quaternius Ultimate Modular Men (glTF Individual) ---
+game/assets/models/characters/,model,Quaternius Ultimate Modular Men,https://quaternius.com,CC0,Quaternius,actors: civilian/guard/inspector/swat outfits,false,8 rigged+animated glTF (Casual/Casual2/Farmer/King/Punk/Suit/Swat/Worker) - native ~1.85m so no rescale - specialist units skipped (stealth focus)
