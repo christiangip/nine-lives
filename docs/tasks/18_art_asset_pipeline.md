@@ -23,8 +23,12 @@ import standards, master materials, and the manifest/credits/ART-TODO discipline
 - [ ] A small import script/checklist enforcing manifest rows (tools/scripts).
 
 ### Phase 18.2 — Sourcing pass
-- [ ] Curate CC0 packs (Kenney/Quaternius/etc.) for characters, props, environment, UI, audio-adjacent.
-- [ ] Fill the launch archetype's prop/character needs; log placeholders.
+- [~] Curate CC0 packs (Kenney/Quaternius/etc.) for characters, props, environment, UI, audio-adjacent.
+      *Curation catalog authored: `../ASSET_CATALOG.md` — maps every real content id → a specific CC0 source, grouped by domain, with import order.*
+- [~] Fill the launch archetype's prop/character needs; log placeholders.
+      *Phase-1 environment import landed (`../../phase-1-art.md`): 8 CC0 kits (720 models) under
+      `game/assets/models/{environment,props}/`, each with an auto-generated browse gallery in
+      `game/scenes/art/gallery_*.tscn`; manifest/credits/ART-TODO updated. Characters/weapons/UI/audio pending.*
 
 ### Phase 18.3 — Vertical-slice dressing (M2)
 - [ ] Light + material pass on the slice archetype; readability check against Pillar 1.

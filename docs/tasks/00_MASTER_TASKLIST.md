@@ -227,6 +227,41 @@ content keeps flowing through lists 19–20 thereafter.
 
 ---
 
+## Asset coverage by task (art status)
+
+Evaluation of tasks **00–12** against real art assets. **Phase-1 art import
+(2026-07-03, `../../phase-1-art.md`)** brought in 8 CC0/CC-BY model kits (720
+models) under `game/assets/models/{environment,props}/` with browse galleries in
+`game/scenes/art/`. Everything built so far renders as **greybox primitives** in
+code; the column below is what real art is *available to wire*, not yet wired.
+
+Legend: ✅ covered by imported assets · ◐ stand-ins available, dedicated art pending ·
+⬜ no art yet (later phase) · — no art needed.
+
+| Task | Art it needs | Coverage from phase-1 import |
+|---|---|---|
+| 00 Master list | — | — |
+| 01 Project Setup | — | — |
+| 02 Core Architecture | — | — |
+| 03 Player Controller (FP) | player body + FP hands | ⬜ pending — Phase 2 (characters) |
+| 04 Stealth & Detection | none (cone debug is procedural) | — |
+| 05 AI Actors | guard/responder/SWAT/specialist/inspector/civilian + `Body` | ⬜ pending — Phase 2 (characters + Mixamo rig) |
+| 06 Obstacles | 17 props (lock, doors, camera, safe, laser, sensors, fuse box, cases, biometrics, breach) | ◐ stand-ins: `server_rack`→`data_server`, `modular_buildings` doors→keycard/keypad leaf, `scifi_megakit` heavy door→vault/breach, `survival/chest`+`factory` box→safe. Dedicated camera/laser/sensors/case/alarm ⬜ Phase 3 |
+| 07 Minigames | 2D overlay UI (lockpick arc, dial, node grid, keypad, gauge) | ⬜ pending — Phase 4 (UI kit) |
+| 08 Loot & Inventory | loot props (cash, gold, painting, jewelry, data) + duffel bag | ⬜ pending — Phase 3 (loot props) |
+| 09 Loadout, Gear & Gadgets | weapons + gadget/tool world models | ⬜ pending — Phase 3 (weapons/gadgets) |
+| 10 Going Loud, Combat & Pursuit | weapon viewmodels + responder/SWAT models | ⬜ pending — Phase 2/3 |
+| 11 Mission Generation | modular sections + interior/exterior dressing (6 Bank sections, vault setpiece) | ✅ **covered**: `modular_buildings` (walls/doors/windows/floors/steps), `city_commercial` (exterior shells), `factory`+`survival` (loading dock/crates/barrels), `scifi_megakit` (vault/server dressing), `furniture_kenney`+`furniture_quaternius` (office/lobby/teller). Wiring = the `scene`-field seam (phase-1-art step 3) |
+| 12 Progression: Streak & Legacy | icons for 20 Edges / 8 Perks / 14 attributes + Hideout UI | ⬜ pending — Phase 4 (icons/UI) |
+
+**Bottom line:** the phase-1 import fully serves **task 11** (sections/environment,
+ready to wire) and gives **task 06** a few obstacle stand-ins; tasks 03/05 (characters),
+08 (loot), 09/10 (weapons), and 07/12 (UI/icons) await later art phases. Nothing here
+is *wired into gameplay* yet — that is the `SectionDef`/`ObstacleDef` `scene`-field
+swap tracked in `phase-1-art.md` and task 18.
+
+---
+
 ## Milestone playtest checklists (manual sign-off)
 
 **M0 — Prototype.** In one greybox level: infiltrate; read a guard's cone and slip past it in shadow; pick one lock; hack one panel; take one guard down non-lethally and hide the body; bag loose loot; hit the carry cap and feel the prioritization; ferry a load to a Drop Point and confirm the value **banks** (persists in the HUD readout); make a second trip; extract. Spot-check: getting fully spotted commits the level to alert. *Fun gut-check: was "one more room?" tempting?*

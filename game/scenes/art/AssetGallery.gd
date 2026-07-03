@@ -19,7 +19,8 @@ extends Node3D
 		if value and Engine.is_editor_hint():
 			_build()
 
-const MODEL_EXTS := [".glb", ".gltf", ".obj"]
+# Raw meshes (browse galleries) or built prop prefabs (the prefab gallery / shelf).
+const MODEL_EXTS := [".glb", ".gltf", ".obj", ".tscn"]
 const FLY_CAMERA := preload("res://game/scenes/art/GalleryFlyCamera.gd")
 
 func _ready() -> void:
