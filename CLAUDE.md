@@ -54,6 +54,7 @@ Canonical design lives in `docs/GDD.md`; build against `docs/ARCHITECTURE.md`.
   No two managers hold hard references to each other's mutable state.
 - **Scene swaps go through `GameManager`** — never ad-hoc `change_scene` in gameplay code.
 - **Add signals in `EventBus.gd` only**, document them, keep that file logic-free.
+- **Add UI control text in greyboxes**, When making greybox playtest sandboxes, make sure the UI is complete
 - **Content registries** (`Content` autoload + `systems/core/ContentRegistry.gd`) scan a folder
   of `*Def` resources at boot and index by `id` (lowercase_snake). New content file → appears
   automatically, no code edit.
