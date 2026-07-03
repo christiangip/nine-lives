@@ -1,0 +1,10 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://game/prefabs/props/PropPrefab.gd" id="1"]
+[ext_resource type="Mesh" uid="uid://chodxm6yal4wo" path="res://game/assets/models/props/server_rack/ServerV2+console.obj" id="2"]
+
+[node name="server_rack" type="StaticBody3D"]
+script = ExtResource("1")
+
+[node name="Model" type="MeshInstance3D" parent="."]
+mesh = ExtResource("2")

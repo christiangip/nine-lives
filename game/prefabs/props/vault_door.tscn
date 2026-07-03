@@ -1,0 +1,9 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://game/prefabs/props/PropPrefab.gd" id="1"]
+[ext_resource type="PackedScene" uid="uid://c4vnkjpm4i6hs" path="res://game/assets/models/environment/scifi_megakit/Door_DarkMetal.gltf" id="2"]
+
+[node name="vault_door" type="StaticBody3D"]
+script = ExtResource("1")
+
+[node name="Model" parent="." instance=ExtResource("2")]

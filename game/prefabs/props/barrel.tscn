@@ -1,0 +1,9 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://game/prefabs/props/PropPrefab.gd" id="1"]
+[ext_resource type="PackedScene" uid="uid://ci3cm4v870lan" path="res://game/assets/models/environment/survival/barrel.glb" id="2"]
+
+[node name="barrel" type="StaticBody3D"]
+script = ExtResource("1")
+
+[node name="Model" parent="." instance=ExtResource("2")]
