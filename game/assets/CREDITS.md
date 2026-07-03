@@ -5,7 +5,14 @@ and is shipped with the game per its license obligations. CC0 assets are listed
 in `ASSET_MANIFEST.csv` but do not require attribution here.
 
 ## Models
-- _none yet_
+**CC-BY — attribution required:**
+- server rack by Jeremy Eyring [CC-BY] via Poly Pizza
+
+CC0 — attribution not required, credited voluntarily (Kenney's license asks for it):
+- **Kenney** (kenney.nl) — Modular Buildings, City Kit Commercial, Factory Kit,
+  Survival Kit, Furniture Kit. CC0.
+- **Quaternius** (quaternius.com) — Modular SciFi MegaKit (Standard), LowPoly
+  Furniture. CC0.
 
 ## Audio (SFX / Music)
 - _none yet_

@@ -3,3 +3,12 @@ asset_path,type,source_name,source_url,license,author,used_in,placeholder,notes
 # Example rows:
 # game/assets/models/characters/guard_a.glb,model,Kenney,https://kenney.nl/assets,CC0,Kenney,actors/Guard,false,
 # game/assets/audio/sfx/alarm.ogg,audio,Freesound,https://freesound.org/s/000000,CC-BY,user,pursuit,false,attribution required
+# --- Phase 1 art import (2026-07-03): environment/prop model kits ---
+game/assets/models/environment/modular_buildings/,model,Kenney Modular Buildings,https://kenney.nl/assets/modular-buildings,CC0,Kenney,walls/windows/doors/corners/steps,false,108 glb + shared Textures/colormap.png
+game/assets/models/environment/city_commercial/,model,Kenney City Kit Commercial,https://kenney.nl/assets/city-kit-commercial,CC0,Kenney,exterior building shells,false,41 glb + colormap
+game/assets/models/environment/factory/,model,Kenney Factory Kit,https://kenney.nl/assets/factory-kit,CC0,Kenney,industrial: catwalks/crates/machinery/loading dock,false,143 glb + colormap
+game/assets/models/environment/survival/,model,Kenney Survival Kit,https://kenney.nl/assets/survival-kit,CC0,Kenney,crates/barrels/floors/fences/metal panels,false,80 glb + colormap
+game/assets/models/environment/scifi_megakit/,model,Quaternius Modular SciFi MegaKit (Standard),https://quaternius.com,CC0,Quaternius,high-security/server/vault dressing (off-style stand-in),true,186 gltf+bin + shared textures; see ART-TODO
+game/assets/models/props/furniture_kenney/,model,Kenney Furniture Kit,https://kenney.nl/assets/furniture-kit,CC0,Kenney,office/interior furniture,false,140 glb self-contained
+game/assets/models/props/furniture_quaternius/,model,Quaternius LowPoly Furniture,https://quaternius.com,CC0,Quaternius,interior furniture (alt set),false,20 obj+mtl vertex-colored
+game/assets/models/props/server_rack/,model,Poly Pizza,https://poly.pizza,CC-BY,Jeremy Eyring,server room prop,false,server rack by Jeremy Eyring [CC-BY] via Poly Pizza - attribution required (CREDITS.md)

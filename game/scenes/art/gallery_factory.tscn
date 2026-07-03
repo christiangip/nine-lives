@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/scenes/art/AssetGallery.gd" id="1_gallery"]
+
+[node name="Gallery_factory" type="Node3D"]
+script = ExtResource("1_gallery")
+models_dir = "res://game/assets/models/environment/factory"
+columns = 10
+spacing = 3.0
