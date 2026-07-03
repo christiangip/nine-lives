@@ -46,7 +46,9 @@ func _fit_collider() -> void:
 	if Engine.is_editor_hint():
 		col.owner = get_tree().edited_scene_root
 
-## Merged local-space AABB (metres) of every MeshInstance3D under this prefab.
+## Merged AABB (metres) of every MeshInstance3D under this prefab, in this node's
+## local space. Uses the local-transform chain (not global_transform) so it is
+## correct even before the scene tree has propagated transforms (e.g. at _ready).
 func _model_aabb() -> AABB:
 	var acc := AABB()
 	var seeded := false
@@ -54,11 +56,20 @@ func _model_aabb() -> AABB:
 		var m := mi as MeshInstance3D
 		if m.mesh == null:
 			continue
-		var rel: Transform3D = global_transform.affine_inverse() * m.global_transform
-		var world: AABB = rel * m.mesh.get_aabb()
+		var world: AABB = _relative_to_self(m) * m.mesh.get_aabb()
 		if not seeded:
 			acc = world
 			seeded = true
 		else:
 			acc = acc.merge(world)
 	return acc
+
+## Transform of `node` relative to this prefab, from local transforms up the chain.
+func _relative_to_self(node: Node3D) -> Transform3D:
+	var t := Transform3D.IDENTITY
+	var cur: Node = node
+	while cur != null and cur != self:
+		if cur is Node3D:
+			t = (cur as Node3D).transform * t
+		cur = cur.get_parent()
+	return t
