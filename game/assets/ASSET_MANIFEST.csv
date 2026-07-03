@@ -14,3 +14,22 @@ game/assets/models/props/furniture_quaternius/,model,Quaternius LowPoly Furnitur
 game/assets/models/props/server_rack/,model,Poly Pizza,https://poly.pizza,CC-BY,Jeremy Eyring,server room prop,false,server rack by Jeremy Eyring [CC-BY] via Poly Pizza - attribution required (CREDITS.md)
 # --- Characters (2026-07-03): Quaternius Ultimate Modular Men (glTF Individual) ---
 game/assets/models/characters/,model,Quaternius Ultimate Modular Men,https://quaternius.com,CC0,Quaternius,actors: civilian/guard/inspector/swat outfits,false,8 rigged+animated glTF (Casual/Casual2/Farmer/King/Punk/Suit/Swat/Worker) - native ~1.85m so no rescale - specialist units skipped (stealth focus)
+# --- Heist props (2026-07-03): loot/security/decor. Per-model rescaled. CC-BY -> CREDITS.md ---
+game/assets/models/props/heist/atm.glb,model,Poly Pizza,https://poly.pizza,CC-BY,J-Toastie,ATM (loot/objective),false,attribution in CREDITS.md
+game/assets/models/props/heist/cash_stack.glb,model,Poly Pizza,https://poly.pizza,CC-BY,J-Toastie,cash_bundle,false,attribution in CREDITS.md
+game/assets/models/props/heist/security_camera.glb,model,Poly Pizza,https://poly.pizza,CC-BY,J-Toastie,camera_ptz,false,attribution in CREDITS.md
+game/assets/models/props/heist/security_keypad.glb,model,Poly Pizza,https://poly.pizza,CC-BY,Bruno Oliveira,keycard/keypad door,false,attribution in CREDITS.md
+game/assets/models/props/heist/biometric_scanner.glb,model,Poly Pizza,https://poly.pizza,CC-BY,Wesley Thompson,biometric_lock,false,attribution in CREDITS.md
+game/assets/models/props/heist/fuse_box.obj,model,Poly Pizza,https://poly.pizza,CC-BY,zeoxo,fuse_box,false,attribution in CREDITS.md; obj+mtl
+game/assets/models/props/heist/display_case.glb,model,Poly Pizza,https://poly.pizza,CC-BY,CMHT Oculus,display_case,false,attribution in CREDITS.md
+game/assets/models/props/heist/gunny_sack.glb,model,Poly Pizza,https://poly.pizza,CC-BY,Oliver Herklotz,loot bag,false,attribution in CREDITS.md
+game/assets/models/props/heist/diamond.glb,model,Poly Pizza,https://poly.pizza,CC-BY,smoj,jewelry/gem loot,false,attribution in CREDITS.md
+game/assets/models/props/heist/painting.glb,model,Poly Pizza,https://poly.pizza,CC-BY,Jonathan Granskog,masterpiece_painting,false,attribution in CREDITS.md
+game/assets/models/props/heist/wall_art_01.glb,model,Poly Pizza,https://poly.pizza,CC-BY,Jarlan Perez,wall decor,false,attribution in CREDITS.md
+game/assets/models/props/heist/wall_art_04.glb,model,Poly Pizza,https://poly.pizza,CC-BY,Jarlan Perez,wall decor,false,attribution in CREDITS.md
+game/assets/models/props/heist/wall_art_06.glb,model,Poly Pizza,https://poly.pizza,CC-BY,Jarlan Perez,wall decor,false,attribution in CREDITS.md
+game/assets/models/props/heist/wall_painting_01.glb,model,Poly Pizza,https://poly.pizza,CC-BY,jeremy,wall decor,false,attribution in CREDITS.md
+game/assets/models/props/heist/wall_painting_02.glb,model,Poly Pizza,https://poly.pizza,CC-BY,jeremy,wall decor,false,attribution in CREDITS.md
+game/assets/models/props/heist/padlock.glb,model,Quaternius,https://quaternius.com,CC0,Quaternius,lock_basic,false,CC0
+game/assets/models/props/heist/safe.glb,model,Poly Pizza,https://poly.pizza,CC-BY?,CreativeTrio,safe_basic,false,credited in CREDITS.md; license marker not given - verify
+game/assets/models/props/heist/gold_bars.glb,model,Poly Pizza,https://poly.pizza,CC-BY?,hat_my_guy,gold_bar loot,false,credited in CREDITS.md; license marker not given - verify
