@@ -4,9 +4,9 @@
 
 [resource]
 script = ExtResource("1_attr")
-id = &"pickpocketing"
-display_name = "Pickpocketing"
-description = "Widens the pickpocket timing window; steal keys/keycards off NPCs with less risk."
+id = &"perception"
+display_name = "Perception"
+description = "Casing/Thief-Vision range and duration; reveals traps and silent alarms."
 max_level = 10
 cost_curve = Array[int]([100, 150, 225, 325, 450, 600, 775, 975, 1200, 1450])
-effect_per_level = 0.02
+effect_per_level = 0.08

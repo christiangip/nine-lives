@@ -15,6 +15,15 @@
 > (the research gate `Loadout.can_equip` already enforces). **Fence:** call `Loadout.restock(gear, qty)`
 > (spends The Take). Come back and tick Phase 09.1/09.2's "→ 13" halves in `09_…md`.
 
+> **↩ From 12 (Progression):** the Legacy-spend *logic* is built + tested — this task builds the station
+> **front-ends** over it. **Training:** `ProgressionManager.train_attribute(attr_id)` (spends the
+> `AttributeDef.cost_curve`, raises the level; preview cost via `ProgressionManager.attribute_cost(def, lvl)`)
+> over the 14 `Content.attributes`. **Legacy Board:** `ProgressionManager.buy_perk(perk_id)` /
+> `can_buy_perk` (prereq + cost gated) over the 8 `Content.perks`. Edges are drawn **in-mission** on
+> `EventBus.streak_level_up(level, choices)` → `RunManager.choose_edge(id)` (an in-run overlay, task 15 —
+> not a Hideout station). Wiring these station buttons is what makes the **M1 "felt" loop** (the deferred
+> DoD bullet in `12_…md`) real — come back and tick it when signing off M1.
+
 ## Overview
 The between-mission hub and the safehouse-grows progression arc. Built as
 **manifest-driven stations** (`StationDef`): each is a scene + a registry entry, so

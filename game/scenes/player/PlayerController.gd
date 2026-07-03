@@ -602,7 +602,7 @@ func _on_health_state_changed(new_state: int) -> void:
 	if new_state == Health.State.CAUGHT or new_state == Health.State.CAPTURED:
 		var run := Services.run()
 		if run != null and run.has_method("end_streak"):
-			run.end_streak("caught")   # returns Legacy; the conversion formula is task 12's (TODO[12])
+			run.end_streak("caught")   # banks Notoriety × Heat-mult → Legacy + resets the Streak (task 12)
 		var gm := Services.game()
 		if gm != null and gm.has_method("goto_results"):
 			gm.goto_results({"outcome": "caught"})

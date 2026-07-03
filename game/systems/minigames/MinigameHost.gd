@@ -118,7 +118,8 @@ func _player_loadout() -> Loadout:
 		return p.loadout as Loadout
 	return null
 
-## TODO[12]: read ProgressionManager for the attribute level. 0 until progression lands.
+## The trained level of the attribute a minigame kind scales off (Lockpicking/Hacking/…), read from
+## ProgressionManager (task 12). 0 headlessly or for an unmapped kind.
 func _attribute_level_for(kind: StringName) -> int:
 	var attr: StringName = _KIND_ATTR.get(kind, &"")
 	if String(attr).is_empty():

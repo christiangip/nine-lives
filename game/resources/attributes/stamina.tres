@@ -8,4 +8,5 @@ id = &"stamina"
 display_name = "Stamina"
 description = "Sprint duration, climbing, dragging bodies."
 max_level = 10
+cost_curve = Array[int]([100, 150, 225, 325, 450, 600, 775, 975, 1200, 1450])
 effect_per_level = 0.06

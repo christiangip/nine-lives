@@ -133,8 +133,22 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
   real art→18; daily contracts→20; Job Map UI→13/15. **F6 "feel" playtest signed off 2026-07-02**
   (`MissionGreybox.tscn`; that pass added guard cones/colours + a dev loadout/HUD and wired the unused
   `takedown` action). DoD met → `[x]`.*
-- [ ] **12 — Progression: Streak & Legacy** · `12_progression_streak_legacy.md` · *(M1)*
+- [x] **12 — Progression: Streak & Legacy** · `12_progression_streak_legacy.md` · *(M1)*
   Notoriety, Streak Levels, Edges (draw-3), Heat, conversion-on-Catch, permanent Legacy, attributes.
+  *Code + automated DoD **complete & verified green on Godot 4.6.3** (headless GUT **270/270**, +25
+  task-12 tests). New `ProgressionConfigDef` (**19th registry** `Content.progression`) holds every
+  curve. `RunManager` gained the Streak engine as pure static seams (`level_for_notoriety`/
+  `stack_multiplier`/`draw_edges`/`heat_multiplier_for`/`convert_to_legacy`): `add_notoriety` applies
+  held-Edge multipliers + draws-3 on level-up (`streak_level_up`), a `mission_completed` listener banks
+  objective NP × performance multiplier, and `end_streak` converts Notoriety × Heat-mult → Legacy
+  (floored) → `add_legacy` → `streak_ended` → reset (FR-12-1..4/9). `ProgressionManager` gained
+  Training (`train_attribute` over the `AttributeDef` cost curve + `attribute_effect`) and Legacy Perks
+  (`buy_perk`/`can_buy_perk`, prereq-gated). Content: **20 Edges**, **8 Perks**, cost curves on all **14**
+  attributes. EventBus stayed frozen. **Closed the `↩ From 10/06/07/08` TODO[12] hooks** (Heat→payout,
+  attribute injection into minigames, Lock snap-easing). **Deferred with ↩ notes:** Take-% + Notoriety
+  economy tuning → 14; Edge/Perk *effect* wiring into every consuming system → per-system polish.
+  **Residual `[~]`:** the M1 "felt" loop needs the Hideout **spend** UI (13) + menu/save (15/16) — that's
+  the M1 milestone gate, not task 12 alone.*
 - [ ] **13 — Hideout & Stations** · `13_hideout_stations.md` · *(M1 min · M3 full)*
   Manifest-driven station system; Job Map, Training, Workshop (min); Armory, Legacy Board, Planning Table, Stash, Fence (full).
 - [ ] **15 — UI/UX, HUD & Menus** · `15_ui_hud_menus.md` · *(M1 menus/HUD · M2 full Options)*
@@ -199,12 +213,12 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
 ```
 Foundation        [x01][x02]                        2 / 2
 Core stealth (M0) [x03][~04][~05·G][~06][~07][~08]   1 / 6
-Spine (M1)        [x11][12][13·m][15·m][16]          1 / 5
+Spine (M1)        [x11][x12][13·m][15·m][16]         2 / 5
 Loud + breadth    [~09][x10][14]                     1 / 3
 Presentation      [17][18]                           0 / 2
 Live + release    [19][20][21]                       0 / 3
 Onboarding        [22]                               0 / 1
-                                          TOTAL  4 / 22 lists
+                                          TOTAL  5 / 22 lists
 Milestones        [ ] M0  [ ] M1  [ ] M2  [ ] M3  [ ] M4  [ ] M5
 ```
 

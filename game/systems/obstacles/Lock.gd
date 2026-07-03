@@ -29,7 +29,7 @@ func set_pouch(p: PickPouch) -> void:
 ## Resolve one lockpick attempt. `success` is the minigame outcome (task 07 produces it; here it is an
 ## input so the consequence is deterministically testable). A failure may snap a pick. `roll` overrides
 ## the RNG for tests (leave as NAN to draw randf()). `lockpicking_level` comes from ProgressionManager
-## (task 12); 0 until then. TODO[12].
+## (task 12): apply_minigame_result feeds it in live; tests pass it explicitly.
 func resolve_attempt(success: bool, roll: float = NAN, lockpicking_level: float = 0.0, reduction_per_level: float = 0.0) -> void:
 	if solved:
 		return
@@ -51,8 +51,17 @@ func interact(_by: Node) -> void:
 		return
 	minigame_requested.emit(&"lockpick")
 
-## Host callback: a solved overlay opens the lock; a failed one may snap a pick. Attribute-scaled snap
-## odds arrive once ProgressionManager lands (TODO[12]); resolve_attempt defaults them to 0 for now.
+## Host callback: a solved overlay opens the lock; a failed one may snap a pick. A trained Lockpicking
+## attribute (task 12) lowers the snap chance — level from ProgressionManager, per-level reduction from
+## the AttributeDef so there are no magic numbers. Headless (no autoloads) → 0, i.e. the base chance.
 func apply_minigame_result(kind: StringName, success: bool) -> void:
 	if kind == &"lockpick":
-		resolve_attempt(success)
+		var level := 0.0
+		var per_level := 0.0
+		if ProgressionManager != null:
+			level = float(ProgressionManager.attribute_level(&"lockpicking"))
+		if Content != null and Content.attributes != null:
+			var adef := Content.attributes.get_def(&"lockpicking") as AttributeDef
+			if adef != null:
+				per_level = adef.effect_per_level
+		resolve_attempt(success, NAN, level, per_level)

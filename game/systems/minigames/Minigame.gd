@@ -19,7 +19,7 @@ signal aborted
 
 @export var difficulty: int = 1
 var config: MinigameConfigDef
-var attribute_level: int = 0        ## the relevant attribute's level (Lockpicking / Hacking / …). TODO[12]
+var attribute_level: int = 0        ## the relevant attribute's level (Lockpicking / Hacking / …); fed by ProgressionManager (task 12)
 var gear_params: Dictionary = {}    ## gadget bonuses (stethoscope, hacking rig, …); fed by task 09 loadout
 
 var _finished: bool = false         ## latches on the first outcome so each signal fires once
@@ -35,7 +35,7 @@ func _resolve_config() -> void:
 		config = MinigameConfigDef.new()   # headless / no-registry fallback: schema defaults
 
 ## Inject the run context before begin(): the obstacle's difficulty tier, the player's relevant
-## attribute level (TODO[12] ProgressionManager), and any gear bonuses (task 09 loadout).
+## attribute level (from ProgressionManager, task 12), and any gear bonuses (task 09 loadout).
 func configure(p_difficulty: int, p_attribute_level: int = 0, p_gear: Dictionary = {}) -> void:
 	difficulty = maxi(1, p_difficulty)
 	attribute_level = maxi(0, p_attribute_level)

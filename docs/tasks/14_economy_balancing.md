@@ -1,5 +1,13 @@
 # 14 — Economy & Balancing
 
+> **↩ From 12 (Progression):** task 12 shipped the currency *plumbing* but left the tuning/externalization
+> to you. Two concrete seams: (1) `RunManager.add_take()` is a 1:1 passthrough marked `TODO[14]` — make
+> it FR-14-2's *%-of-secured-cash*. (2) The Notoriety performance multipliers already live as data on
+> `ProgressionConfigDef` (`Content.progression`, exported fractions `bonus_stealth`/`bonus_no_alarm`/
+> `bonus_no_kill`/`bonus_speed`/`bonus_full_clear`) + the Heat→payout `heat_multiplier_*` slope + the
+> `legacy_floor` + attribute `cost_curve`s + Perk `legacy_cost`s — FR-14-4 wants these in hot-editable
+> `data/*.json` and FR-14-3/5 wants them *tuned*. Come back and tick FR-14-2/3/4 here.
+
 **Milestone:** M2 (wiring) · M3 (tuning) · **Depends on:** 08, 12, 13 · **Blocks:** —
 **Implements:** GDD §12 · **Decisions:** Q4 (keep three currencies).
 

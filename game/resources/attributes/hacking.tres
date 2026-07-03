@@ -8,5 +8,5 @@ id = &"hacking"
 display_name = "Hacking"
 description = "Adds fault tolerance to hacks and safe-cracks, easing the minigames and widening cues."
 max_level = 10
-cost_curve = Array[int]([])
+cost_curve = Array[int]([100, 150, 225, 325, 450, 600, 775, 975, 1200, 1450])
 effect_per_level = 0.05
