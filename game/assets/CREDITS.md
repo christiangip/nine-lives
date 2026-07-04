@@ -33,13 +33,22 @@ CC0 — attribution not required, credited voluntarily (Kenney's license asks fo
 - **Kenney** (kenney.nl) — Modular Buildings, City Kit Commercial, Factory Kit,
   Survival Kit, Furniture Kit. CC0.
 - **Quaternius** (quaternius.com) — Modular SciFi MegaKit (Standard), LowPoly
-  Furniture, Ultimate Modular Men (characters), Padlock. CC0.
+  Furniture, Ultimate Modular Men (characters), LowPoly Guns (weapons), Padlock. CC0.
 
 ## Audio (SFX / Music)
-- _none yet_
+CC0 — attribution not required, credited voluntarily:
+- **Kenney** (kenney.nl) — Interface Sounds, Impact Sounds. CC0.
+- _music: none yet_
+
+## UI / Icons
+CC0 — attribution not required, credited voluntarily:
+- **Kenney** (kenney.nl) — Game Icons, Game Icons Expansion, UI Pack, UI Pack: RPG
+  Expansion. CC0.
 
 ## Fonts
-- _none yet_
+CC0:
+- **Kenney** — Kenney Future, Kenney Future Narrow. CC0.
+- _body/primary font (Google Fonts — Barlow/Inter): none yet_
 
 ## Generators / Tools
 - _none yet_

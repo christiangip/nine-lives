@@ -67,12 +67,12 @@ One prop per obstacle def — these replace the tinted greybox boxes directly.
 | `keycard_door` / `keypad_door` | card reader + keypad panel | **Kenney — furniture/tech** · Poly Pizza "keypad" | CC0 |
 | `elock_basic`, `biometric_lock`, `biometric_spoof` | wall panel + scanner | Poly Pizza "keypad/scanner" | CC0 |
 | `camera_ptz` | CCTV dome/PTZ camera | **Poly Pizza** "security camera" | CC0 |
-| `laser_grid` | emitter posts (beams = shader) | Kenney sci-fi prop + emissive shader | CC0 |
-| `motion_sensor`, `pressure_plate` | ceiling/floor sensor | Poly Pizza "motion sensor" | CC0 |
+| `laser_grid` | emitter posts (beams = shader) | Kenney sci-fi prop + emissive shader | CC0 | not found
+| `motion_sensor`, `pressure_plate` | ceiling/floor sensor | Poly Pizza "motion sensor" | CC0 | not found
 | `fuse_box`, `junction_box`, `light_switchable` | electrical panel | Poly Pizza "fuse box / breaker" | CC0 |
 | `safe_basic` | floor safe | **Poly Pizza** "safe" | CC0 |
 | `display_case` | glass case | Kenney furniture + transparent mat | CC0 |
-| `silent_alarm` | wall alarm/strobe | Poly Pizza "alarm" | CC0 |
+| `silent_alarm` | wall alarm/strobe | Poly Pizza "alarm" | CC0 | not found
 | `breach_vault` (drill target) | reinforced vault door | Poly Pizza "vault door" | CC0 |
 
 ---
@@ -85,34 +85,37 @@ One prop per obstacle def — these replace the tinted greybox boxes directly.
 | `gold_bar` | gold bar | Poly Pizza "gold bar" | CC0 |
 | `masterpiece_painting` | framed painting | Poly Pizza "painting/frame" | CC0 |
 | `jewelry_case` | jewelry / gems | **Kenney — Generic Items** · Poly Pizza "diamond" | CC0 |
-| `stolen_data` | hard drive / documents | Poly Pizza "hard drive" | CC0 |
+| `stolen_data` | hard drive / documents | Poly Pizza "hard drive" | CC0 | not found
 | Loot bag / thrown bag / dropped bag | duffel bag | **Poly Pizza** "duffel bag" | CC0 |
 
 ---
 
 ## 5. Gear, gadgets & weapons (feeds task 09)
 
-### Tools & gadgets (26 GearDefs)
-Most are held/HUD items — many only need a **UI icon** (see §7), not a full 3D model.
-World models needed for the ones the player deploys:
+**Scope (2026-07-03): stealth-first.** This is Payday-2's *stealth* half only. Loud is
+an **escape/failure** state, not a playstyle — so loud-combat kit is **cut**:
+- ❌ Removed: `drill`, `thermite`, `c4` (loud breaching), `emp`, `smoke`, `body_bag`,
+  `armor_plates`. (These `GearDef`/obstacle hooks still exist in task-09/10 code — see
+  ART-TODO for the recommended data cleanup.)
 
+### Tools & gadgets — mostly **UI icon only** (see §7), no 3D model
 | Gear ID | Needs | Source | License |
 |---|---|---|---|
-| `drill`, `thermite`, `c4` | deployable world models | Poly Pizza "power drill / charge" · Kenney tools | CC0 |
-| `emp`, `smoke`, `noisemaker`, `throwing_coins`, `aerosol` | small throwables | Kenney — Generic Items | CC0 |
-| `lockpick_set`, `lockpick_gun`, `hacking_rig`, `stethoscope`, `glasscutter`, `keycard_cloner`, `casing_visor`, `body_bag`, `get_out_of_jail`, `soft_soled_gear` | **icon only** for now | Kenney — Game Icons (see §7) | CC0 |
-| `armor_plates` | body-armor viewmodel | Quaternius character armor variant | CC0 |
+| `lockpick_set`, `lockpick_gun`, `hacking_rig`, `stethoscope`, `glasscutter`, `keycard_cloner`, `casing_visor`, `get_out_of_jail`, `soft_soled_gear`, `noisemaker`, `throwing_coins`, `aerosol` | **icon only** | Kenney — Game Icons (see §7) | CC0 |
 
-### Weapons (low-poly modern firearms)
-| Weapon ID | Source | License |
-|---|---|---|
-| `suppressed_pistol`, `dart_gun` | **Quaternius — Guns pack** (pistol) | CC0 |
-| `smg`, `rifle`, `shotgun` | **Quaternius — Guns pack** · OpenGameArt "low poly modern weapons" (CC0 filter) | CC0 |
-| `suppressor` (attachment) | modeled as pistol variant or small mesh | CC0 |
+### Weapons (low-poly, grounded)
+Minimal by design — this is not a gunfight game.
 
-> Note: Kenney's gun assets are sci-fi "Blaster Kit"; for grounded modern firearms
-> prefer **Quaternius Guns** or an OGA CC0 modern-weapons pack. Log as ART-TODO if
-> the only on-hand option is stylized.
+| Weapon ID | Model | Source | License |
+|---|---|---|---|
+| `suppressed_pistol` (player **and** enemies) | pistol + silencer | **Quaternius — Guns pack** | CC0 |
+| `dart_gun` — **2 variants** | pistol (distinct tint) | **Quaternius — Guns pack** | CC0 |
+| &nbsp;&nbsp;• `dart_sedative` | non-lethal: target leaves post for a few min (walks to a restroom nav point) — behaviour, not art | — | — |
+| &nbsp;&nbsp;• `dart_knockout` | non-lethal: target drops (concealable body) | — | — |
+
+> NPC long-guns (smg/rifle/shotgun) are **deferred** — enemies use the suppressed
+> pistol for now; may revisit NPC weapon variety later. The Quaternius Guns pack (CC0)
+> already ships them if needed. Grounded low-poly, not sci-fi.
 
 ---
 

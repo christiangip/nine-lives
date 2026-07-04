@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://bqwy5sp881nkd"
+path="res://.godot/imported/Silencer_2.obj-a4dfcc4a6fe311e21aa924fd4f5bd33c.mesh"
+
+[deps]
+
+files=["res://.godot/imported/Silencer_2.obj-a4dfcc4a6fe311e21aa924fd4f5bd33c.mesh"]
+
+source_file="res://game/assets/models/weapons/Silencer_2.obj"
+dest_files=["res://.godot/imported/Silencer_2.obj-a4dfcc4a6fe311e21aa924fd4f5bd33c.mesh", "res://.godot/imported/Silencer_2.obj-a4dfcc4a6fe311e21aa924fd4f5bd33c.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(0.12, 0.12, 0.12)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false

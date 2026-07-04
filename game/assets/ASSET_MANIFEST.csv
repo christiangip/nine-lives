@@ -33,3 +33,15 @@ game/assets/models/props/heist/wall_painting_02.glb,model,Poly Pizza,https://pol
 game/assets/models/props/heist/padlock.glb,model,Quaternius,https://quaternius.com,CC0,Quaternius,lock_basic,false,CC0
 game/assets/models/props/heist/safe.glb,model,Poly Pizza,https://poly.pizza,CC-BY?,CreativeTrio,safe_basic,false,credited in CREDITS.md; license marker not given - verify
 game/assets/models/props/heist/gold_bars.glb,model,Poly Pizza,https://poly.pizza,CC-BY?,hat_my_guy,gold_bar loot,false,credited in CREDITS.md; license marker not given - verify
+# --- Audio (2026-07-03): Kenney SFX libraries (CC0), staged for task 17 ---
+game/assets/audio/sfx/interface/,audio,Kenney Interface Sounds,https://kenney.nl/assets/interface-sounds,CC0,Kenney,UI clicks/confirm/back/toggle,false,100 ogg
+game/assets/audio/sfx/impact/,audio,Kenney Impact Sounds,https://kenney.nl/assets/impact-sounds,CC0,Kenney,footsteps(carpet/concrete/wood/grass/snow)+impacts+punches,false,130 ogg/wav
+# --- Weapons (2026-07-03): Quaternius Guns pack (CC0), rescaled x0.12 to real size ---
+game/assets/models/weapons/,model,Quaternius LowPoly Guns,https://quaternius.com,CC0,Quaternius,suppressed_pistol + dart_gun (pistols + silencers); NPC long-guns deferred,false,11 obj (Pistol_1-6 + Silencer_1/2/3/long/short) vertex-colored
+# --- UI/icons/fonts (2026-07-03): Kenney (CC0), staged for task 15 ---
+game/assets/ui/icons/,ui,Kenney Game Icons,https://kenney.nl/assets/game-icons,CC0,Kenney,HUD/gear/loot/edge/perk/attribute icons (white tintable),false,105 png 2x
+game/assets/ui/icons_expansion/,ui,Kenney Game Icons Expansion,https://kenney.nl/assets/game-icons-expansion,CC0,Kenney,extra icons,false,white spritesheet+xml (~790 icons)
+game/assets/ui/kit/,ui,Kenney UI Pack,https://kenney.nl/assets/ui-pack,CC0,Kenney,panels/buttons/frames/sliders,false,82 png grey+extra
+game/assets/ui/kit_rpg/,ui,Kenney UI Pack RPG Expansion,https://kenney.nl/assets/ui-pack-rpg-expansion,CC0,Kenney,RPG-style UI widgets,false,89 png
+game/assets/fonts/KenneyFuture.ttf,font,Kenney Future,https://kenney.nl/assets/kenney-fonts,CC0,Kenney,display/heading font,false,
+game/assets/fonts/KenneyFutureNarrow.ttf,font,Kenney Future Narrow,https://kenney.nl/assets/kenney-fonts,CC0,Kenney,display/heading font,false,
