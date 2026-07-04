@@ -197,7 +197,7 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
   HUD → 15; Heat→payout-multiplier + Legacy-conversion formula → 12. **F6 "feel" playtest signed off
   2026-07-02** (going-loud/combat/pursuit verified inside `MissionGreybox.tscn` — L=go-loud, LMB fire,
   reinforcements spawn, damage→Downed→Caught). DoD met → `[x]`.*
-- [~] **14 — Economy & Balancing** · `14_economy_balancing.md` · *(M2 wiring · M3 tuning)*
+- [x] **14 — Economy & Balancing** · `14_economy_balancing.md` · *(M2 wiring · M3 tuning)*
   Three currencies wired, Notoriety multipliers, Take spend (consumables/intel), tuning data tables, balance passes.
   *Code + automated DoD **complete & verified green on Godot 4.6.3** (headless GUT **311/311**, +15 task-14 tests).
   New **`EconomyConfigDef`** (20th `Content` registry `Content.economy`) is the central balance table, authored
@@ -211,7 +211,7 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
   → **2.55× ratio**; Intel re-priced to the new Take reality. Also wired the `financier` Perk's
   `legacy_conversion_mult`. Greybox **`EconomyGreybox.tscn`** (FP sandbox, real heist/furniture models, live
   currency header + `[B]` balance readout). EventBus stayed frozen. **Deferred (↩):** Take/Heat HUD → 15;
-  economy↔save → 16; balance presets → 20. **Residual `[~]`:** F6 "feel" sign-off on `EconomyGreybox.tscn`.*
+  economy↔save → 16; balance presets → 20. **F6 "feel" playtest signed off 2026-07-04 → Task 14 complete (`[x]`).***
 
 ### Presentation & content (M2/M3)
 - [ ] **17 — Audio** · `17_audio.md` · *(M2)*
@@ -239,11 +239,11 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
 Foundation        [x01][x02]                        2 / 2
 Core stealth (M0) [x03][~04][~05·G][~06][~07][~08]   1 / 6
 Spine (M1)        [x11][x12][x13][15·m][16]          3 / 5
-Loud + breadth    [~09][x10][~14]                    1 / 3
+Loud + breadth    [~09][x10][x14]                    2 / 3
 Presentation      [17][18]                           0 / 2
 Live + release    [19][20][21]                       0 / 3
 Onboarding        [22]                               0 / 1
-                                          TOTAL  6 / 22 lists
+                                          TOTAL  7 / 22 lists
 Milestones        [ ] M0  [ ] M1  [ ] M2  [ ] M3  [ ] M4  [ ] M5
 ```
 

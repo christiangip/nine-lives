@@ -65,8 +65,8 @@ Legacy/run **~35.3k**, Take/run **~7.8k**, min payout **150** (the floor); loud 
 Legacy/run **~13.8k** → **clean/loud Legacy ratio 2.55×**. Every Catch affords the cheapest Training buy
 (100 ≤ floor 150).
 
-**Residual (`[~]`):** the F6 "feel" sign-off on `game/scenes/economy/EconomyGreybox.tscn` (secure loot →
-watch the Notoriety-full / Take-fraction split; spend Take at Fence/Planning + Legacy at Training; `[H]`
-Heat, `[C]` complete, `[K]` get Caught → convert; `[B]` balance report). Mark milestone gates after it,
-mirroring tasks 03–13. **Deferred (↩):** in-mission Take/Heat HUD → 15; economy ↔ SaveManager → 16;
-daily/seeded balance presets → 20.
+**F6 "feel" playtest signed off 2026-07-04** on `game/scenes/economy/EconomyGreybox.tscn` (secure loot →
+the Notoriety-full / Take-fraction split reads live; spend Take at Fence/Planning + Legacy at Training;
+`[H]` Heat, `[C]` complete, `[K]` get Caught → convert; `[B]` balance report) — **Task 14 complete
+(`[x]`).** **Deferred (↩):** in-mission Take/Heat HUD → 15; economy ↔ SaveManager → 16; daily/seeded
+balance presets → 20. (M2/M3 milestone *gates* still need their other spanned tasks.)

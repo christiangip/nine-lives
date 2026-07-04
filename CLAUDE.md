@@ -472,5 +472,6 @@ consequence logic tested behind a hook and added `↩ From 06` banners to `07`�
   dev keys drive the flow (`[H]` silent alarm → Heat↑, `[C]` complete clean contract, `[K]` get Caught →
   convert, `[B]` balancing-harness readout with an ASCII Streak-length histogram). **Deferred (↩):**
   in-mission Take/Heat HUD → **15**; economy↔`SaveManager` → **16**; daily/seeded balance presets → **20**.
-  **Residual (`[~]`):** the F6 "feel" sign-off on `EconomyGreybox.tscn` (headless instantiation is smoke-tested
-  by `test_economy_scenes.gd`) — mark `[x]` after a human playtest pass, mirroring tasks 03–13.
+  **F6 "feel" playtest signed off 2026-07-04** (headless instantiation of `EconomyGreybox.tscn` is also
+  smoke-tested by `test_economy_scenes.gd`) — **Task 14 complete (`[x]`).** The **M2/M3 milestone gates**
+  still need their other spanned tasks before they're met.
