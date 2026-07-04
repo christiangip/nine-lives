@@ -12,6 +12,7 @@ var heat: float = 0.0               ## 0..1; rises on alarms/going loud
 var take: int = 0                   ## per-streak cash currency
 var edges: Array[StringName] = []   ## chosen temporary perks (Edge ids), applied while held
 var job_board: Array = []           ## available contracts (+ seeds)
+var intel_by_seed: Dictionary = {}  ## mission_seed(int) -> Array[String reveal keys] bought at the Planning Table (task 13)
 var committed: bool = false         ## true once an alarm is raised (strict saves)
 var _loadout: Loadout               ## the Streak's equipped gear (task 09); lazily created
 
@@ -103,6 +104,7 @@ func loadout() -> Loadout:
 func start_new_streak() -> void:
 	notoriety = 0; streak_level = 1; streak_length = 0
 	heat = 0.0; take = 0; edges.clear(); committed = false
+	intel_by_seed.clear()
 	_reset_mission_tracking()
 	refresh_board()
 
@@ -111,6 +113,58 @@ func start_new_streak() -> void:
 func refresh_board() -> void:
 	if MissionGenerator != null:
 		job_board = MissionGenerator.refresh_board(1 + streak_length, heat)
+
+# --- Planning Table: Intel (FR-13-3/8, closes ↩ From 06 reveal half) --------
+## Buy an Intel packet for a specific board contract, spending its Take (and/or Legacy) cost, and
+## record what it reveals against the contract's seed. Refuses if already revealed or unaffordable.
+## Job-Map/briefing UI then queries has_intel()/revealed_modifiers() to surface the otherwise-hidden
+## modifiers, loot manifest, and silent-alarm locations (SilentAlarm.reveal() in-mission, task 06).
+func buy_intel(contract: Contract, intel: IntelDef) -> bool:
+	if contract == null or intel == null:
+		return false
+	# Nothing new to reveal → no charge.
+	var already := true
+	for r in intel.reveals:
+		if not has_intel(contract, String(r)):
+			already = false
+			break
+	if already:
+		return false
+	if take < intel.take_cost:
+		return false
+	if ProgressionManager != null and ProgressionManager.legacy < intel.legacy_cost:
+		return false
+	take -= intel.take_cost
+	if ProgressionManager != null and intel.legacy_cost > 0:
+		ProgressionManager.spend_legacy(intel.legacy_cost)
+	var reveals: Array = []
+	for r in intel.reveals:
+		reveals.append(String(r))
+	reveal_intel(contract, reveals)
+	return true
+
+## Mark reveal keys ("modifiers","manifest","silent_alarms") as bought for a contract's seed.
+func reveal_intel(contract: Contract, reveals: Array) -> void:
+	if contract == null:
+		return
+	var have: Array = intel_by_seed.get(contract.mission_seed, [])
+	for r in reveals:
+		if String(r) not in have:
+			have.append(String(r))
+	intel_by_seed[contract.mission_seed] = have
+
+## Has `reveal` been bought for this contract? (Hidden-until-bought gate for the Job Map.)
+func has_intel(contract: Contract, reveal: String) -> bool:
+	if contract == null:
+		return false
+	return reveal in intel_by_seed.get(contract.mission_seed, [])
+
+## The contract's modifier ids IF Intel has revealed them, else empty — the Job Map hides modifiers
+## behind Intel (FR-13-3). Callers show "??? (buy Intel)" for the empty case.
+func revealed_modifiers(contract: Contract) -> Array:
+	if contract != null and has_intel(contract, "modifiers"):
+		return contract.modifier_ids.duplicate()
+	return []
 
 # --- Notoriety accrual + Streak Levels (FR-12-1, FR-12-2) ------------------
 ## Bank Notoriety. Held Edges with a "notoriety_mult" modifier scale the gain (e.g. Fence

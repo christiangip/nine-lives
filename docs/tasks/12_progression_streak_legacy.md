@@ -48,9 +48,10 @@ Notoriety → Legacy so the player always progresses. Runs through `RunManager` 
 - [x] FR-12-1..9 satisfied; phases checked; tests green.
 - [~] M1 manual: a full Streak→Catch→spend→stronger-next-run loop is felt. *(The
   Streak→Catch→conversion→board-escalation half is playable + F6-verifiable in
-  `MissionGreybox.tscn` today; the **spend** half needs the Hideout stations (task 13) +
-  menu/save flow (15/16). This is the **M1 milestone gate**, met once 13/15/16 land — not
-  task 12 alone. Come back and tick it when signing off M1.)*
+  `MissionGreybox.tscn` today; the **spend** half now exists — the Hideout stations landed in
+  **task 13** (Training/Workshop/Armory/Legacy Board drive `train_attribute`/`research_gear`/
+  `Loadout.equip`/`buy_perk`). Still needs the menu/save flow (15/16) to close the loop end to
+  end. This is the **M1 milestone gate**, met once 15/16 land — not task 12 alone.)*
 
 ## Progress notes
 - **Complete (code + automated DoD, verified green on Godot 4.6.3 — headless GUT 270/270,

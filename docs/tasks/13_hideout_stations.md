@@ -44,24 +44,48 @@ new stations ship with **zero core edits** — the central expandability promise
 
 ## Phases
 ### Phase 13.1 — Station framework + min stations (M1)
-- [ ] Manifest loader + station mount/unmount + unlock gating + locked-state UI.
-- [ ] Job Map (board + briefing + Intel reveal), Training, Workshop (minimum viable).
+- [x] Manifest loader (`HideoutManifest`) + station mount/unmount (panel overlay from `StationDef.scene_path`) + unlock gating + locked-state UI.
+- [x] Job Map (board + briefing + Intel reveal), Training, Workshop (minimum viable).
 
 ### Phase 13.2 — Loadout & economy stations (M2)
-- [ ] Armory (slot management), Planning Table (Intel), Fence (restock/convert).
+- [x] Armory (slot management), Planning Table (Intel), Fence (restock/convert).
 
 ### Phase 13.3 — Identity & trophies (M3)
-- [ ] Legacy Board (perks), The Stash (trophies + set bonuses), visible safehouse growth.
+- [x] Legacy Board (perks), The Stash (trophies + set bonuses), visible safehouse growth (locked props → green on unlock in the 3D demo).
 
 ### Phase 13.4 — Polish
-- [ ] Navigation between stations; gamepad support; first-time hints (22).
+- [x] Navigation between stations (hub grid ↔ panel overlays, Back / `ui_cancel`); keyboard/gamepad focus. First-time hints deferred → **22** (`TODO[22]`).
 
 ## Tests (GUT)
-- `test_station_manifest.gd` — adding a `StationDef` makes a station appear with **no code change** (mirror of FR-02-5).
-- `test_station_unlock.gd` — a locked station unlocks on paying Legacy / delivering the named special loot.
-- `test_jobmap_intel.gd` — buying Intel reveals the contract's hidden modifiers/manifest.
-- `test_training_spend.gd` — Training spends Legacy and raises the attribute.
+- [x] `test_station_manifest.gd` — adding a `StationDef` makes a station appear with **no code change** (mirror of FR-02-5).
+- [x] `test_station_unlock.gd` — a locked station unlocks on paying Legacy / delivering the named special loot.
+- [x] `test_jobmap_intel.gd` — buying Intel reveals the contract's hidden modifiers/manifest.
+- [x] `test_training_spend.gd` — Training spends Legacy and raises the attribute.
+- [x] `test_workshop_research.gd`, `test_fence_convert.gd`, `test_stash_set_bonus.gd` — extra station seams.
+- [x] `test_hideout_scenes.gd` (integration) — hub + all 8 panels + the 3D demo instantiate and build in-tree.
 
 ## Definition of Done
-- [ ] M1: Job Map + Training + Workshop functional; manifest test green.
-- [ ] M3: all eight stations functional; safehouse visibly grows with progression.
+- [x] M1: Job Map + Training + Workshop functional; manifest test green. *(verified headless GUT 295/295 on Godot 4.6.3)*
+- [x] M3: all eight stations functional; safehouse visibly grows with progression. *(code + automated DoD complete)*
+- [x] F6 "feel" sign-off on `Hideout.tscn` + `HideoutGreybox.tscn` (interactive) — **signed off 2026-07-04**, mirroring tasks 03–11.
+
+## Progress note
+**Code + automated DoD complete & verified green** on Godot 4.6.3 (headless GUT **295/295**, +25 task-13
+tests). New `game/systems/hideout/HideoutManifest.gd` builds the station list purely from
+`Content.stations` + `ProgressionManager` unlock state — dropping a `StationDef` .tres + a panel scene
+adds a station with no code edit (FR-13-1, proven by `test_station_manifest`). **Manager seams (pure,
+headless-tested):** `ProgressionManager` gained station unlock (`is/try_unlock_station` +
+`can_unlock_station`), Workshop `research_gear` (+ `can_research`), Fence `convert_stash_item`
+(+ `convert_value`), and `stash_set_bonus_total` (read by 12); `RunManager` gained the Planning-Table
+Intel line (`buy_intel`/`has_intel`/`revealed_modifiers`, per-contract-seed). **UI:** a 2D
+`Hideout.tscn` hub (manifest grid, unlock buttons, currency header) + a `StationPanel` base and **8
+panels** (`stations/*.tscn`) driving already-tested manager methods; plus a 3D furnished
+`HideoutGreybox.tscn` demo (Phase-1 Quaternius furniture + a Casual character, FP walk + `[F]` a prop →
+the same panel overlay; locked props show a red placard, turn green on unlock). **EventBus stayed
+frozen** (panels use direct manager calls + local `closed`/`loadout_changed` signals). **8 `StationDef`
++ 3 `IntelDef` .tres** authored; `LootDef` gained a `params` field for Stash set bonuses; `IntelDef`
+gained `description`/`legacy_cost`. `GameManager` New Game/Continue now land in the Hideout (FR-13-11;
+real save I/O still `TODO[16]`). **Closed the deferred hooks:** the `↩ From 06` Intel reveal half
+(Planning Table), the `↩ From 09.1/09.2` Armory/Workshop/Fence front-ends, and the `↩ From 12` Training/
+Legacy-Board front-ends. **F6 "feel" playtest signed off 2026-07-04** — **Task 13 complete (`[x]`).** The
+**M1 milestone gate** itself still needs **15** (menu/HUD) + **16** (save) before it's met.

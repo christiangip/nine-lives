@@ -7,7 +7,7 @@ extends Node
 enum State { BOOT, MAIN_MENU, HIDEOUT, MISSION, MISSION_RESULTS, PAUSED }
 
 const MAIN_MENU_SCENE := "res://game/scenes/menu/MainMenu.tscn"
-const HIDEOUT_SCENE := "res://game/scenes/hideout/Hideout.tscn"            ## TODO[13]: built by Hideout list
+const HIDEOUT_SCENE := "res://game/scenes/hideout/Hideout.tscn"            ## the between-mission hub (task 13)
 const MISSION_RESULTS_SCENE := "res://game/scenes/mission/MissionResults.tscn"  ## TODO[11/15]
 const FADE_TIME := 0.25
 
@@ -104,11 +104,16 @@ func _ensure_fade_layer() -> void:
 
 func start_new_game(slot: int) -> void:
 	active_slot = slot
-	# TODO[16]: SaveManager.save_slot(slot) fresh, run tutorial, then goto_hideout()
+	# Fresh account/Streak, then land in the Hideout (FR-13-11). TODO[16]: persist a fresh slot +
+	# run the tutorial (task 22) before the hub; TODO[22]: first-time hints.
+	if RunManager != null:
+		RunManager.start_new_streak()
+	goto_hideout()
 
 func continue_game(slot: int) -> void:
 	active_slot = slot
-	# TODO[16]: SaveManager.load_slot(slot) -> goto_hideout()
+	# TODO[16]: SaveManager.load_slot(slot) rehydrates ProgressionManager/RunManager first.
+	goto_hideout()
 
 ## Build a contract into a live mission and swap into it (task 11, FR-11-3). Validates the Streak
 ## loadout first (FR-09-8) and refuses to enter if the generator can't produce a solvable layout.

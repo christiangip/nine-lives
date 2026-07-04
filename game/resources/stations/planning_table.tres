@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="StationDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/StationDef.gd" id="1_station"]
+
+[resource]
+script = ExtResource("1_station")
+id = &"planning_table"
+display_name = "Planning Table"
+scene_path = "res://game/scenes/hideout/stations/PlanningTableStation.tscn"
+unlock_legacy_cost = 400
+unlock_special_loot = &""
+ui_hooks = {
+"order": 5,
+"blurb": "Buy Intel: reveal modifiers, manifests and silent alarms.",
+"prop": "table"
+}

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="StationDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/StationDef.gd" id="1_station"]
+
+[resource]
+script = ExtResource("1_station")
+id = &"workshop"
+display_name = "Workshop"
+scene_path = "res://game/scenes/hideout/stations/WorkshopStation.tscn"
+unlock_legacy_cost = 0
+unlock_special_loot = &""
+ui_hooks = {
+"order": 2,
+"blurb": "Research tools, gadgets and mods with Legacy.",
+"prop": "workbench"
+}

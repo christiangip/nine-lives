@@ -149,8 +149,20 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
   economy tuning → 14; Edge/Perk *effect* wiring into every consuming system → per-system polish.
   **Residual `[~]`:** the M1 "felt" loop needs the Hideout **spend** UI (13) + menu/save (15/16) — that's
   the M1 milestone gate, not task 12 alone.*
-- [ ] **13 — Hideout & Stations** · `13_hideout_stations.md` · *(M1 min · M3 full)*
+- [x] **13 — Hideout & Stations** · `13_hideout_stations.md` · *(M1 min · M3 full)*
   Manifest-driven station system; Job Map, Training, Workshop (min); Armory, Legacy Board, Planning Table, Stash, Fence (full).
+  *Code + automated DoD (M1 **and** M3) **complete & verified green on Godot 4.6.3** (headless GUT **295/295**, +25 task-13
+  tests). New `game/systems/hideout/HideoutManifest.gd` builds the station list purely from `Content.stations` +
+  `ProgressionManager` state (FR-13-1, "add a station with no code" proven by `test_station_manifest`). Manager seams (pure,
+  tested): `ProgressionManager` station unlock (`try/can_unlock_station`) + Workshop `research_gear` + Fence
+  `convert_stash_item` + `stash_set_bonus_total`; `RunManager` Planning-Table Intel (`buy_intel`/`has_intel`/
+  `revealed_modifiers`). A 2D `Hideout.tscn` hub + `StationPanel` base + **8 panels** drive already-tested manager methods,
+  plus a 3D furnished `HideoutGreybox.tscn` demo (Phase-1 Quaternius furniture + Casual character; FP walk, `[F]` a prop →
+  the same panel; locked props go red→green on unlock). EventBus stayed frozen. **8 `StationDef` + 3 `IntelDef` .tres**
+  authored; `LootDef` gained `params` (Stash set bonuses). `GameManager` New Game/Continue land in the Hideout (FR-13-11).
+  **Closed the ↩ From 06 (Intel reveal) / 09.1-09.2 (Armory/Workshop/Fence) / 12 (Training/Legacy Board) hooks.** **F6
+  "feel" playtest signed off 2026-07-04 → Task 13 complete (`[x]`).** The **M1 milestone gate** still needs 15 (menu/HUD) +
+  16 (save) before it's met.*
 - [ ] **15 — UI/UX, HUD & Menus** · `15_ui_hud_menus.md` · *(M1 menus/HUD · M2 full Options)*
   Main Menu (4 items + Continue-disabled logic), 10-slot popup, full Options, FP-readability HUD.
 - [ ] **16 — Save System** · `16_save_system.md` · *(M1)*
@@ -213,12 +225,12 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
 ```
 Foundation        [x01][x02]                        2 / 2
 Core stealth (M0) [x03][~04][~05·G][~06][~07][~08]   1 / 6
-Spine (M1)        [x11][x12][13·m][15·m][16]         2 / 5
+Spine (M1)        [x11][x12][x13][15·m][16]          3 / 5
 Loud + breadth    [~09][x10][14]                     1 / 3
 Presentation      [17][18]                           0 / 2
 Live + release    [19][20][21]                       0 / 3
 Onboarding        [22]                               0 / 1
-                                          TOTAL  5 / 22 lists
+                                          TOTAL  6 / 22 lists
 Milestones        [ ] M0  [ ] M1  [ ] M2  [ ] M3  [ ] M4  [ ] M5
 ```
 

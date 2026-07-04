@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="IntelDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/IntelDef.gd" id="1_intel"]
+
+[resource]
+script = ExtResource("1_intel")
+id = &"intel_silent_alarms"
+display_name = "Alarm Blueprints"
+description = "Marks the otherwise-invisible silent alarms in the building — the stealth run's edge."
+take_cost = 4000
+legacy_cost = 0
+reveals = Array[StringName]([&"silent_alarms", &"manifest"])

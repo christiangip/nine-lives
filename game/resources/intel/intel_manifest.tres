@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="IntelDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/IntelDef.gd" id="1_intel"]
+
+[resource]
+script = ExtResource("1_intel")
+id = &"intel_manifest"
+display_name = "Loot Manifest"
+description = "Reveals the expected loot manifest for the target so you can plan your carry."
+take_cost = 2000
+legacy_cost = 0
+reveals = Array[StringName]([&"manifest"])

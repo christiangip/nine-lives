@@ -14,4 +14,5 @@ enum Tier { SMALL, MEDIUM, BULKY, SPECIAL }
 @export var needs_bagging: bool = false    ## loose cash/gold must be bagged first
 @export var hand_slots: int = 0            ## >0 = two-handed; movement penalty
 @export var special_hook: StringName = &"" ## unlock/stash-trophy id for SPECIAL tier
+@export var params: Dictionary = {}        ## extra data (e.g. {"set_bonus": {"carry_weight_mult": 0.05}}) — Stash set bonuses (task 13)
 @export var mesh: PackedScene

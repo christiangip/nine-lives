@@ -13,3 +13,8 @@ volume = 8.0
 needs_bagging = false
 hand_slots = 2
 special_hook = &"stash_trophy_painting"
+params = {
+"set_bonus": {
+"notoriety_mult": 0.05
+}
+}

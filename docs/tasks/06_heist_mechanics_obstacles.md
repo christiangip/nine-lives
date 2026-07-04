@@ -78,7 +78,8 @@ with defined counter-play. Obstacles pair with minigames (07) but are never
 - [x] Motion sensors, pressure plates, biometric/magnetic locks (+ knocked-out-keyholder route).
   *(`MotionSensor`/`PressurePlate`/`BiometricLock` + pure trip/unlock seams; keyholder-drag → 08.)*
 - [x] Silent alarms + Intel reveal. *(`SilentAlarm.gd`: `cross()`→silent alarm, `reveal()` flag; the
-  Intel **source** is task 13.)*
+  Intel **source landed in task 13** — the Planning Table's `intel_silent_alarms` packet sets the
+  `silent_alarms` reveal on a contract, FR-13-8.)*
 
 ### Phase 06.4 — Power, light, breaching (M2)
 - [x] Fuse box: zone power-cut, backup generator timer, guard investigate-draw. *(`FuseBox.gd`:

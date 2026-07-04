@@ -29,9 +29,11 @@ Disguise Kit.
 ### Phase 09.1 — Gear data & slots
 - [x] Author the catalogue as `GearDef` resources; slot rules + Armory validation. *(26 `GearDef`
   `.tres` in `game/resources/gear/`; `Loadout` enforces per-slot capacity from `LoadoutConfigDef`
-  (`Content.loadout`) + `validate()`. **Armory station UI → 13.**)*
+  (`Content.loadout`) + `validate()`. **Armory station UI landed in 13** (`ArmoryStation.gd` — equip/
+  unequip within slot caps; Workshop `research_gear` feeds the unlock gate).)*
 - [x] Consumable counts + restock economy hook (14). *(`Loadout.restock()` spends `RunManager.take`
-  per unit, capped at `GearDef.max_count`; pure `can_restock()` seam. **Fence UI + Take-scaling → 13/14.**)*
+  per unit, capped at `GearDef.max_count`; pure `can_restock()` seam. **Fence UI landed in 13**
+  (`FenceStation.gd` — restock + `convert_stash_item`); Take-scaling still → 14.)*
 
 ### Phase 09.2 — Tool/gadget behaviors
 - [x] Wire each tool/gadget to its system (06 obstacles, 04 lasers reveal, etc.). *(Closes the

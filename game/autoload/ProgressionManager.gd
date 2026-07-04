@@ -32,6 +32,71 @@ func attribute_level(attr_id: StringName) -> int:
 func is_unlocked(gear_id: StringName) -> bool:
 	return gear_id in unlocked_gear
 
+# --- Workshop: research gear (FR-13-5) -------------------------------------
+## Research a gear/gadget/weapon-mod at the Workshop: spend its Legacy research_cost (and honour an
+## optional params["research_prereq"] chain — data, not an id branch) → permanently unlock it, which
+## the research gate Loadout.can_equip already enforces. Idempotent; false if unknown/owned/gated.
+func research_gear(gear_id: StringName) -> bool:
+	var def := _gear_def(gear_id)
+	if not can_research(def, unlocked_gear, legacy):
+		return false
+	spend_legacy(def.research_cost)
+	unlocked_gear.append(def.id)
+	if def.id not in research_done:
+		research_done.append(def.id)
+	return true
+
+## Can this gear be researched now? Not already unlocked, prerequisite (if any) owned, affordable.
+## Pure — takes the def + the current unlock set + Legacy, so it's headless-testable. (FR-13-5)
+static func can_research(def: GearDef, unlocked: Array, available_legacy: int) -> bool:
+	if def == null or def.research_cost <= 0 or def.id in unlocked:
+		return false
+	var prereq := StringName(def.params.get("research_prereq", &""))
+	if prereq != &"" and prereq not in unlocked:
+		return false
+	return available_legacy >= def.research_cost
+
+func _gear_def(gear_id: StringName) -> GearDef:
+	if Content != null and Content.gear != null:
+		return Content.gear.get_def(gear_id) as GearDef
+	return null
+
+# --- Hideout stations: unlock gating (FR-13-1/2) ---------------------------
+## Is a station available to enter? Free stations (no cost + no loot gate) are always open; the rest
+## open once bought with Legacy or once their named special loot has been delivered to the Stash.
+func is_station_unlocked(def: StationDef) -> bool:
+	if def == null:
+		return false
+	if def.unlock_legacy_cost <= 0 and def.unlock_special_loot == &"":
+		return true
+	if def.id in stations_unlocked:
+		return true
+	return def.unlock_special_loot != &"" and def.unlock_special_loot in stash
+
+## Try to unlock a locked station: pay its Legacy cost, OR ratify a loot-gated station whose special
+## loot is already in the Stash (no Legacy spent). Returns true only when an unlock actually happens
+## (already-unlocked or unaffordable → false).
+func try_unlock_station(def: StationDef) -> bool:
+	if def == null or def.id in stations_unlocked:
+		return false
+	if not can_unlock_station(def, legacy, stash):
+		return false
+	# A loot-gated station whose loot is delivered is paid for by the delivery; otherwise spend Legacy.
+	var loot_gated := def.unlock_special_loot != &"" and def.unlock_special_loot in stash
+	if not loot_gated:
+		spend_legacy(def.unlock_legacy_cost)
+	stations_unlocked.append(def.id)
+	return true
+
+## Can this station be unlocked right now? Either the gate loot sits in the Stash, or there's enough
+## Legacy for its cost. Pure — takes the def + Legacy + Stash. (FR-13-2)
+static func can_unlock_station(def: StationDef, available_legacy: int, delivered_stash: Array) -> bool:
+	if def == null:
+		return false
+	if def.unlock_special_loot != &"" and def.unlock_special_loot in delivered_stash:
+		return true
+	return def.unlock_legacy_cost > 0 and available_legacy >= def.unlock_legacy_cost
+
 # --- Training: attributes (FR-12-6) ----------------------------------------
 ## Buy one level of an attribute at the Training station. Spends the per-level Legacy cost from the
 ## AttributeDef.cost_curve and raises the level; the effect feeds the relevant system via
@@ -117,3 +182,40 @@ static func can_buy_perk(def: PerkDef, owned: Array, available_legacy: int) -> b
 func add_to_stash(hook_id: StringName) -> void:
 	if hook_id != &"" and hook_id not in stash:
 		stash.append(hook_id)
+
+## Summed set-bonus value of a modifier key across every special loot in the Stash (FR-13-9). Each
+## trophy's LootDef may carry params["set_bonus"] = {key: amount}; systems query this the same way
+## Edges/Perks are summed (RunManager.edge_modifier_total / perk_modifier_total). Pure over content.
+func stash_set_bonus_total(key: String) -> float:
+	var total := 0.0
+	for hook in stash:
+		var def := _loot_by_hook(hook)
+		if def != null:
+			var bonus = def.params.get("set_bonus", {})
+			if bonus is Dictionary and bonus.has(key):
+				total += float(bonus[key])
+	return total
+
+## Fence a delivered special loot: remove it from the Stash and return the cash value the sale grants
+## (the caller — Fence station — banks it into The Take). 0 if the hook isn't in the Stash. (FR-13-10)
+func convert_stash_item(hook_id: StringName) -> int:
+	var idx := stash.find(hook_id)
+	if idx == -1:
+		return 0
+	stash.remove_at(idx)
+	return convert_value(_loot_by_hook(hook_id))
+
+## The Take a fenced special loot is worth. Pure — a LootDef's value (fallback 0 for an unknown hook).
+static func convert_value(def: LootDef) -> int:
+	return def.value if def != null else 0
+
+## The LootDef whose special_hook matches `hook` (Stash entries are special_hook ids), or null.
+func _loot_by_hook(hook) -> LootDef:
+	if Content == null or Content.loot == null:
+		return null
+	var want := StringName(hook)
+	for res in Content.loot.all():
+		var def := res as LootDef
+		if def != null and def.special_hook == want:
+			return def
+	return null
