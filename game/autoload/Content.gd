@@ -30,6 +30,7 @@ var loadout: ContentRegistry
 var pursuit: ContentRegistry
 var sections: ContentRegistry
 var progression: ContentRegistry
+var economy: ContentRegistry
 
 var _registries: Dictionary = {}    ## StringName -> ContentRegistry
 
@@ -58,6 +59,7 @@ func _build() -> void:
 	pursuit = _make(&"pursuit", PursuitConfigDef, "pursuit")   # going-loud pursuit/combat tunables (task 10)
 	sections = _make(&"sections", SectionDef, "prefabs_meta")   # modular section prefab-contracts (task 11)
 	progression = _make(&"progression", ProgressionConfigDef, "progression")   # streak/legacy tunables (task 12)
+	economy = _make(&"economy", EconomyConfigDef, "economy", [_DATA_ROOT.path_join("economy.json")])   # central balance table, JSON-authored (task 14)
 
 func _make(key: StringName, def_script: GDScript, folder: String, json_files: Array = []) -> ContentRegistry:
 	var reg := ContentRegistry.new(def_script, [_RESOURCE_ROOT.path_join(folder)], json_files)

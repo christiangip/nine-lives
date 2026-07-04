@@ -1,0 +1,31 @@
+{
+	"id": "default",
+
+	"take_fraction": 0.35,
+	"fence_fraction": 1.0,
+
+	"objective_notoriety": 1000,
+	"bonus_stealth": 0.60,
+	"bonus_no_alarm": 0.40,
+	"bonus_no_kill": 0.40,
+	"bonus_speed": 0.25,
+	"bonus_full_clear": 0.50,
+
+	"heat_multiplier_base": 1.0,
+	"heat_multiplier_slope": 0.5,
+
+	"legacy_floor": 150,
+
+	"base_catch_chance": 0.06,
+	"catch_per_tier": 0.05,
+	"catch_per_heat": 0.55,
+	"max_contracts_per_streak": 12,
+	"sim_heat_per_loud_contract": 0.25,
+	"sim_cash_per_contract": 5000,
+
+	"target_streak_len_min": 3.0,
+	"target_streak_len_max": 7.0,
+	"min_first_buy_legacy": 100,
+
+	"_notes": "Central hot-editable economy balance table (task 14, FR-14-4). Stealth-favored: clean runs stack the bonus_* multipliers and keep Heat ~0 (low catch chance); going loud gives only a modest heat_multiplier_slope payout bump but a steep catch_per_heat. Per-item cost tables (loot/gear/attr/perk/intel) live in their .tres and are range-checked by EconomyValidator. Unknown keys like this one are ignored by ContentRegistry._hydrate."
+}

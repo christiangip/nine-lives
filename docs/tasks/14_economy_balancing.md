@@ -1,12 +1,14 @@
 # 14 — Economy & Balancing
 
-> **↩ From 12 (Progression):** task 12 shipped the currency *plumbing* but left the tuning/externalization
-> to you. Two concrete seams: (1) `RunManager.add_take()` is a 1:1 passthrough marked `TODO[14]` — make
-> it FR-14-2's *%-of-secured-cash*. (2) The Notoriety performance multipliers already live as data on
-> `ProgressionConfigDef` (`Content.progression`, exported fractions `bonus_stealth`/`bonus_no_alarm`/
-> `bonus_no_kill`/`bonus_speed`/`bonus_full_clear`) + the Heat→payout `heat_multiplier_*` slope + the
-> `legacy_floor` + attribute `cost_curve`s + Perk `legacy_cost`s — FR-14-4 wants these in hot-editable
-> `data/*.json` and FR-14-3/5 wants them *tuned*. Come back and tick FR-14-2/3/4 here.
+> **↩ From 12 (Progression) — CLOSED:** task 12 shipped the currency *plumbing*; task 14 wired + tuned it.
+> (1) `RunManager.add_take()` `TODO[14]` resolved — `DropPoint.bank()` now banks Notoriety=full but
+> Take=`take_fraction` cut (FR-14-2). (2) The economy dials (Notoriety `bonus_*` multipliers, Heat→payout
+> `heat_multiplier_*` slope, `legacy_floor`, `objective_notoriety`) moved into hot-editable
+> `data/economy.json` (`EconomyConfigDef`, `Content.economy`); RunManager reads them via `_econ()`.
+> `ProgressionConfigDef` keeps the streak *structure* (level thresholds, Edge weights). Attribute
+> `cost_curve`s / Perk `legacy_cost`s stay `.tres`, range-checked by `EconomyValidator` (FR-14-4).
+> Also closed a task-12 leftover: the `financier` Perk's `legacy_conversion_mult` is now consumed in
+> `end_streak`. FR-14-2/3/4 ticked below.
 
 **Milestone:** M2 (wiring) · M3 (tuning) · **Depends on:** 08, 12, 13 · **Blocks:** —
 **Implements:** GDD §12 · **Decisions:** Q4 (keep three currencies).
@@ -26,22 +28,45 @@ code (and so The Take could be folded into Notoriety later if needed — Q4 flip
 
 ## Phases
 ### Phase 14.1 — Currency wiring (M2)
-- [ ] The Take accrual + spend sinks (Fence/Planning); reset-on-Catch.
-- [ ] Multiplier config surfaced from data; Notoriety pipeline reads it.
+- [x] The Take accrual + spend sinks (Fence/Planning); reset-on-Catch. *(FR-14-2: `DropPoint.bank()`
+  splits Notoriety=full / Take=`take_fraction` cut via `EconomyConfigDef.take_cut`; sinks unchanged.)*
+- [x] Multiplier config surfaced from data; Notoriety pipeline reads it. *(RunManager `_econ()` sources
+  the dials from `data/economy.json`; `stack_multiplier` reads the config's `bonus_*`.)*
 
 ### Phase 14.2 — Data tables
-- [ ] Externalize all costs/values/curves to `data/*.json`; loaders + validation.
+- [x] Externalize all costs/values/curves to `data/*.json`; loaders + validation. *(Chosen scope:
+  central `data/economy.json` (`EconomyConfigDef`, 20th `Content` registry) for the global economy dials,
+  loaded by the existing `ContentRegistry` JSON path; `EconomyValidator` range-checks every per-item
+  `.tres` cost table (loot/gear/attr/perk/intel) + the economy dials. Per-item costs stay `.tres`.)*
 
 ### Phase 14.3 — Balancing harness & passes
-- [ ] Monte-Carlo-ish run simulator over data; report Streak-length distribution + Legacy/run.
-- [ ] Iterate curves to hit tuning targets; record decisions.
+- [x] Monte-Carlo-ish run simulator over data; report Streak-length distribution + Legacy/run.
+  *(`EconomySimulator` — CLEAN vs LOUD cohorts, seeded/headless; reuses the real payout seams.)*
+- [x] Iterate curves to hit tuning targets; record decisions (see Balance pass below).
 
 ## Tests (GUT)
-- `test_take_lifecycle.gd` — Take accrues from cash, spends at Fence, resets on Catch, never becomes Legacy.
-- `test_multiplier_config.gd` — changing a multiplier in data changes the Notoriety result.
-- `test_data_tables_valid.gd` — every cost/curve table loads and passes schema/range checks.
-- `test_tuning_invariants.gd` — simulated average Streak length + min payout fall in target bands.
+- [x] `test_take_lifecycle.gd` — Take = fraction of secured cash, spends at Planning Table, resets on Catch, never becomes Legacy.
+- [x] `test_multiplier_config.gd` — changing a multiplier in the config changes the Notoriety result; economy.json hydrates.
+- [x] `test_data_tables_valid.gd` — every cost/curve table loads and passes `EconomyValidator` schema/range checks (+ a not-a-rubber-stamp proof).
+- [x] `test_tuning_invariants.gd` — simulated average Streak length in the target band, min payout ≥ floor, and clean strictly beats loud.
+- [x] `test_economy_scenes.gd` — the Economy Sandbox greybox instantiates + the harness runs from config.
 
 ## Definition of Done
-- [ ] FR-14-1..6 satisfied; phases checked; tests green.
-- [ ] Curves hit the tuning targets in the harness; ready for human playtest passes.
+- [x] FR-14-1..6 satisfied; phases checked; tests green *(311/311 headless GUT on Godot 4.6.3, +15 task-14)*.
+- [x] Curves hit the tuning targets in the harness; ready for human playtest passes.
+
+## Balance pass (recorded decisions — stealth-focused, "loud is a last resort")
+Dials in `game/data/economy.json` (hot-editable): `take_fraction=0.35`, `heat_multiplier_slope=0.5`
+(modest payout bump), `catch_per_heat=0.55` (steep — a hot Streak dies fast), stealth bonuses
+`stealth 0.60 / no_alarm 0.40 / no_kill 0.40 / full_clear 0.50`, `legacy_floor=150`. Intel re-priced to
+the new Take reality (manifest 2000→1200, modifiers 3000→1800, silent_alarms 4000→2400) so casing stays
+usable on a clean run. **Harness (20k runs/cohort):** clean mean **4.47** contracts (target band 3–7),
+Legacy/run **~35.3k**, Take/run **~7.8k**, min payout **150** (the floor); loud mean **1.51** contracts,
+Legacy/run **~13.8k** → **clean/loud Legacy ratio 2.55×**. Every Catch affords the cheapest Training buy
+(100 ≤ floor 150).
+
+**Residual (`[~]`):** the F6 "feel" sign-off on `game/scenes/economy/EconomyGreybox.tscn` (secure loot →
+watch the Notoriety-full / Take-fraction split; spend Take at Fence/Planning + Legacy at Training; `[H]`
+Heat, `[C]` complete, `[K]` get Caught → convert; `[B]` balance report). Mark milestone gates after it,
+mirroring tasks 03–13. **Deferred (↩):** in-mission Take/Heat HUD → 15; economy ↔ SaveManager → 16;
+daily/seeded balance presets → 20.

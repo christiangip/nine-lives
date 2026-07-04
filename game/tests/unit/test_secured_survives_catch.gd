@@ -29,8 +29,10 @@ func test_secure_from_updates_run_manager() -> void:
 	inv.pick_up_direct(TestHelper.make_loot(1.0, 1.0, 1200))
 	var drop: DropPoint = autofree(DropPoint.new())
 	drop.secure_from(inv)
-	assert_eq(RunManager.notoriety, starting_notoriety + 1200, "Securing loot must bank Notoriety")
-	assert_eq(RunManager.take, starting_take + 1200, "Securing loot must bank Take")
+	assert_eq(RunManager.notoriety, starting_notoriety + 1200, "Securing loot must bank the full Notoriety")
+	# The Take is only the launderable fraction of the secured cash now (FR-14-2), not 1:1.
+	var expected_take := EconomyConfigDef.take_cut(1200, EconomyConfigDef.resolve().take_fraction)
+	assert_eq(RunManager.take, starting_take + expected_take, "Securing loot banks the Take fraction")
 
 func test_special_hook_delivers_to_stash_on_secure() -> void:
 	ProgressionManager.stash.clear()

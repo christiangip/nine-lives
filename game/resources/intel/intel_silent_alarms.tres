@@ -7,6 +7,6 @@ script = ExtResource("1_intel")
 id = &"intel_silent_alarms"
 display_name = "Alarm Blueprints"
 description = "Marks the otherwise-invisible silent alarms in the building — the stealth run's edge."
-take_cost = 4000
+take_cost = 2400
 legacy_cost = 0
 reveals = Array[StringName]([&"silent_alarms", &"manifest"])

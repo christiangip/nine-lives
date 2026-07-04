@@ -43,6 +43,13 @@ func _cfg() -> ProgressionConfigDef:
 		cfg = ProgressionConfigDef.new()
 	return cfg
 
+## The economy tunables (Content.economy &"default"), with a schema-default fallback so headless seams
+## never crash. Task 14 took over the payout dials (Take fraction, Notoriety multipliers, Heat slope,
+## Legacy floor) from ProgressionConfigDef via the `↩ From 12` handoff; _cfg() keeps the streak-
+## *structure* dials (level thresholds, Edge weights, par time). See EconomyConfigDef.
+func _econ() -> EconomyConfigDef:
+	return EconomyConfigDef.resolve()
+
 # --- Per-mission event tracking --------------------------------------------
 ## An alarm (silent or loud) commits the Streak — no more mid-mission save-scumming (strict saves) —
 ## and raises Heat for the remainder of the Streak. Task 10 owns this trigger.
@@ -67,10 +74,11 @@ func _heat_for_alarm(kind: String) -> float:
 ## next contract escalates (FR-11-10). A Catch never reaches here — it calls end_streak() directly.
 func _on_mission_completed(summary: Dictionary) -> void:
 	streak_length += 1
-	var cfg := _cfg()
+	var cfg := _cfg()          # ProgressionConfigDef — par time gates the speed flag
+	var econ := _econ()        # EconomyConfigDef — the tunable payout dials (FR-14-3)
 	var flags := _performance_flags(summary, cfg)
-	var perf := stack_multiplier(flags, cfg)
-	add_notoriety(int(round(cfg.objective_notoriety * perf)))
+	var perf := stack_multiplier(flags, econ)
+	add_notoriety(int(round(econ.objective_notoriety * perf)))
 	_reset_mission_tracking()
 	refresh_board()
 
@@ -227,16 +235,19 @@ func raise_heat(amount: float) -> void:
 ## The Legacy payout multiplier the current Heat buys (FR-12-3). A hot, loud Streak banks more
 ## Legacy per Notoriety — but is likelier to end early.
 func heat_multiplier() -> float:
-	var cfg := _cfg()
-	return heat_multiplier_for(heat, cfg.heat_multiplier_base, cfg.heat_multiplier_slope)
+	var econ := _econ()
+	return heat_multiplier_for(heat, econ.heat_multiplier_base, econ.heat_multiplier_slope)
 
 # --- The Catch: conversion → Legacy → reset (FR-12-4, FR-12-9) -------------
 ## The Streak ends (Caught). Convert accrued Notoriety × Heat-multiplier → permanent Legacy (floored
 ## for anti-frustration), bank it, announce streak_ended, then reset to a fresh low-difficulty
 ## Streak. Returns the Legacy awarded. Task 10's Catch handoff calls this.
 func end_streak(reason: String) -> int:
-	var cfg := _cfg()
-	var awarded := convert_to_legacy(notoriety, heat_multiplier(), cfg.legacy_floor)
+	var econ := _econ()
+	var awarded := convert_to_legacy(notoriety, heat_multiplier(), econ.legacy_floor)
+	# Legacy-conversion Perks (e.g. Financier: +10% Legacy from every Catch) scale the payout — closes
+	# the previously-authored-but-unread `legacy_conversion_mult` modifier (task-12 per-system wiring).
+	awarded = int(round(float(awarded) * (1.0 + _legacy_conversion_bonus())))
 	ProgressionManager.add_legacy(awarded)
 	_bump_stat(&"streaks_caught", 1)
 	_bump_stat(&"legacy_earned", awarded)
@@ -244,13 +255,21 @@ func end_streak(reason: String) -> int:
 	start_new_streak()
 	return awarded
 
-## Per-Streak cash from secured loot (task 08). A straight passthrough for now.
+## Summed +Legacy-per-Catch fraction from owned permanent Perks (Financier & friends). 0.0 if none.
+func _legacy_conversion_bonus() -> float:
+	if ProgressionManager != null:
+		return ProgressionManager.perk_modifier_total("legacy_conversion_mult")
+	return 0.0
+
+## Per-Streak cash. A pure passthrough: each caller passes the exact Take to add — DropPoint.bank()
+## passes the take-fraction *cut* of secured cash (FR-14-2, EconomyConfigDef.take_cut), the Fence
+## passes a trophy's fenced value. Resets on the Catch (start_new_streak) and never converts to
+## Legacy (GDD §5.3). The %-of-secured-cash rule lives at the secure site, not here, so the Fence and
+## consumable refunds bank their own values undiscounted.
 func add_take(amount: int) -> void:
 	if amount <= 0:
 		return
 	take += amount
-	# TODO[14]: FR-14-2 — Take = a % of secured cash value, not a 1:1 passthrough. This is the
-	# real base `take` accrual task 08's banking needs now; 14's "M2 wiring" scales it.
 
 func _bump_stat(stat_id: StringName, amount: int) -> void:
 	if ProgressionManager != null:
@@ -267,9 +286,11 @@ static func level_for_notoriety(total: int, thresholds: Array) -> int:
 			break
 	return level
 
-## Stacked performance multiplier from a flags dict + config (FR-12-1). Base ×1.0, each enabled
-## bonus adds its fraction. Edge effects are applied separately (add_notoriety), never here.
-static func stack_multiplier(flags: Dictionary, cfg: ProgressionConfigDef) -> float:
+## Stacked performance multiplier from a flags dict + config (FR-12-1 / FR-14-3). Base ×1.0, each
+## enabled bonus adds its fraction. Edge effects are applied separately (add_notoriety), never here.
+## `cfg` is duck-typed: it only reads the shared `bonus_*` fields, so either an EconomyConfigDef (the
+## runtime source since task 14) or a ProgressionConfigDef (task-12 tests) works.
+static func stack_multiplier(flags: Dictionary, cfg) -> float:
 	var m := 1.0
 	if bool(flags.get("stealth", false)):
 		m += cfg.bonus_stealth

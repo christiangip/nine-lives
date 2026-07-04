@@ -50,9 +50,12 @@ func _bank_result(result: Dictionary) -> void:
 ## Escape call identical logic without inheriting from each other (they don't share a
 ## Def/solved state machine, only this arithmetic), and so it's callable headlessly from a
 ## bare DropPoint.new() with no scene tree.
+## The full street value feeds Notoriety (reputation) and the frozen loot_secured signal; only the
+## launderable take_fraction of it becomes spendable Take (FR-14-2, EconomyConfigDef.take_cut).
 static func bank(amount: int, loot_id: String) -> void:
 	if amount <= 0:
 		return
 	EventBus.loot_secured.emit(loot_id, amount)
 	RunManager.add_notoriety(amount)
-	RunManager.add_take(amount)
+	var econ := EconomyConfigDef.resolve()
+	RunManager.add_take(EconomyConfigDef.take_cut(amount, econ.take_fraction))

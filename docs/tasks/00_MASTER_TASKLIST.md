@@ -197,8 +197,21 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
   HUD → 15; Heat→payout-multiplier + Legacy-conversion formula → 12. **F6 "feel" playtest signed off
   2026-07-02** (going-loud/combat/pursuit verified inside `MissionGreybox.tscn` — L=go-loud, LMB fire,
   reinforcements spawn, damage→Downed→Caught). DoD met → `[x]`.*
-- [ ] **14 — Economy & Balancing** · `14_economy_balancing.md` · *(M2 wiring · M3 tuning)*
+- [~] **14 — Economy & Balancing** · `14_economy_balancing.md` · *(M2 wiring · M3 tuning)*
   Three currencies wired, Notoriety multipliers, Take spend (consumables/intel), tuning data tables, balance passes.
+  *Code + automated DoD **complete & verified green on Godot 4.6.3** (headless GUT **311/311**, +15 task-14 tests).
+  New **`EconomyConfigDef`** (20th `Content` registry `Content.economy`) is the central balance table, authored
+  as hot-editable **`data/economy.json`** (loaded via the existing `ContentRegistry` JSON path) — the `↩ From 12`
+  handoff. **FR-14-2:** `DropPoint.bank()` splits Notoriety=full / Take=`take_fraction` cut (`add_take` `TODO[14]`
+  resolved). **FR-14-3:** RunManager sources the Notoriety multipliers/Heat-slope/floor from `_econ()`;
+  `stack_multiplier` relaxed to duck-type the config (task-12 tests stay green). **FR-14-4:** `EconomyValidator`
+  range-checks every per-item cost `.tres` + the economy dials (`test_data_tables_valid`, not a rubber stamp).
+  **FR-14-6:** `EconomySimulator` (Monte-Carlo, CLEAN vs LOUD, seeded/headless) reports Streak-length + Legacy/run.
+  **Stealth-favored tuning (FR-14-5):** clean mean **4.47** contracts / **~35k** Legacy vs loud **1.51** / **~14k**
+  → **2.55× ratio**; Intel re-priced to the new Take reality. Also wired the `financier` Perk's
+  `legacy_conversion_mult`. Greybox **`EconomyGreybox.tscn`** (FP sandbox, real heist/furniture models, live
+  currency header + `[B]` balance readout). EventBus stayed frozen. **Deferred (↩):** Take/Heat HUD → 15;
+  economy↔save → 16; balance presets → 20. **Residual `[~]`:** F6 "feel" sign-off on `EconomyGreybox.tscn`.*
 
 ### Presentation & content (M2/M3)
 - [ ] **17 — Audio** · `17_audio.md` · *(M2)*
@@ -226,7 +239,7 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
 Foundation        [x01][x02]                        2 / 2
 Core stealth (M0) [x03][~04][~05·G][~06][~07][~08]   1 / 6
 Spine (M1)        [x11][x12][x13][15·m][16]          3 / 5
-Loud + breadth    [~09][x10][14]                     1 / 3
+Loud + breadth    [~09][x10][~14]                    1 / 3
 Presentation      [17][18]                           0 / 2
 Live + release    [19][20][21]                       0 / 3
 Onboarding        [22]                               0 / 1

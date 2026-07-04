@@ -52,17 +52,19 @@ func _convert_section() -> void:
 		_note("— no special loot to fence —")
 		return
 	_note("Selling a trophy pays out The Take but removes it from your Stash.")
+	var econ := EconomyConfigDef.resolve()
 	for hook in ProgressionManager.stash.duplicate():
 		var def := _loot_by_hook(hook)
-		var value := ProgressionManager.convert_value(def)
+		var payout := EconomyConfigDef.fence_payout(ProgressionManager.convert_value(def), econ.fence_fraction)
 		var label := "  %s" % (def.display_name if def != null else String(hook))
-		var btn := _action_row(label, "Sell  $%d" % value, value > 0)
+		var btn := _action_row(label, "Sell  $%d" % payout, payout > 0)
 		btn.pressed.connect(_on_sell.bind(StringName(hook)))
 
 func _on_sell(hook: StringName) -> void:
 	var value := ProgressionManager.convert_stash_item(hook)
 	if value > 0:
-		RunManager.add_take(value)
+		var econ := EconomyConfigDef.resolve()
+		RunManager.add_take(EconomyConfigDef.fence_payout(value, econ.fence_fraction))
 		refresh()
 
 func _loot_by_hook(hook) -> LootDef:

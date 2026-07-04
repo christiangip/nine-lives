@@ -5,6 +5,7 @@ extends GutTest
 
 func before_each() -> void:
 	ProgressionManager.legacy = 0
+	ProgressionManager.meta_perks.clear()   # end_streak now reads legacy-conversion Perks (task 14)
 	RunManager.notoriety = 0
 	RunManager.streak_level = 1
 	RunManager.heat = 0.0
@@ -25,10 +26,15 @@ func test_catch_banks_notoriety_and_resets_streak() -> void:
 	assert_true(RunManager.edges.is_empty(), "Edges vanish on the Catch")
 
 func test_catch_applies_the_heat_multiplier() -> void:
+	# Task 14 owns the Heat→payout slope (data/economy.json), so derive the expectation from config
+	# rather than pinning a number — the mechanic under test is "max Heat multiplies the payout".
+	var econ := EconomyConfigDef.resolve()
+	var expected := int(round(1000.0 * (econ.heat_multiplier_base + econ.heat_multiplier_slope)))
 	RunManager.notoriety = 1000
-	RunManager.heat = 1.0           # multiplier ×2.0 at default curve
+	RunManager.heat = 1.0           # max Heat → base+slope multiplier
 	var awarded := RunManager.end_streak("caught")
-	assert_eq(awarded, 2000, "1000 Notoriety × 2.0 (max Heat) → 2000 Legacy")
+	assert_eq(awarded, expected, "1000 Notoriety × max-Heat multiplier → %d Legacy" % expected)
+	assert_gt(awarded, 1000, "max Heat pays more than the flat Notoriety")
 
 func test_catch_emits_streak_ended() -> void:
 	watch_signals(EventBus)

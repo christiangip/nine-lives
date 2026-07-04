@@ -7,6 +7,6 @@ script = ExtResource("1_intel")
 id = &"intel_manifest"
 display_name = "Loot Manifest"
 description = "Reveals the expected loot manifest for the target so you can plan your carry."
-take_cost = 2000
+take_cost = 1200
 legacy_cost = 0
 reveals = Array[StringName]([&"manifest"])
