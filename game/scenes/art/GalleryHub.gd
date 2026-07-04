@@ -7,6 +7,7 @@ extends Control
 # title · model count · gallery scene. Counts mirror the imported kit folders.
 const GALLERIES := [
 	{"title": "★ Bank Test (walkthrough)", "count": 12, "path": "res://game/scenes/art/bank_test.tscn"},
+	{"title": "★ Phase 5-7 Demo (weapons/audio/UI)", "count": 3, "path": "res://game/scenes/art/phase567_demo.tscn"},
 	{"title": "★ Prefabs — Bank set", "count": 12, "path": "res://game/scenes/art/gallery_prefabs.tscn"},
 	{"title": "★ Characters", "count": 8, "path": "res://game/scenes/art/gallery_characters.tscn"},
 	{"title": "★ Heist Props (loot/security)", "count": 18, "path": "res://game/scenes/art/gallery_heist_props.tscn"},
