@@ -25,6 +25,7 @@ const _TRANSITIONS := {
 
 var state: int = State.BOOT
 var active_slot: int = -1
+var pending_results: Dictionary = {}   ## last mission/Catch summary; read by MissionResults (task 15, FR-15-8)
 
 var _fade_layer: CanvasLayer
 var _fade_rect: ColorRect
@@ -61,7 +62,8 @@ func goto_hideout() -> void:
 	transition_to(State.HIDEOUT)
 	_change_scene(HIDEOUT_SCENE)
 
-func goto_results(_payload: Dictionary = {}) -> void:
+func goto_results(payload: Dictionary = {}) -> void:
+	pending_results = payload   # MissionResults reads this in _ready (task 15, FR-15-8)
 	transition_to(State.MISSION_RESULTS)
 	_change_scene(MISSION_RESULTS_SCENE)
 

@@ -24,26 +24,43 @@ stealth legible (the FP readability requirement from Q1).
 - **FR-15-7** HUD is minimal, trustable, and accessibility-aware (no color-only cues; UI scale).
 - **FR-15-8** Results/Catch screen summarizes the mission/Streak and the Legacy payout.
 
+> **↩ To 16 (Save System):** the menu/slot UI is built but its **live data** is task 16 — SlotPopup/MainMenu
+> call `SaveManager.scan_slots/slot_summary/save_slot/load_slot/delete_slot`, which are stubs, so Continue is
+> greyed + slots read "Empty" until 16 fills them. The two **save-backed** integration tests move to 16 too.
+> The pure UI logic (binding, summary formatting, detection→widget, options round-trip) is tested + green here.
+
 ## Phases
 ### Phase 15.1 — Menu & slots (M1)
-- [ ] Main Menu + Continue-disabled binding + Exit confirm.
-- [ ] 10-slot popup (shared by New Game/Continue) + summaries + Delete confirm.
+- [x] Main Menu + Continue-disabled binding + Exit confirm. *(`MainMenu.gd/.tscn`; pure seam
+  `MainMenu.continue_enabled(count)`; `ConfirmPopup` on Exit.)*
+- [x] 10-slot popup (shared by New Game/Continue) + summaries + Delete confirm. *(`SlotPopup.gd`, NEW/LOAD
+  modes; rows render `SaveManager.slot_summary()` via the pure `SlotPopup.format_slot()`; Overwrite/Delete
+  confirmed. **Live slot data ↩ From 15 → 16** — all "Empty" until then.)*
 
 ### Phase 15.2 — Core HUD (M1)
-- [ ] Detection indicator + cone-fill + noise ring; carry readout; objective/secured tracker.
+- [x] Detection indicator + cone-fill + noise ring; carry readout; objective/secured tracker. *(`HUD.gd`
+  mounts the combined `CompassEye` (fill + directional tick, Q1), carry W/V + FULL, objective +
+  secured/remaining; `NoiseRingSpawner` for the on-world ring. Mounted by `MissionController.realize()`.)*
 
 ### Phase 15.3 — Options (M2)
-- [ ] All Options sections; bind to settings/config; live-apply + persistence; remap UI (with 01).
+- [x] All Options sections; bind to settings/config; live-apply + persistence; remap UI (with 01).
+  *(`Options.gd` TabContainer: Graphics/Audio/Controls-remap/Accessibility/System over `SettingsManager` +
+  `InputManager.rebind_action`; `SettingsManager.DEFAULTS` extended to the full §15.2 schema.)*
 
 ### Phase 15.4 — Loud HUD & results
-- [ ] Health/armor/ammo + Pursuit/Heat indicators; Catch/results screen.
+- [x] Health/armor/ammo + Pursuit/Heat indicators; Catch/results screen. *(HUD loud block via `loud_visible()`;
+  `PauseMenu` with Q5 commit messaging; `MissionResults.gd/.tscn` reads `GameManager.pending_results`.)*
 
 ## Tests (GUT)
-- `test_continue_enabled_binding.gd` — Continue disabled at 0 saves, enabled at ≥1 (with a temp save).
-- `test_slot_popup_summary.gd` — an occupied slot renders the five summary fields; empty renders "Empty."
-- `test_options_persist.gd` — changing an option writes config and survives a reload.
-- `test_hud_detection_binding.gd` — `detection_changed` updates the indicator/cone-fill.
+- [x] `test_continue_enabled_binding.gd` — Continue disabled at 0, enabled at ≥1 (pure seam; the *temp-save*
+  half ↩ From 15 → 16).
+- [x] `test_slot_popup_summary.gd` — an occupied slot renders the five summary fields; empty renders "Empty."
+- [x] `test_options_persist.gd` — changing an option (incl. a new §15.2 key) writes config and survives a reload.
+- [x] `test_hud_detection_binding.gd` — `detection_changed` updates the compass-eye indicator/fill; bearing seam.
+- [x] `test_ui_scenes.gd` — every new UI surface (menu/HUD/options/slots/pause/results/sandbox) builds in-tree.
 
 ## Definition of Done
-- [ ] FR-15-1..8 satisfied; phases checked; tests green.
-- [ ] M1 manual: Continue-disabled logic correct; HUD makes FP stealth readable.
+- [~] FR-15-1..8 satisfied; phases checked; tests green. *(**331/331 green** on Godot 4.6.3. All UI built;
+  FR-15-2/3's **live save data** is deferred to 16 — ↩ From 15.)*
+- [ ] M1 manual: Continue-disabled logic correct; HUD makes FP stealth readable. *(Residual: human F6 sign-off
+  on `game/scenes/ui/UISandbox.tscn` — mirrors tasks 03–14.)*

@@ -16,11 +16,20 @@ const DEFAULTS := {
 		"vsync": true,
 		"max_fps": 0,        # 0 = uncapped
 		"msaa": 2,           # matches project.godot anti_aliasing/quality/msaa_3d
+		"render_scale": 1.0, # 3D resolution scale (0.5..1.0), applied to the viewport
+		"shadows": 2,        # 0 off · 1 low · 2 medium · 3 high (read on demand by the renderer)
+		"fov": 75.0,         # camera field of view (deg); PlayerController reads it on settings_changed
+		"gamma": 1.0,        # display gamma (read on demand)
+		"motion_blur": false,
+		"camera_shake": true,
 	},
 	"audio": {
 		"master": 1.0,       # linear 0..1, applied as bus volume
 		"music": 0.8,
 		"sfx": 0.9,
+		"ui": 0.9,           # UI SFX bus (falls back gracefully if the bus is absent)
+		"ambience": 0.7,
+		"subtitles": false,
 	},
 	"gameplay": {
 		"mouse_sensitivity": 0.3,
@@ -28,6 +37,12 @@ const DEFAULTS := {
 		"ui_scale": 1.0,
 		"crouch_toggle": false,  # false = hold to crouch; true = press to toggle (task 03)
 		"sprint_toggle": false,  # false = hold to sprint; true = press to toggle (task 03)
+		# Accessibility (GDD §15.2). Read on demand by the HUD / camera / input.
+		"colorblind": 0,         # 0 none · 1 protanopia · 2 deuteranopia · 3 tritanopia
+		"reduce_flashing": false,# HUD honours this (no flashing cues) — FR-15-7
+		"aim_assist": false,
+		"vibration": true,
+		"language": "en",
 	},
 }
 
@@ -106,11 +121,16 @@ func _apply_video() -> void:
 	var vp := get_viewport()
 	if vp != null:
 		vp.msaa_3d = int(get_value("video", "msaa"))
+		# Live-apply the 3D render scale where possible (FR-15-4). Shadows/gamma/motion-blur are
+		# read on demand by the renderer/camera; fov is pushed to the player via settings_changed.
+		vp.scaling_3d_scale = clampf(float(get_value("video", "render_scale")), 0.5, 1.0)
 
 func _apply_audio() -> void:
 	_set_bus_linear("Master", get_value("audio", "master"))
 	_set_bus_linear("Music", get_value("audio", "music"))
 	_set_bus_linear("SFX", get_value("audio", "sfx"))
+	_set_bus_linear("UI", get_value("audio", "ui"))            # no-op if the bus doesn't exist
+	_set_bus_linear("Ambience", get_value("audio", "ambience"))
 
 func _set_bus_linear(bus: String, linear: float) -> void:
 	var idx := AudioServer.get_bus_index(bus)

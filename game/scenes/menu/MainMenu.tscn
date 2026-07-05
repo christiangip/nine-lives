@@ -36,7 +36,7 @@ offset_right = 300.0
 offset_bottom = 176.0
 grow_horizontal = 2
 modulate = Color(0.7, 0.7, 0.7, 1)
-text = "placeholder main menu"
+text = "a first-person stealth-heist roguelite"
 horizontal_alignment = 1
 
 [node name="Menu" type="VBoxContainer" parent="."]

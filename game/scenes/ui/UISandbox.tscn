@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://b15uisandbox0nl"]
+
+[ext_resource type="Script" path="res://game/scenes/ui/UISandboxDebug.gd" id="1_sbx"]
+
+[node name="UISandbox" type="Node3D"]
+script = ExtResource("1_sbx")

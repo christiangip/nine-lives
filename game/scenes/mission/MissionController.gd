@@ -12,6 +12,7 @@ class_name MissionController
 
 const CELL := MissionLayout.CELL_SIZE
 const _PLAYER_SCENE := preload("res://game/scenes/player/PlayerController.tscn")
+const _HUD_SCENE := preload("res://game/scenes/ui/hud/HUD.tscn")   ## the real in-mission HUD (task 15)
 
 ## Category → Obstacle subclass. Branch on the def property, never on id (const via preload, per house rule).
 const _OBSTACLE_SCRIPTS := {
@@ -75,6 +76,32 @@ func realize() -> void:
 	_build_pursuit()
 	_build_minigame_host(world)
 	_spawn_player(world)
+	_build_hud(world)
+
+## Mount the real task-15 HUD (compass-eye / carry / objective / pursuit / loud) + the on-world noise-ring
+## spawner. Replaces the MissionGreyboxDebug stand-in label. A greybox that already added its own HUD is
+## left alone (avoid a double overlay).
+func _build_hud(world: Node3D) -> void:
+	if get_tree() != null and not get_tree().get_nodes_in_group(&"mission_hud").is_empty():
+		return
+	var hud := _HUD_SCENE.instantiate()
+	hud.add_to_group(&"mission_hud")
+	add_child(hud)
+	var rings := NoiseRingSpawner.new()
+	rings.name = "NoiseRings"
+	world.add_child(rings)
+
+## Total street value of all loot placed in this mission — the denominator for the HUD's
+## secured-vs-remaining readout (task 15, FR-15-5).
+func loot_total_value() -> int:
+	var total := 0
+	if layout == null or Content == null or Content.loot == null:
+		return total
+	for l in layout.loot:
+		var def := Content.loot.get_def(StringName(l.get("loot_id", &""))) as LootDef
+		if def != null:
+			total += def.value
+	return total
 
 func _build_floor(world: Node3D) -> void:
 	if layout.sections.is_empty():

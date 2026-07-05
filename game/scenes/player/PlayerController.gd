@@ -590,6 +590,11 @@ func apply_damage(damage: float) -> void:
 	if health != null:
 		health.take_damage(damage)
 
+## The Streak's currently-selected weapon (for the HUD loud-block ammo readout, task 15). Null if
+## unarmed or combat isn't mounted yet.
+func active_weapon() -> Weapon:
+	return _combat.active_weapon() if _combat != null else null
+
 ## Move-speed multiplier from equipped armor weight (never freezes; Armor.agility_mult floors it).
 func _armor_speed_mult() -> float:
 	if health != null and health.armor != null:
@@ -600,12 +605,15 @@ func _armor_speed_mult() -> float:
 ## Notoriety→Legacy conversion, then to the results screen (task 11/15). FR-10-6/FR-10-9.
 func _on_health_state_changed(new_state: int) -> void:
 	if new_state == Health.State.CAUGHT or new_state == Health.State.CAPTURED:
+		var secured := inventory.secured_value() if inventory != null else 0
+		var awarded := 0
 		var run := Services.run()
 		if run != null and run.has_method("end_streak"):
-			run.end_streak("caught")   # banks Notoriety × Heat-mult → Legacy + resets the Streak (task 12)
+			awarded = run.end_streak("caught")   # banks Notoriety × Heat-mult → Legacy + resets the Streak (task 12)
 		var gm := Services.game()
 		if gm != null and gm.has_method("goto_results"):
-			gm.goto_results({"outcome": "caught"})
+			# Feed the Results/Catch screen (task 15, FR-15-8) the real payout + what survived.
+			gm.goto_results({"outcome": "caught", "legacy_awarded": awarded, "secured_value": secured})
 
 # --- Attributes / settings / helpers ---------------------------------------
 
@@ -634,9 +642,12 @@ func _refresh_settings() -> void:
 	_invert_y = bool(s.get_value("gameplay", "invert_y"))
 	_crouch_toggle = bool(s.get_value("gameplay", "crouch_toggle"))
 	_sprint_toggle = bool(s.get_value("gameplay", "sprint_toggle"))
+	# Field of view is a graphics option (GDD §15.2) but only the player camera can apply it (task 15).
+	if _camera != null:
+		_camera.fov = clampf(float(s.get_value("video", "fov")), 50.0, 120.0)
 
 func _on_settings_changed(section: String) -> void:
-	if section == "gameplay":
+	if section == "gameplay" or section == "video":
 		_refresh_settings()
 
 func _resolve_gravity() -> void:

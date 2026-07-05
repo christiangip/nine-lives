@@ -14,20 +14,13 @@ extends Node3D
 
 ## Equipped on the Streak so the loud/vault paths are testable (research-gated → dev-unlock first).
 const _DEV_GEAR: Array[StringName] = [&"suppressed_pistol", &"keycard_cloner", &"lockpick_set", &"emp", &"smoke"]
-const _STATE_NAMES := ["Unaware", "Suspicious", "Searching", "Alerted", "Pursuit"]
 
 var _label: Label
-var _det: Dictionary = {}     ## actor_id -> [state, fill]
-var _phase: int = 0
-var _alarm: String = ""
 
 func _ready() -> void:
 	_equip_dev_loadout()
 	_build_mission()
 	_build_overlay()
-	EventBus.detection_changed.connect(_on_detection)
-	EventBus.pursuit_phase_changed.connect(func(p: int) -> void: _phase = p)
-	EventBus.alarm_tripped.connect(func(k: String, _pos: Vector3) -> void: _alarm = k)
 
 func _equip_dev_loadout() -> void:
 	var lo := RunManager.loadout()
@@ -61,16 +54,17 @@ func _input(event: InputEvent) -> void:
 		var p := _player()
 		EventBus.alarm_tripped.emit("loud", p.global_position if p != null else global_position)
 
-func _on_detection(actor_id: int, state: int, fill: float) -> void:
-	_det[actor_id] = [state, fill]
-
 # --- Debug overlay ---------------------------------------------------------
 func _build_overlay() -> void:
 	var layer := CanvasLayer.new()
 	layer.layer = 40
 	add_child(layer)
 	_label = Label.new()
-	_label.position = Vector2(16, 12)
+	# Bottom-left dev cheat-sheet — the real task-15 HUD (MissionController mounts it) now owns the live
+	# carry/detection/pursuit readouts up top, so this only carries the controls list.
+	_label.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	_label.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_label.position = Vector2(16, -8)
 	_label.add_theme_color_override("font_color", Color.WHITE)
 	_label.add_theme_color_override("font_outline_color", Color.BLACK)
 	_label.add_theme_constant_override("outline_size", 5)
@@ -79,31 +73,11 @@ func _build_overlay() -> void:
 func _process(_delta: float) -> void:
 	if _label == null:
 		return
-	_label.text = "%s\n\n%s" % [_controls(), _status()]
+	_label.text = _controls()
 
 func _controls() -> String:
-	return "[TASK 11 DEV GREYBOX]  WASD move · mouse look · Shift sprint · C crouch · Z prone · Q/E lean\n" + \
+	return "[TASK 11 DEV GREYBOX — real HUD is task 15]  WASD move · mouse look · Shift sprint · C crouch · Z prone · Q/E lean\n" + \
 		"F interact/pick-up · V takedown · T throw bag · G drop body · LMB fire · 1 weapon · 4 gadget · L = GO LOUD · Esc pause"
-
-func _status() -> String:
-	var carry := "empty"
-	var p := _player()
-	if p != null and p.get("inventory") != null:
-		var inv = p.inventory
-		carry = "%.1f kg / %.1f L   in-hand $%d" % [inv.current_weight(), inv.current_volume(), inv.in_hand_value()]
-	var ds := _max_detection()
-	var det_name: String = _STATE_NAMES[clampi(ds[0], 0, _STATE_NAMES.size() - 1)]
-	var alarm := _alarm if _alarm != "" else "none"
-	return "SECURED (Notoriety) $%d   Take $%d   Heat %.2f\nCarrying: %s\nAlert: %s (%.0f%%)   Pursuit phase: %d   Alarm: %s\nVault door: interact (F) — you hold the keycard cloner." % [
-		RunManager.notoriety, RunManager.take, RunManager.heat, carry, det_name, ds[1] * 100.0, _phase, alarm]
-
-func _max_detection() -> Array:
-	var s := 0
-	var f := 0.0
-	for v in _det.values():
-		s = maxi(s, int(v[0]))
-		f = maxf(f, float(v[1]))
-	return [s, f]
 
 func _player() -> Node3D:
 	return get_tree().get_first_node_in_group(&"player") as Node3D

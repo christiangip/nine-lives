@@ -1,0 +1,71 @@
+extends Control
+## MissionResults — the results / Catch screen (task 15, FR-15-8). GameManager swaps here after a mission
+## ends (Escape, or the Catch). It summarizes the outcome + the Legacy payout from GameManager.pending_results
+## (set by goto_results): a clean escape reports secured loot + performance and the Streak continues; a Catch
+## (caught / captured / committed-abort) reports the Notoriety→Legacy conversion and that the Streak resets
+## but Legacy carries forward. One button returns to the Hideout. Built in code with the shared UITheme.
+## See docs/tasks/15_ui_hud_menus.md and GDD §15/§5.
+
+const _CATCH_OUTCOMES := ["caught", "captured", "aborted"]
+
+func _ready() -> void:
+	theme = UITheme.build()
+	var bg := ColorRect.new()
+	bg.color = UITheme.BG
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(bg)
+
+	var data := GameManager.pending_results if GameManager != null else {}
+	var outcome := String(data.get("outcome", "success"))
+	var is_catch := outcome in _CATCH_OUTCOMES
+
+	var box := VBoxContainer.new()
+	box.set_anchors_preset(Control.PRESET_CENTER)
+	box.custom_minimum_size = Vector2(560, 0)
+	box.add_theme_constant_override("separation", 14)
+	add_child(box)
+
+	var title := Label.new()
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 44)
+	if is_catch:
+		title.text = "CAUGHT" if outcome != "aborted" else "STREAK ENDED"
+		title.add_theme_color_override("font_color", UITheme.WARN)
+	else:
+		title.text = "CONTRACT COMPLETE"
+		title.add_theme_color_override("font_color", UITheme.OK)
+	box.add_child(title)
+	box.add_child(HSeparator.new())
+
+	for line in _summary_lines(data, is_catch):
+		var lbl := Label.new()
+		lbl.text = line
+		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		box.add_child(lbl)
+
+	box.add_child(HSeparator.new())
+	var cont := Button.new()
+	cont.text = "Return to the Hideout"
+	cont.custom_minimum_size = Vector2(0, 48)
+	cont.pressed.connect(func() -> void: GameManager.goto_hideout())
+	box.add_child(cont)
+	cont.grab_focus()
+
+## The body lines, tailored to a clean escape vs the Catch.
+func _summary_lines(data: Dictionary, is_catch: bool) -> Array[String]:
+	var lines: Array[String] = []
+	var secured := int(data.get("secured_value", 0))
+	if is_catch:
+		lines.append("Loot secured before the Catch: $%d" % secured)
+		lines.append("Notoriety banked as permanent Legacy: +%d" % int(data.get("legacy_awarded", 0)))
+		lines.append("Your Streak resets — but your Legacy carries forward. Come back sharper.")
+	else:
+		lines.append("Loot secured this contract: $%d" % secured)
+		var perf: Array[String] = []
+		if bool(data.get("no_kill", false)): perf.append("No-Kill")
+		if bool(data.get("full_clear", false)): perf.append("Full Clear")
+		if not perf.is_empty():
+			lines.append("Performance: %s" % ", ".join(perf))
+		lines.append("Streak continues — pull your next contract from the Job Map.")
+	return lines

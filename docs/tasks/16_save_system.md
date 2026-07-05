@@ -9,6 +9,17 @@
 > counts survive save/load, then come back and tick the 09 DoD's second bullet ("round-trips through
 > save") in `09_…md`.
 
+> **↩ From 15 (UI/HUD/Menus):** the Main Menu + 10-slot **SlotPopup** UI is fully built and already calls
+> the SaveManager seams — `scan_slots()` / `slot_summary(slot)` / `save_slot(slot)` / `load_slot(slot)` /
+> `delete_slot(slot)` (+ `autosave()` at the hub / post-mission). They're stubs today, so Continue is
+> correctly greyed and every slot reads "Empty" on a fresh profile. Fill these in here and the menu lights
+> up with **no UI edit**. The five summary fields SlotPopup renders are `{streak_len, legacy, playtime,
+> last_played, last_contract}` (see `SlotPopup.format_slot`); `GameManager.start_new_game/continue_game`
+> already route through the popup. Then **add the two save-backed integration tests** task 15 deferred —
+> Continue enables once a real temp save exists, and a real occupied slot renders the five fields — and
+> tick FR-15-2/3 + the M1 gate in `15_…md`. Also swap `GameManager.continue_game`'s `TODO[16]` for the
+> real `load_slot` rehydrate.
+
 ## Overview
 Ten slots, autosave, and the **strict** roguelite integrity policy that protects
 the stakes: missions are atomic, clean abort only while undetected, and quitting
