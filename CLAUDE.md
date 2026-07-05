@@ -512,5 +512,7 @@ consequence logic tested behind a hook and added `↩ From 06` banners to `07`�
   From 15 → 16, per the user's decision to build 15 against SaveManager's seams):** the menu/slots' **live
   save data** (SlotPopup/MainMenu already call `scan_slots`/`slot_summary`/`save_slot`/`load_slot`/
   `delete_slot`, all stubs → Continue greyed + slots "Empty" on a fresh profile; lights up with no UI edit
-  once 16 lands) + the two save-backed integration tests. **Residual (`[~]`):** the M1 human F6 "feel"
-  sign-off on `UISandbox.tscn`, mirroring 03–14. The **M1 milestone gate** still needs task 16.
+  once 16 lands) + the two save-backed integration tests. **F6 "feel" sign-off passed 2026-07-05** —
+  compass-eye fills grey→red + points at threats, carry/objective-secured/pursuit-heat/loud readouts live,
+  noise ring visible, all menus functional, Options persist, Pause Q5 messaging, Results correct, HUD renders
+  in `MissionGreybox.tscn`. **Task 15 complete (`[x]`).** The **M1 milestone gate** still needs task 16.

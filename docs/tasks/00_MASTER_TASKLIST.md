@@ -163,7 +163,7 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
   **Closed the ↩ From 06 (Intel reveal) / 09.1-09.2 (Armory/Workshop/Fence) / 12 (Training/Legacy Board) hooks.** **F6
   "feel" playtest signed off 2026-07-04 → Task 13 complete (`[x]`).** The **M1 milestone gate** still needs 15 (menu/HUD) +
   16 (save) before it's met.*
-- [~] **15 — UI/UX, HUD & Menus** · `15_ui_hud_menus.md` · *(M1 menus/HUD · M2 full Options)*
+- [x] **15 — UI/UX, HUD & Menus** · `15_ui_hud_menus.md` · *(M1 menus/HUD · M2 full Options)*
   Main Menu (4 items + Continue-disabled logic), 10-slot popup, full Options, FP-readability HUD.
   *Code + automated DoD **complete & verified green on Godot 4.6.3** (headless GUT **331/331**, +20 task-15
   tests). All UI built in code with a shared `UITheme` (Kenney font + `ui/kit_rpg` textures): **MainMenu**
@@ -177,8 +177,9 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
   Demo greybox **`game/scenes/ui/UISandbox.tscn`** (real Quaternius furniture + safe + Swat/Casual models +
   a real player, dev keys drive every readout + open every menu). **Deferred (↩ From 15 → 16):** the menu/
   slots' **live save data** (SlotPopup/MainMenu already call the SaveManager seams; all "Empty" + Continue
-  greyed until 16) + the two save-backed integration tests. **Residual `[~]`:** the M1 human F6 sign-off on
-  `UISandbox.tscn`. The **M1 gate** still needs 16.*
+  greyed until 16) + the two save-backed integration tests. **F6 "feel" sign-off passed 2026-07-05:**
+  compass-eye fills + points, all readouts live, menus functional, Options persist, Pause Q5 messaging,
+  Results screen correct. The **M1 gate** still needs 16.*
 - [ ] **16 — Save System** · `16_save_system.md` · *(M1)*
   10-slot schema, autosave, `scan_slots()`, load/delete, strict mid-mission policy, migration.
 
@@ -252,7 +253,7 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
 ```
 Foundation        [x01][x02]                        2 / 2
 Core stealth (M0) [x03][~04][~05·G][~06][~07][~08]   1 / 6
-Spine (M1)        [x11][x12][x13][~15][16]           3 / 5
+Spine (M1)        [x11][x12][x13][x15][16]           4 / 5
 Loud + breadth    [~09][x10][x14]                    2 / 3
 Presentation      [17][18]                           0 / 2
 Live + release    [19][20][21]                       0 / 3

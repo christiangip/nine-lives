@@ -60,7 +60,10 @@ stealth legible (the FP readability requirement from Q1).
 - [x] `test_ui_scenes.gd` — every new UI surface (menu/HUD/options/slots/pause/results/sandbox) builds in-tree.
 
 ## Definition of Done
-- [~] FR-15-1..8 satisfied; phases checked; tests green. *(**331/331 green** on Godot 4.6.3. All UI built;
+- [x] FR-15-1..8 satisfied; phases checked; tests green. *(**331/331 green** on Godot 4.6.3. All UI built;
   FR-15-2/3's **live save data** is deferred to 16 — ↩ From 15.)*
-- [ ] M1 manual: Continue-disabled logic correct; HUD makes FP stealth readable. *(Residual: human F6 sign-off
-  on `game/scenes/ui/UISandbox.tscn` — mirrors tasks 03–14.)*
+- [x] M1 manual: Continue-disabled logic correct; HUD makes FP stealth readable. *(Human F6 sign-off on
+  `game/scenes/ui/UISandbox.tscn` passed 2026-07-05 — compass-eye fills + points at threats, carry/
+  objective/pursuit/loud readouts live, noise ring visible, all menus open/functional, Options persist,
+  Pause Q5 messaging shown, Results screen correct. HUD also renders in `MissionGreybox.tscn`.)*
+- **Task 15 complete (`[x]`).** The **M1 milestone gate** still needs task 16 (save system).
