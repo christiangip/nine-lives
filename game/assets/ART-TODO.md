@@ -19,3 +19,5 @@ off-scale here for a per-file import-scale pass (`AssetGallery.gd` / phase-1-art
 | **Safe** (CreativeTrio), **Gold Bars** (hat_my_guy) | `safe_basic`, `gold_bar` loot | author credited but **license marker not provided** | Low | confirm CC0/CC-BY on Poly Pizza (credited either way; add license to manifest) |
 | _gap:_ **laser_grid, motion_sensor, pressure_plate, silent_alarm, stolen_data** | task-06 obstacles / task-08 loot | not found in the phase-3 download | Med | source CC0 (Poly Pizza / Kenney) later |
 | _gap:_ **wall/floor tiling materials** | marble/carpet/tile surfaces | models pre-textured only | Low | ambientCG / Poly Haven PBR sets (recolor to palette) |
+| **procedural music beds** (`AudioManager._make_bed`) | Calm/Tense/Combat/Resolve music layers (task 17) | in-code tonal placeholders, not composed music | Med | real layered stems (grounded/heist tone, Q3) — swap into `AudioConfigDef` |
+| Kenney interface/impact SFX | spotted-sting / alarm klaxon / running drill (task 17) | approximated from CC0 UI/impact set, not bespoke | Low | dedicated diegetic SFX (klaxon, drill loop, pick-snap) — remap `AudioConfigDef.sfx_paths` |

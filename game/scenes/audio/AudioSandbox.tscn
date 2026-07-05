@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://b17audiosandbox0"]
+
+[ext_resource type="Script" path="res://game/scenes/audio/AudioSandboxDebug.gd" id="1_asx"]
+
+[node name="AudioSandbox" type="Node3D"]
+script = ExtResource("1_asx")

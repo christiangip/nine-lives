@@ -37,8 +37,10 @@ CC0 — attribution not required, credited voluntarily (Kenney's license asks fo
 
 ## Audio (SFX / Music)
 CC0 — attribution not required, credited voluntarily:
-- **Kenney** (kenney.nl) — Interface Sounds, Impact Sounds. CC0.
-- _music: none yet_
+- **Kenney** (kenney.nl) — Interface Sounds, Impact Sounds. CC0. *(Task 17 wires these as the diegetic
+  SFX set — cues approximated from the interface/impact libraries; bespoke sting/klaxon/drill pending.)*
+- _music: procedural placeholder beds generated in-code (`AudioManager._make_bed`) for task 17; no real
+  music stems yet — see ART-TODO._
 
 ## UI / Icons
 CC0 — attribution not required, credited voluntarily:

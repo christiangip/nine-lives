@@ -547,3 +547,32 @@ consequence logic tested behind a hook and added `↩ From 06` banners to `07`�
   `[N]/[O]` opening the real MainMenu/SlotPopup. **F6 "feel" playtest signed off 2026-07-05** (Continue
   restores a slot exactly; a hot-quit costs the run) — **Task 16 complete (`[x]`)**. With 16 landed, the
   **M1 milestone gate is met** (every spanned task + the manual checklist).
+- **17 — Audio:** **code + automated DoD complete & verified green** on Godot 4.6.3 (headless GUT
+  **356/356**, +13 task-17 tests). Two pillars — dynamic music + diegetic/positional SFX — built on the
+  **frozen EventBus** (no signal changes): `AudioManager` *subscribes* to the existing globals and adds a
+  local `caption_requested` signal (EventBus stays signals-only). **Music (FR-17-1):** four looped
+  **procedural placeholder beds** (`AudioStreamWAV` additive-harmonic drones, rising partial count/pitch
+  per state — user chose placeholder-now over silent-framework) crossfade on the Music bus via a pure
+  static `music_state_for(detection_state, pursuit_phase)` seam + a per-actor detection aggregator
+  (`_actor_states`, pruned on UNAWARE) + latest pursuit phase; `mission_completed`/`streak_ended` latch
+  **Resolve**, `game_state_changed` resets to Calm. **SFX (FR-17-2, user chose approximate-from-CC0):**
+  every cue is mapped from the imported **Kenney CC0** interface/impact set via a new data-driven
+  **`AudioConfigDef`** (+ `default_audio.tres`), the **21st `Content` registry `Content.audio`** (static
+  `resolve()`); EventBus-global cues (spotted/alarm-by-kind/loot/body/footstep) are handled in
+  AudioManager, and **local-signal sites call `play_sfx` directly** (EventBus untouched): `Lock`
+  (pick-snap), `BreachPoint` (a `play_loop` running-drill + jam/done), `HackTarget`/`HackMinigame`
+  (tick/fault/done), `GuardAI.take_down`. `play_sfx(id, position)` routes a transient
+  `AudioStreamPlayer3D` when given a Vector3 else a 2D player; `_last_sfx_id` is the test seam.
+  **Positional (FR-17-3):** player footsteps off `noise_emitted(source=="footstep")`; `GuardAI` emits a
+  cadence-driven 3D footstep (per-instance throttle) so an approaching guard is locatable by ear.
+  **Buses (FR-17-4):** added the missing **Ambience** bus to `default_bus_layout.tres` — the five Options
+  sliders were already wired via `SettingsManager._apply_audio`/`_set_bus_linear`. **Captions (FR-17-7):**
+  a HUD caption line (`MissionHUD`) fed by `AudioManager.caption_requested`, gated on the existing
+  `audio.subtitles` setting (generation-token auto-clear). **Grounded palette (FR-17-5)** — CC0 diegetic
+  sounds, no supernatural motifs. **Manifest/CREDITS/ART-TODO (FR-17-6)** updated with the procedural-bed
+  + approximated-SFX placeholders and their real-asset replacements. Demo:
+  `game/scenes/audio/AudioSandbox.tscn` (+ `AudioSandboxDebug.gd`) — an FP room (Quaternius furniture +
+  `safe.glb` + a patrolling `Swat.gltf`) with dev keys to cycle detection (hear Calm→Tense→Combat
+  crossfade), bump pursuit, fire each cue, locate the guard by footsteps, toggle Subtitles, and mute the
+  Music bus. **Residual (`[~]`):** the M2 human F6 "feel" sign-off (tell calm/tense/combat apart + locate
+  a guard by footsteps); real music stems + bespoke SFX are noted pending in ART-TODO.

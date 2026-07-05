@@ -102,6 +102,8 @@ func _complete(method: StringName) -> void:
 		_deliver_data_loot()
 	_mark_solved(method)
 	hack_completed.emit(kind)
+	if AudioManager != null:
+		AudioManager.play_sfx(&"hack_done", global_position)   # device-hacked cue (task 17)
 
 ## The download is added to the hacker's carry (↩ from 06, closes TODO[08]). Duck-typed exactly
 ## like Obstacle.actor_has_item — this class doesn't know Inventory's shape, just that _hacker

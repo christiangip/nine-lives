@@ -17,6 +17,7 @@ var method: StringName = &"drill"
 var progress: float = 0.0
 var _speed_mult: float = 1.0   ## breach-gear upgrade: >1 drills faster (task 09, FR-09-3)
 var _jam_mult: float = 1.0     ## breach-gear upgrade: <1 jams less often (task 09, FR-09-3)
+var _drill_sfx: AudioStreamPlayer3D   ## running-drill loop (task 17); stopped on jam/finish
 
 # --- Pure seams (deterministic; unit-tested headless) ----------------------
 ## Does the drill jam this tick? `roll` is a uniform draw in [0,1); `chance` already folds in delta. Pure.
@@ -57,10 +58,13 @@ func begin_breach(p_method: StringName, _by: Node = null) -> void:
 	is_jammed = false
 	progress = 0.0
 	_emit_noise_for(method)            # the tool draws guards while it works
+	_start_drill_sfx()                 # running-drill loop (task 17)
 
 func repair() -> void:
 	if is_jammed:
 		is_jammed = false
+		if running:
+			_start_drill_sfx()   # resume the running-drill loop after a repair (task 17)
 
 func _process(delta: float) -> void:
 	if not running or is_jammed:
@@ -68,6 +72,9 @@ func _process(delta: float) -> void:
 	if method == &"drill" and _jam_chance() > 0.0 and jam_check(randf(), _jam_chance() * delta):
 		is_jammed = true
 		jammed.emit()
+		_stop_drill_sfx()
+		if AudioManager != null:
+			AudioManager.play_sfx(&"drill_jam", global_position)
 		return
 	progress = minf(progress + delta * _speed_mult, def.time_seconds)
 	breach_progress.emit(fraction(progress, def.time_seconds))
@@ -79,5 +86,20 @@ func _jam_chance() -> float:
 
 func _finish() -> void:
 	running = false
+	_stop_drill_sfx()
+	if AudioManager != null and method != &"c4":
+		AudioManager.play_sfx(&"drill_done", global_position)   # thermite/drill completion (task 17)
 	_mark_solved(method)
 	breached.emit(method)
+
+# --- Running-drill loop SFX (task 17) --------------------------------------
+func _start_drill_sfx() -> void:
+	if AudioManager == null or method == &"c4":
+		return
+	_stop_drill_sfx()
+	_drill_sfx = AudioManager.play_loop(&"drill_run", global_position)
+
+func _stop_drill_sfx() -> void:
+	if is_instance_valid(_drill_sfx):
+		_drill_sfx.queue_free()
+	_drill_sfx = null

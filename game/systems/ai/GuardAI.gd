@@ -35,6 +35,10 @@ var _hp: float = 0.0                          ## current health; set from EnemyD
 var _weapon: Weapon                           ## built lazily from EnemyDef.loadout[0]
 var _pursuit_cfg: PursuitConfigDef            ## combat tunables (ranges/speed); Content.pursuit &"default"
 
+# --- Footstep audio (task 17, FR-17-3): 3D footsteps make an approaching guard locatable by ear.
+var _step_accum: float = 0.0
+var _step_interval: float = 0.5
+
 func _ready() -> void:
 	add_to_group(&"guard")
 	if def == null and Content != null and Content.enemies != null:
@@ -46,6 +50,7 @@ func _ready() -> void:
 		ai_config = Content.ai.get_def(&"default") as AIConfigDef
 	if ai_config == null:
 		ai_config = AIConfigDef.new()
+	_step_interval = AudioConfigDef.resolve().guard_step_interval
 	_resolve_sensor()
 	_resolve_waypoints()
 	if not EventBus.detection_changed.is_connected(_on_detection_changed):
@@ -332,6 +337,8 @@ func take_down(lethal: bool = false) -> void:
 	velocity = Vector3.ZERO
 	if _sensor != null:
 		_sensor.set_physics_process(false)
+	if AudioManager != null:
+		AudioManager.play_sfx(&"takedown", global_position)   # diegetic takedown cue (task 17)
 	_spawn_body(lethal)
 	if ai_config != null:
 		radio = RadioCheckin.new(ai_config.max_fakeable_checkins, global_position)
@@ -440,11 +447,22 @@ func _move_toward(target: Vector3, speed: float, delta: float) -> void:
 		velocity.x = dir.x * speed
 		velocity.z = dir.z * speed
 		look_at(global_position + dir, Vector3.UP)   # face travel so the cone leads the way
+		_tick_footsteps(delta)
 	else:
 		velocity.x = 0.0
 		velocity.z = 0.0
 	_apply_gravity(delta)
 	move_and_slide()
+
+## Emit a 3D footstep on the guard's cadence while it's moving (task 17); each guard throttles on its
+## own instance id so multiple guards don't share a footstep budget.
+func _tick_footsteps(delta: float) -> void:
+	if AudioManager == null:
+		return
+	_step_accum += delta
+	if _step_accum >= _step_interval:
+		_step_accum = 0.0
+		AudioManager.play_footstep(global_position, str(get_instance_id()))
 
 func _halt(delta: float) -> void:
 	velocity.x = 0.0

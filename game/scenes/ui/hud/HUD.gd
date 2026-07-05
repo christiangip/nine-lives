@@ -30,6 +30,8 @@ var _bar_w: float = 180.0
 var _phase: int = 0
 var _pause_menu: Control = null
 var _ui_scale: float = 1.0
+var _caption_label: Label = null       ## audio captions (task 17, FR-17-7); shown only when subtitles on
+var _caption_token: int = 0            ## generation guard so a new caption cancels the old clear timer
 
 func _ready() -> void:
 	layer = 20
@@ -40,6 +42,10 @@ func _ready() -> void:
 		EventBus.pursuit_phase_changed.connect(_on_pursuit_phase)
 	if not EventBus.settings_changed.is_connected(_on_settings_changed):
 		EventBus.settings_changed.connect(_on_settings_changed)
+	# Audio captions (FR-17-7): AudioManager emits a local caption per critical cue; we render it only
+	# when the subtitles accessibility option is on.
+	if AudioManager != null and not AudioManager.caption_requested.is_connected(_on_caption):
+		AudioManager.caption_requested.connect(_on_caption)
 
 # --- Pure seams (headless-testable) --------------------------------------------
 ## Carry is "full" (show the warning) once within a whisker of either cap. Pure. (FR-15-5)
@@ -85,6 +91,18 @@ func _build() -> void:
 	_pursuit_label = _mk_label(bl, "", 20, UITheme.WARN)
 
 	_build_loud_block()
+
+	# Bottom-center caption line (subtitles).
+	_caption_label = Label.new()
+	_caption_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_caption_label.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_caption_label.position = Vector2(-260, -70) * _ui_scale
+	_caption_label.custom_minimum_size = Vector2(520, 0) * _ui_scale
+	_caption_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_caption_label.add_theme_color_override("font_color", UITheme.TEXT)
+	_caption_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	_caption_label.add_theme_constant_override("outline_size", _OUTLINE)
+	_root.add_child(_caption_label)
 
 func _build_crosshair() -> void:
 	_crosshair = Control.new()
@@ -231,6 +249,26 @@ func _open_pause() -> void:
 # --- Signals / settings --------------------------------------------------------
 func _on_pursuit_phase(phase: int) -> void:
 	_phase = phase
+
+## Show a caption for a critical audio cue (FR-17-7), but only when Subtitles is enabled. Auto-clears
+## after a few seconds; a newer caption cancels the older clear via a generation token.
+func _on_caption(text: String) -> void:
+	if _caption_label == null or not _subtitles_on():
+		return
+	_caption_label.text = text
+	_caption_token += 1
+	var token := _caption_token
+	var tree := get_tree()
+	if tree == null:
+		return
+	var t := tree.create_timer(3.0)
+	t.timeout.connect(func() -> void:
+		if _caption_label != null and _caption_token == token:
+			_caption_label.text = "")
+
+func _subtitles_on() -> bool:
+	var s := Services.settings()
+	return s != null and bool(s.get_value("audio", "subtitles"))
 
 func _on_settings_changed(section: String) -> void:
 	if section == "gameplay":

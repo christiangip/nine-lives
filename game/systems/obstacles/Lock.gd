@@ -43,6 +43,9 @@ func resolve_attempt(success: bool, roll: float = NAN, lockpicking_level: float 
 		if pouch != null:
 			pouch.consume()
 		pick_snapped.emit()
+		# Diegetic snap cue (task 17). Direct call keeps EventBus frozen; local signal stays for the HUD.
+		if AudioManager != null:
+			AudioManager.play_sfx(&"lockpick_snap", global_position)
 
 ## Instant tap requests the lockpick overlay (task 07). The MinigameHost mounts it and feeds the
 ## outcome back through apply_minigame_result → resolve_attempt.

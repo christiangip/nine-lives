@@ -97,10 +97,14 @@ func _current_in_range() -> bool:
 func _route_input(dir: StringName) -> void:
 	if _index < _route.size() and dir == _route[_index]:
 		_index += 1
+		if AudioManager != null:
+			AudioManager.play_sfx(&"hack_tick")   # progress blip (task 17; 2D UI overlay)
 		if _index >= _route.size():
 			_finish_solved()
 	else:
 		_faults_left -= 1
+		if AudioManager != null:
+			AudioManager.play_sfx(&"hack_fault")  # wrong-route buzz (task 17)
 		if _faults_left < 0:
 			_finish_failed("faults")
 
