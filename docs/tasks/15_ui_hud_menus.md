@@ -24,10 +24,11 @@ stealth legible (the FP readability requirement from Q1).
 - **FR-15-7** HUD is minimal, trustable, and accessibility-aware (no color-only cues; UI scale).
 - **FR-15-8** Results/Catch screen summarizes the mission/Streak and the Legacy payout.
 
-> **↩ To 16 (Save System):** the menu/slot UI is built but its **live data** is task 16 — SlotPopup/MainMenu
-> call `SaveManager.scan_slots/slot_summary/save_slot/load_slot/delete_slot`, which are stubs, so Continue is
-> greyed + slots read "Empty" until 16 fills them. The two **save-backed** integration tests move to 16 too.
-> The pure UI logic (binding, summary formatting, detection→widget, options round-trip) is tested + green here.
+> **↩ To 16 (Save System) — CLOSED:** the menu/slot UI's **live data** landed with **task 16**.
+> SlotPopup/MainMenu's `SaveManager.scan_slots/slot_summary/save_slot/load_slot/delete_slot` calls are now
+> real (no UI edit) — Continue enables on a real save and occupied slots render the five fields (FR-15-2/3).
+> The two save-backed integration tests live in `test_save_menu_integration.gd` (task 16). The pure UI logic
+> (binding, summary formatting, detection→widget, options round-trip) was already tested + green here.
 
 ## Phases
 ### Phase 15.1 — Menu & slots (M1)
@@ -53,7 +54,7 @@ stealth legible (the FP readability requirement from Q1).
 
 ## Tests (GUT)
 - [x] `test_continue_enabled_binding.gd` — Continue disabled at 0, enabled at ≥1 (pure seam; the *temp-save*
-  half ↩ From 15 → 16).
+  half landed in task 16's `test_save_menu_integration.gd`).
 - [x] `test_slot_popup_summary.gd` — an occupied slot renders the five summary fields; empty renders "Empty."
 - [x] `test_options_persist.gd` — changing an option (incl. a new §15.2 key) writes config and survives a reload.
 - [x] `test_hud_detection_binding.gd` — `detection_changed` updates the compass-eye indicator/fill; bearing seam.
@@ -61,7 +62,8 @@ stealth legible (the FP readability requirement from Q1).
 
 ## Definition of Done
 - [x] FR-15-1..8 satisfied; phases checked; tests green. *(**331/331 green** on Godot 4.6.3. All UI built;
-  FR-15-2/3's **live save data** is deferred to 16 — ↩ From 15.)*
+  FR-15-2/3's **live save data** landed with task 16 — Continue enables + slots render live via
+  `test_save_menu_integration.gd`, no UI edit.)*
 - [x] M1 manual: Continue-disabled logic correct; HUD makes FP stealth readable. *(Human F6 sign-off on
   `game/scenes/ui/UISandbox.tscn` passed 2026-07-05 — compass-eye fills + points at threats, carry/
   objective/pursuit/loud readouts live, noise ring visible, all menus open/functional, Options persist,

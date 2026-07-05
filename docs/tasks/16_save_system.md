@@ -38,24 +38,46 @@ via schema migration.
 
 ## Phases
 ### Phase 16.1 — I/O & scan
-- [ ] Serialize/deserialize the schema; atomic write; header validation.
-- [ ] `scan_slots()` / `populated_count()` / `slot_summary()` (cheap meta read).
+- [x] Serialize/deserialize the schema; atomic write; header validation.
+- [x] `scan_slots()` / `populated_count()` / `slot_summary()` (cheap meta read).
 
 ### Phase 16.2 — Autosave & strict policy
-- [ ] Autosave hooks (Hideout + post-mission); block mid-mission saves.
-- [ ] `committed` handling: hot-quit → Catch resolution on relaunch; clean pre-detection abort path.
+- [x] Autosave hooks (Hideout entry + post-mission + each station spend); mid-mission saves blocked (autosave only runs between missions via `goto_hideout`/panel-close).
+- [x] `committed` handling: hot-quit → Catch resolution on relaunch (on-disk `active_mission_committed` checkpoint flip on alarm); clean pre-detection abort keeps Streak + secured loot.
 
 ### Phase 16.3 — Delete & migration
-- [ ] Delete-slot; migration framework + at least one example migration + version stamping.
+- [x] Delete-slot; migration framework (`migrate()` stepwise loop) + the `_migrate_1_to_2` example + version stamping (`SCHEMA_VERSION = 2`).
 
 ## Tests (GUT)
 - (existing) `test_save_scan.gd` — 10 slots; Continue logic base case.
-- `test_save_roundtrip.gd` — write a rich state → load → deep-equal.
-- `test_strict_commit.gd` — simulating a hot-quit (`committed=true`) resolves as a Catch, not a free escape.
-- `test_clean_abort.gd` — aborting while undetected keeps secured loot and the Streak.
-- `test_migration.gd` — a v0 save loads and upgrades to the current schema.
-- `test_atomic_write.gd` — an interrupted write leaves the previous save intact.
+- [x] `test_save_roundtrip.gd` — write a rich state → load → deep-equal (permanent + Streak, incl. loadout/job_board/intel).
+- [x] `test_strict_commit.gd` — a hot-quit (`active_mission_committed=true`) resolves as a Catch, not a free escape (+ no double-Catch on the next load).
+- [x] `test_clean_abort.gd` — a save taken while undetected keeps secured Take/Notoriety and the Streak.
+- [x] `test_migration.gd` — a v1 save loads and upgrades to the current schema (dict + on-disk file).
+- [x] `test_atomic_write.gd` — an interrupted write / corrupt file leaves the previous save intact and reads as empty.
+- [x] `test_save_menu_integration.gd` — (task-15 deferral) Continue enables once a real save exists; an occupied slot renders the five fields.
+- [x] `test_save_scenes.gd` — the `SaveSandbox.tscn` demo instantiates headlessly.
 
 ## Definition of Done
-- [ ] FR-16-1..8 satisfied; phases checked; tests green.
-- [ ] M1 manual: Continue restores a slot exactly; a hot-quit costs the run.
+- [x] FR-16-1..8 satisfied; phases checked; tests green (headless GUT **343/343** on Godot 4.6.3).
+- [x] M1 manual: Continue restores a slot exactly; a hot-quit costs the run. *(F6 sign-off passed 2026-07-05 via `SaveSandbox.tscn` + the real MainMenu→SlotPopup→Hideout loop.)*
+
+## Progress note
+**Code + automated DoD complete & verified green** on Godot 4.6.3 (headless GUT **343/343**, +12
+task-16 tests). `SaveManager` writes one JSON file per slot under `user://saves/` with **atomic
+write-then-rename** (`_write_atomic`: fill `.tmp` → swap), header validation, and a `JSON`-instance
+parse so corrupt slots read as empty without logging. The schema is composed from new
+`to_dict()/from_dict()` seams on **ProgressionManager** (permanent block + a new `playtime_seconds`)
+and **RunManager** (Streak block, folding in the existing `Loadout`/`Contract` serializers +
+`intel_by_seed`). **Strict integrity (Q5):** a top-level `active_mission_committed` checkpoint flag —
+distinct from the normal `streak.committed` — is flipped on-disk the instant an alarm trips
+(`RunManager._on_alarm_tripped` → `mark_committed()`); `load_slot` resolving that flag runs
+`end_streak("caught_hot_quit")` (the hot-quit Catch) and re-persists the cleared Streak. **Autosave**
+(`goto_hideout` arrival, `start_new_game` fresh slot, each Hideout station spend) only ever fires
+between missions. **Migration** bumped `SCHEMA_VERSION → 2` with `_migrate_1_to_2` defaulting the two
+v2-new fields. The Main Menu / `SlotPopup` needed **no edits** — they light up on the now-real seams
+(closes the `↩ From 15` deferral + its two integration tests, and the `↩ From 09` loadout↔save DoD
+bullet). Demo: `game/scenes/menu/SaveSandbox.tscn` (+ `SaveSandboxDebug.gd`) — a live 10-slot readout
+with dev keys for save/load/delete, a hot-quit→Catch simulation, and a v1→v2 migration round-trip,
+opening the real MainMenu/SlotPopup. **F6 "feel" playtest signed off 2026-07-05 → Task 16 complete
+(`[x]`).** With 16 landed, the **M1 milestone gate** is met (all spanned tasks + the manual checklist).

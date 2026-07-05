@@ -14,6 +14,7 @@ var edges: Array[StringName] = []   ## chosen temporary perks (Edge ids), applie
 var job_board: Array = []           ## available contracts (+ seeds)
 var intel_by_seed: Dictionary = {}  ## mission_seed(int) -> Array[String reveal keys] bought at the Planning Table (task 13)
 var committed: bool = false         ## true once an alarm is raised (strict saves)
+var last_contract: String = ""      ## display name of the most recent contract entered (save meta, task 16)
 var _loadout: Loadout               ## the Streak's equipped gear (task 09); lazily created
 
 # Per-mission performance tracking (reset each mission; feeds the multiplier stack, FR-12-1).
@@ -57,6 +58,11 @@ func _on_alarm_tripped(kind: String, _position: Vector3) -> void:
 	committed = true
 	_alarm_this_mission = true
 	raise_heat(_heat_for_alarm(kind))
+	# Strict saves (Q5, FR-16-5): flip the on-disk checkpoint flag the instant we commit, so a
+	# hot-quit mid-mission resolves as the Catch on next launch. One-way + un-save-scummable (it can
+	# only ever cost the player), so it's the one allowed mid-mission disk touch — no progress saved.
+	if SaveManager != null:
+		SaveManager.mark_committed()
 
 func _on_player_spotted(_by_actor_id: int) -> void:
 	_spotted_this_mission = true
@@ -107,6 +113,55 @@ func loadout() -> Loadout:
 	if _loadout == null:
 		_loadout = Loadout.new()
 	return _loadout
+
+# --- Serialization (task 16, FR-16-2) --------------------------------------
+## Snapshot the current Streak into a JSON-safe Dictionary — the save schema's "streak" block. Folds
+## in the equipped Loadout (task 09's to_dict), the Contract job board, and bought Intel. `committed`
+## rides along as normal Streak state; the mid-mission hot-quit checkpoint is SaveManager's own
+## top-level `active_mission_committed` flag, kept separate so a safe hub save isn't read as a Catch.
+func to_dict() -> Dictionary:
+	var board: Array = []
+	for c in job_board:
+		if c is Contract:
+			board.append((c as Contract).to_dict())
+	var intel: Dictionary = {}
+	for seed in intel_by_seed:
+		intel[str(seed)] = (intel_by_seed[seed] as Array).duplicate()
+	return {
+		"notoriety": notoriety,
+		"streak_level": streak_level,
+		"streak_length": streak_length,
+		"heat": heat,
+		"take": take,
+		"edges": ProgressionManager._sn_array_to_str(edges),
+		"committed": committed,
+		"last_contract": last_contract,
+		"loadout": loadout().to_dict(),
+		"job_board": board,
+		"intel_by_seed": intel,
+	}
+
+## Rehydrate the Streak from a to_dict() snapshot (missing keys keep defaults).
+func from_dict(d: Dictionary) -> void:
+	notoriety = int(d.get("notoriety", 0))
+	streak_level = int(d.get("streak_level", 1))
+	streak_length = int(d.get("streak_length", 0))
+	heat = float(d.get("heat", 0.0))
+	take = int(d.get("take", 0))
+	edges = ProgressionManager._str_array_to_sn(d.get("edges", []))
+	committed = bool(d.get("committed", false))
+	last_contract = String(d.get("last_contract", ""))
+	loadout().from_dict(d.get("loadout", {}))
+	job_board = []
+	for cd in d.get("job_board", []):
+		job_board.append(Contract.from_data(cd))
+	intel_by_seed = {}
+	for seed_key in d.get("intel_by_seed", {}):
+		var reveals: Array = []
+		for r in d["intel_by_seed"][seed_key]:
+			reveals.append(String(r))
+		intel_by_seed[int(seed_key)] = reveals
+	_reset_mission_tracking()
 
 # --- Streak lifecycle ------------------------------------------------------
 func start_new_streak() -> void:

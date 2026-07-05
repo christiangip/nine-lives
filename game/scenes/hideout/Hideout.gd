@@ -138,10 +138,15 @@ func _open_station(def: StationDef) -> void:
 func _on_panel_closed() -> void:
 	_active_panel = null
 	_rebuild()   # currencies / new unlocks may have changed
+	# Persist spends made at the station so a purchase can't be lost to a quit (task 16, FR-16-4).
+	if SaveManager != null:
+		SaveManager.autosave()
 
 func _unlock_station(def: StationDef) -> void:
 	if ProgressionManager.try_unlock_station(def):
 		_rebuild()
+		if SaveManager != null:
+			SaveManager.autosave()
 
 func _update_currencies() -> void:
 	var take := RunManager.take if RunManager != null else 0

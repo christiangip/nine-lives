@@ -13,12 +13,14 @@ var meta_perks: Array[StringName] = []  ## always-on permanent passives (Legacy 
 var stations_unlocked: Array[StringName] = []
 var stash: Array[StringName] = []       ## delivered special/unique loot
 var stats: Dictionary = {}              ## lifetime statistics
+var playtime_seconds: float = 0.0       ## lifetime playtime (accumulated by SaveManager, task 16)
 
 func add_legacy(amount: int) -> void:
 	if amount <= 0:
 		return
 	legacy += amount
-	# TODO[16]: trigger autosave
+	# Autosave isn't triggered here (that would over-save on every Notoriety→Legacy conversion);
+	# the strict policy autosaves at the Hideout / after each station spend / post-mission (task 16).
 
 func spend_legacy(amount: int) -> bool:
 	if amount < 0 or legacy < amount:
@@ -219,3 +221,59 @@ func _loot_by_hook(hook) -> LootDef:
 		if def != null and def.special_hook == want:
 			return def
 	return null
+
+# --- Serialization (task 16, FR-16-2) --------------------------------------
+## Snapshot the whole permanent account into a JSON-safe Dictionary (StringName → String). The save
+## schema's "permanent" block. Restored by from_dict(); round-tripped by test_save_roundtrip.gd.
+func to_dict() -> Dictionary:
+	return {
+		"legacy": legacy,
+		"attributes": _sn_dict_to_str(attributes),
+		"unlocked_gear": _sn_array_to_str(unlocked_gear),
+		"research_done": _sn_array_to_str(research_done),
+		"meta_perks": _sn_array_to_str(meta_perks),
+		"stations_unlocked": _sn_array_to_str(stations_unlocked),
+		"stash": _sn_array_to_str(stash),
+		"stats": _sn_dict_to_str(stats),
+		"playtime_seconds": playtime_seconds,
+	}
+
+## Rehydrate the permanent account from a to_dict() snapshot (missing keys keep defaults).
+func from_dict(d: Dictionary) -> void:
+	legacy = int(d.get("legacy", 0))
+	attributes = _str_dict_to_sn(d.get("attributes", {}))
+	unlocked_gear = _str_array_to_sn(d.get("unlocked_gear", []))
+	research_done = _str_array_to_sn(d.get("research_done", []))
+	meta_perks = _str_array_to_sn(d.get("meta_perks", []))
+	stations_unlocked = _str_array_to_sn(d.get("stations_unlocked", []))
+	stash = _str_array_to_sn(d.get("stash", []))
+	stats = _str_dict_to_sn(d.get("stats", {}))
+	playtime_seconds = float(d.get("playtime_seconds", 0.0))
+
+# JSON has no StringName type: arrays/dicts of StringName ids serialize as String and rehydrate back.
+static func _sn_array_to_str(arr: Array) -> Array:
+	var out: Array = []
+	for v in arr:
+		out.append(String(v))
+	return out
+
+static func _str_array_to_sn(arr) -> Array[StringName]:
+	var out: Array[StringName] = []
+	if arr is Array:
+		for v in arr:
+			out.append(StringName(v))
+	return out
+
+## StringName-keyed dict → String-keyed (values kept as-is: ints for attributes/stats).
+static func _sn_dict_to_str(d: Dictionary) -> Dictionary:
+	var out: Dictionary = {}
+	for k in d:
+		out[String(k)] = d[k]
+	return out
+
+static func _str_dict_to_sn(d) -> Dictionary:
+	var out: Dictionary = {}
+	if d is Dictionary:
+		for k in d:
+			out[StringName(k)] = int(d[k])
+	return out

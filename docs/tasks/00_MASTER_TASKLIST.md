@@ -180,8 +180,20 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
   greyed until 16) + the two save-backed integration tests. **F6 "feel" sign-off passed 2026-07-05:**
   compass-eye fills + points, all readouts live, menus functional, Options persist, Pause Q5 messaging,
   Results screen correct. The **M1 gate** still needs 16.*
-- [ ] **16 — Save System** · `16_save_system.md` · *(M1)*
+- [x] **16 — Save System** · `16_save_system.md` · *(M1)*
   10-slot schema, autosave, `scan_slots()`, load/delete, strict mid-mission policy, migration.
+  *Code + automated DoD **complete & verified green on Godot 4.6.3** (headless GUT **343/343**, +12 task-16
+  tests). `SaveManager` writes one JSON file per slot under `user://saves/` with **atomic write-then-rename**,
+  header validation, and cheap `slot_summary` meta reads; the schema is composed from new `to_dict()/from_dict()`
+  seams on `ProgressionManager` (permanent + `playtime_seconds`) and `RunManager` (Streak, folding in the
+  `Loadout`/`Contract` serializers + `intel_by_seed`). **Strict integrity (Q5):** a top-level
+  `active_mission_committed` checkpoint flag is flipped on-disk the instant an alarm trips
+  (`RunManager._on_alarm_tripped` → `SaveManager.mark_committed()`); `load_slot` resolving it runs the hot-quit
+  Catch (`end_streak`). **Autosave** at hideout entry / fresh new-game slot / each station spend — between
+  missions only. **Migration** bumped `SCHEMA_VERSION → 2` with `_migrate_1_to_2`. MainMenu/`SlotPopup` needed
+  **no edits** (closes the `↩ From 15` live-save deferral + its two tests, and the `↩ From 09` loadout↔save DoD
+  bullet). Demo `game/scenes/menu/SaveSandbox.tscn`. **F6 sign-off passed 2026-07-05 → Task 16 complete (`[x]`);
+  the M1 milestone gate is met.***
 
 ### Going loud + breadth (M2/M3)
 - [~] **09 — Loadout, Gear & Gadgets** · `09_loadout_gear_gadgets.md` · *(M2)*
@@ -253,13 +265,13 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
 ```
 Foundation        [x01][x02]                        2 / 2
 Core stealth (M0) [x03][~04][~05·G][~06][~07][~08]   1 / 6
-Spine (M1)        [x11][x12][x13][x15][16]           4 / 5
+Spine (M1)        [x11][x12][x13][x15][x16]          5 / 5
 Loud + breadth    [~09][x10][x14]                    2 / 3
 Presentation      [17][18]                           0 / 2
 Live + release    [19][20][21]                       0 / 3
 Onboarding        [22]                               0 / 1
-                                          TOTAL  7 / 22 lists
-Milestones        [ ] M0  [ ] M1  [ ] M2  [ ] M3  [ ] M4  [ ] M5
+                                          TOTAL  8 / 22 lists
+Milestones        [ ] M0  [x] M1  [ ] M2  [ ] M3  [ ] M4  [ ] M5
 ```
 
 Update the counts and gate boxes as DoDs are met. The base game ships at **M5**;
@@ -306,7 +318,7 @@ swap tracked in `phase-1-art.md` and task 18.
 
 **M0 — Prototype.** In one greybox level: infiltrate; read a guard's cone and slip past it in shadow; pick one lock; hack one panel; take one guard down non-lethally and hide the body; bag loose loot; hit the carry cap and feel the prioritization; ferry a load to a Drop Point and confirm the value **banks** (persists in the HUD readout); make a second trip; extract. Spot-check: getting fully spotted commits the level to alert. *Fun gut-check: was "one more room?" tempting?*
 
-**M1 — Roguelite spine.** From Main Menu: Continue is **greyed out** with no saves; New Game creates a slot, plays the greybox, returns to the Hideout. Complete 2–3 contracts in a Streak (board escalates), trip an alarm (Heat rises), get Caught; confirm Notoriety → **Legacy** payout; spend Legacy on a Training point + a Workshop unlock and feel the difference next Streak; quit and **Continue** restores the slot.
+**M1 — Roguelite spine.** ✅ **Signed off 2026-07-05.** From Main Menu: Continue is **greyed out** with no saves; New Game creates a slot, plays the greybox, returns to the Hideout. Complete 2–3 contracts in a Streak (board escalates), trip an alarm (Heat rises), get Caught; confirm Notoriety → **Legacy** payout; spend Legacy on a Training point + a Workshop unlock and feel the difference next Streak; quit and **Continue** restores the slot.
 
 **M2 — Vertical slice.** One polished archetype generated from a seed plays cleanly stealth *or* loud; a vault Crack (keycard → time-lock hack → drill under Pursuit) is completable; going loud triggers the cover-shooter escalation and a sweaty escape; dynamic music tracks the state; full Options apply and persist; no placeholder is *missing* art (ART-TODO may list off-style stand-ins).
 

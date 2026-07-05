@@ -60,6 +60,10 @@ func goto_main_menu() -> void:
 
 func goto_hideout() -> void:
 	transition_to(State.HIDEOUT)
+	# Between-mission autosave (FR-16-4): landing at the hub is a safe checkpoint, and it clears the
+	# mid-mission commit flag so a subsequent quit doesn't re-resolve a Catch.
+	if SaveManager != null:
+		SaveManager.autosave()
 	_change_scene(HIDEOUT_SCENE)
 
 func goto_results(payload: Dictionary = {}) -> void:
@@ -106,15 +110,20 @@ func _ensure_fade_layer() -> void:
 
 func start_new_game(slot: int) -> void:
 	active_slot = slot
-	# Fresh account/Streak, then land in the Hideout (FR-13-11). TODO[16]: persist a fresh slot +
-	# run the tutorial (task 22) before the hub; TODO[22]: first-time hints.
+	# Fresh account/Streak, persisted to the slot before the hub swap so the file exists for autosave /
+	# mark_committed (FR-16-1). goto_hideout autosaves again on arrival. TODO[22]: first-time hints.
 	if RunManager != null:
 		RunManager.start_new_streak()
+	if SaveManager != null:
+		SaveManager.save_slot(slot)
 	goto_hideout()
 
 func continue_game(slot: int) -> void:
 	active_slot = slot
-	# TODO[16]: SaveManager.load_slot(slot) rehydrates ProgressionManager/RunManager first.
+	# Rehydrate ProgressionManager/RunManager from disk BEFORE the hub swap; load_slot also resolves a
+	# hot-quit-while-committed as the Catch (FR-16-5) so the hub shows the correct post-Catch state.
+	if SaveManager != null:
+		SaveManager.load_slot(slot)
 	goto_hideout()
 
 ## Build a contract into a live mission and swap into it (task 11, FR-11-3). Validates the Streak
@@ -124,6 +133,9 @@ func enter_mission(contract) -> void:
 	if c == null:
 		push_warning("GameManager.enter_mission: no contract supplied")
 		return
+	# Record the contract name for the save slot summary (task 16 meta.last_contract).
+	if RunManager != null:
+		RunManager.last_contract = _contract_name(c)
 	# FR-09-8: validate the Streak's equipped loadout before entering (the Armory fixes it, task 13).
 	var run := Services.run()
 	if run != null and run.has_method("loadout"):
@@ -149,6 +161,14 @@ func _swap_to_built_scene(root: Node) -> void:
 		tree.root.add_child(root)
 		tree.current_scene = root)
 	tween.tween_property(_fade_rect, "color:a", 0.0, FADE_TIME)
+
+## The archetype's display name for a contract, falling back to the raw id (save meta, task 16).
+func _contract_name(c: Contract) -> String:
+	if Content != null and Content.archetypes != null:
+		var arch := Content.archetypes.get_def(c.archetype_id) as ArchetypeDef
+		if arch != null and arch.display_name != "":
+			return arch.display_name
+	return String(c.archetype_id)
 
 func return_to_hideout() -> void:
 	goto_hideout()
