@@ -574,5 +574,5 @@ consequence logic tested behind a hook and added `↩ From 06` banners to `07`�
   `game/scenes/audio/AudioSandbox.tscn` (+ `AudioSandboxDebug.gd`) — an FP room (Quaternius furniture +
   `safe.glb` + a patrolling `Swat.gltf`) with dev keys to cycle detection (hear Calm→Tense→Combat
   crossfade), bump pursuit, fire each cue, locate the guard by footsteps, toggle Subtitles, and mute the
-  Music bus. **Residual (`[~]`):** the M2 human F6 "feel" sign-off (tell calm/tense/combat apart + locate
-  a guard by footsteps); real music stems + bespoke SFX are noted pending in ART-TODO.
+  Music bus. **M2 manual F6 sign-off 2026-07-05** (tell calm/tense/combat apart + locate a guard by
+  footsteps); real music stems + bespoke SFX are noted pending in ART-TODO — **Task 17 complete (`[x]`).**

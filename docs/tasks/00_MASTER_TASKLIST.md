@@ -241,7 +241,7 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
   economy↔save → 16; balance presets → 20. **F6 "feel" playtest signed off 2026-07-04 → Task 14 complete (`[x]`).***
 
 ### Presentation & content (M2/M3)
-- [~] **17 — Audio** · `17_audio.md` · *(M2)*
+- [x] **17 — Audio** · `17_audio.md` · *(M2)*
   Dynamic music layers tied to detection/pursuit, diegetic SFX set, 3D positional, bus + Options volumes.
   *Code + automated DoD **complete & verified green on Godot 4.6.3** (headless GUT **356/356**, +13 task-17
   tests). Built on the **frozen EventBus** — `AudioManager` subscribes to the existing globals + exposes a
@@ -252,8 +252,8 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
   local-signal sites (Lock snap, BreachPoint drill loop/jam/done, HackTarget/HackMinigame, GuardAI takedown)
   call `play_sfx` directly. **3D positional:** player footsteps off `noise_emitted` + guard cadence
   footsteps. **Buses:** added the missing Ambience bus (Options sliders already wired). **Captions:** HUD
-  caption line gated on `audio.subtitles`. Demo `game/scenes/audio/AudioSandbox.tscn`. **Residual `[~]`:**
-  the M2 human F6 sign-off (tell calm/tense/combat apart + locate a guard by footsteps); real music stems +
+  caption line gated on `audio.subtitles`. Demo `game/scenes/audio/AudioSandbox.tscn`. **M2 manual F6
+  sign-off 2026-07-05** (tell calm/tense/combat apart + locate a guard by footsteps); real music stems +
   bespoke SFX noted pending in ART-TODO.*
 - [ ] **18 — Art & Asset Pipeline** · `18_art_asset_pipeline.md` · *(M2 first pass · ongoing)*
   Sourcing pass, glTF import standards, master materials/palette, manifest/credits/ART-TODO upkeep.
@@ -279,10 +279,10 @@ Foundation        [x01][x02]                        2 / 2
 Core stealth (M0) [x03][~04][~05·G][~06][~07][~08]   1 / 6
 Spine (M1)        [x11][x12][x13][x15][x16]          5 / 5
 Loud + breadth    [~09][x10][x14]                    2 / 3
-Presentation      [~17][18]                          0 / 2
+Presentation      [x17][18]                          1 / 2
 Live + release    [19][20][21]                       0 / 3
 Onboarding        [22]                               0 / 1
-                                          TOTAL  8 / 22 lists
+                                          TOTAL  11 / 22 lists
 Milestones        [ ] M0  [x] M1  [ ] M2  [ ] M3  [ ] M4  [ ] M5
 ```
 

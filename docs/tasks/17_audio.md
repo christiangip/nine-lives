@@ -52,8 +52,8 @@ learnable SFX and 3D-positional threat audio (doubly important in first-person).
 
 ## Definition of Done
 - [x] FR-17-1..7 satisfied; phases checked; tests green (headless GUT **356/356** on Godot 4.6.3).
-- [ ] M2 manual: closing your eyes, you can tell calm/tense/combat apart and locate a guard by footsteps.
-  *(In-editor F6 sign-off pending — verify via `game/scenes/audio/AudioSandbox.tscn`.)*
+- [x] M2 manual: closing your eyes, you can tell calm/tense/combat apart and locate a guard by footsteps.
+  *(F6 sign-off on `game/scenes/audio/AudioSandbox.tscn` — verified 2026-07-05.)*
 
 ## Progress note
 **Code + automated DoD complete & verified green** on Godot 4.6.3 (headless GUT **356/356**, +13 task-17
