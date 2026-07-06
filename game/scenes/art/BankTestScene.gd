@@ -63,7 +63,7 @@ func _build_stage() -> void:
 	add_child(sun)
 
 func _build_shell() -> void:
-	_add_box(Vector3(FLOOR_X * 0.5, -0.2, FLOOR_Z * 0.5), Vector3(FLOOR_X, 0.4, FLOOR_Z), "concrete")
+	_add_box(Vector3(FLOOR_X * 0.5, -0.2, FLOOR_Z * 0.5), Vector3(FLOOR_X, 0.4, FLOOR_Z), "concrete", &"floor")
 	# Perimeter walls, with a central entrance gap on the south (z = FLOOR_Z).
 	_wall(Vector3(FLOOR_X * 0.5, WALL_H * 0.5, 0.0), Vector3(FLOOR_X, WALL_H, 0.3))
 	_wall(Vector3(0.0, WALL_H * 0.5, FLOOR_Z * 0.5), Vector3(0.3, WALL_H, FLOOR_Z))
@@ -121,8 +121,9 @@ func _populate() -> void:
 	_place_char(CH_PUNK, Vector3(21.0, 0.0, 14.0), 200.0, "Idle")
 	# Teller line — a suited clerk behind the counter (unarmed civilian variant)
 	_place_char(CH_SUIT_NOGUN, Vector3(13.0, 0.0, 17.2), 180.0, "Idle")
-	# Guard near the server room
+	# Guard near the server room — a blue feet-ring keeps the threat read (task 18 "real models + keep reads")
 	_place_char(CH_SWAT, Vector3(9.8, 0.0, 12.5), 90.0, "Idle")
+	_role_ring(Palette.TINT_GUARD, Vector3(9.8, 0.03, 12.5))
 	# Loading dock — worker + farmer
 	_place_char(CH_WORKER, Vector3(25.0, 0.0, 17.5), 180.0, "Interact")
 	_place_char(CH_FARMER, Vector3(27.5, 0.0, 19.0), 200.0, "Idle")
@@ -201,9 +202,24 @@ func _place(scene: PackedScene, pos: Vector3, rot_y_deg: float = 0.0) -> void:
 	add_child(inst)
 
 func _wall(center: Vector3, size: Vector3) -> void:
-	_add_box(center, size, "")
+	_add_box(center, size, "", &"wall")
 
-func _add_box(center: Vector3, size: Vector3, surface: String) -> void:
+## A thin emissive feet-ring marking an actor's role — mirrors MissionController's stealth read (task 18).
+func _role_ring(color: Color, pos: Vector3) -> void:
+	var ring := MeshInstance3D.new()
+	var tm := TorusMesh.new()
+	tm.inner_radius = 0.35
+	tm.outer_radius = 0.55
+	ring.mesh = tm
+	ring.position = pos
+	var mat := Palette.tinted(color)
+	mat.emission_enabled = true
+	mat.emission = color
+	mat.emission_energy_multiplier = 0.6
+	ring.material_override = mat
+	add_child(ring)
+
+func _add_box(center: Vector3, size: Vector3, surface: String, mat_name: StringName = &"wall") -> void:
 	var body := StaticBody3D.new()
 	body.position = center
 	if surface != "":
@@ -212,6 +228,7 @@ func _add_box(center: Vector3, size: Vector3, surface: String) -> void:
 	mesh.size = size
 	var mi := MeshInstance3D.new()
 	mi.mesh = mesh
+	mi.material_override = Palette.material(mat_name)   # master material set (task 18)
 	body.add_child(mi)
 	var shape := BoxShape3D.new()
 	shape.size = size

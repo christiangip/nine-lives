@@ -32,6 +32,7 @@ game/assets/models/props/heist/wall_painting_01.glb,model,Poly Pizza,https://pol
 game/assets/models/props/heist/wall_painting_02.glb,model,Poly Pizza,https://poly.pizza,CC-BY,jeremy,wall decor,false,attribution in CREDITS.md
 game/assets/models/props/heist/padlock.glb,model,Quaternius,https://quaternius.com,CC0,Quaternius,lock_basic,false,CC0
 game/assets/models/props/heist/safe.glb,model,Poly Pizza,https://poly.pizza,CC-BY?,CreativeTrio,safe_basic,false,credited in CREDITS.md; license marker not given - verify
+game/assets/models/props/heist/safe_House_Props_Diffuse.png,texture,Poly Pizza,https://poly.pizza,CC-BY?,CreativeTrio,safe_basic diffuse texture,false,texture for safe.glb; credited in CREDITS.md; verify license
 game/assets/models/props/heist/gold_bars.glb,model,Poly Pizza,https://poly.pizza,CC-BY?,hat_my_guy,gold_bar loot,false,credited in CREDITS.md; license marker not given - verify
 # --- Audio (2026-07-03): Kenney SFX libraries (CC0), staged for task 17 ---
 game/assets/audio/sfx/interface/,audio,Kenney Interface Sounds,https://kenney.nl/assets/interface-sounds,CC0,Kenney,UI clicks/confirm/back/toggle,false,100 ogg

@@ -1,9 +1,11 @@
-[gd_resource type="Resource" script_class="LootDef" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="LootDef" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://game/resources/_defs/LootDef.gd" id="1_loot"]
+[ext_resource type="PackedScene" path="res://game/assets/models/props/heist/cash_stack.glb" id="2_art"]
 
 [resource]
 script = ExtResource("1_loot")
+mesh = ExtResource("2_art")
 id = &"cash_bundle"
 display_name = "Bundle of Cash"
 tier = 0

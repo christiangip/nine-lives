@@ -255,8 +255,19 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
   caption line gated on `audio.subtitles`. Demo `game/scenes/audio/AudioSandbox.tscn`. **M2 manual F6
   sign-off 2026-07-05** (tell calm/tense/combat apart + locate a guard by footsteps); real music stems +
   bespoke SFX noted pending in ART-TODO.*
-- [ ] **18 — Art & Asset Pipeline** · `18_art_asset_pipeline.md` · *(M2 first pass · ongoing)*
+- [~] **18 — Art & Asset Pipeline** · `18_art_asset_pipeline.md` · *(M2 first pass · ongoing)*
   Sourcing pass, glTF import standards, master materials/palette, manifest/credits/ART-TODO upkeep.
+  *First M2 pass **code + automated DoD complete & verified green on Godot 4.6.3** (headless GUT **98/98**,
+  +2 art tests; `check_assets.sh` green). New **`Palette`** master-material accessor (`game/systems/art/`) +
+  10 `StandardMaterial3D` .tres in `game/assets/materials/`. The dormant art `scene` seam is **wired**:
+  `MissionController` realizes `SectionDef.scene` (new `SectionShell` grid-snapped shells — vault + lobby),
+  `ObstacleDef.scene` (added; prop prefabs), `LootDef.mesh`, and a new `EnemyDef.model` (real characters +
+  a tinted feet-ring so threats stay legible), all additive with a greybox fallback so task-11 tests stay
+  green + un-dressed archetypes still build; + a WorldEnvironment/lighting pass tuned for stealth shadows.
+  Standalone showcase `bank_test.tscn` recolored to the palette. `check_assets.sh` (manifest-row + LFS gate)
+  authored + CI-wired. **Deferred (↩ logged in ART-TODO):** section shells for the other 4 Bank sections +
+  Museum/Warehouse; per-tier actor models; loot-model scale pass; grounded prop replacements. **Residual
+  `[~]`:** the M2 F6 cohesion/readability sign-off.*
 - [ ] **19 — Expansion Framework** · `19_expansion_framework.md` · *(M3)*
   Hardening the data-driven "add content without code" path; authoring templates; mod-friendly loaders; content validation.
 
@@ -279,7 +290,7 @@ Foundation        [x01][x02]                        2 / 2
 Core stealth (M0) [x03][~04][~05·G][~06][~07][~08]   1 / 6
 Spine (M1)        [x11][x12][x13][x15][x16]          5 / 5
 Loud + breadth    [~09][x10][x14]                    2 / 3
-Presentation      [x17][18]                          1 / 2
+Presentation      [x17][~18]                        1 / 2
 Live + release    [19][20][21]                       0 / 3
 Onboarding        [22]                               0 / 1
                                           TOTAL  11 / 22 lists
@@ -320,9 +331,12 @@ Legend: ✅ covered by imported assets · ◐ stand-ins available, dedicated art
 
 **Bottom line:** the phase-1 import fully serves **task 11** (sections/environment,
 ready to wire) and gives **task 06** a few obstacle stand-ins; tasks 03/05 (characters),
-08 (loot), 09/10 (weapons), and 07/12 (UI/icons) await later art phases. Nothing here
-is *wired into gameplay* yet — that is the `SectionDef`/`ObstacleDef` `scene`-field
-swap tracked in `phase-1-art.md` and task 18.
+08 (loot), 09/10 (weapons), and 07/12 (UI/icons) await later art phases. **Update (task 18
+first pass):** the `scene`-field swap is now **wired** — `MissionController` realizes
+`SectionDef.scene` / `ObstacleDef.scene` / `LootDef.mesh` / `EnemyDef.model` (real Bank section
+shells, prop prefabs, loot + character models) behind a master-material/palette + lighting pass,
+additive with a greybox fallback. Remaining per-section shells, per-tier actors, and grounded prop
+replacements are logged in `game/assets/ART-TODO.md`.
 
 ---
 

@@ -25,3 +25,5 @@ jobs:
           -gconfig=game/tests/.gutconfig.json -gexit
       - name: Lint task-list / doc links
         run: bash tools/scripts/check_docs.sh
+      - name: Check asset manifest + LFS
+        run: bash tools/scripts/check_assets.sh

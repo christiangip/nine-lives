@@ -13,6 +13,8 @@ class_name MissionController
 const CELL := MissionLayout.CELL_SIZE
 const _PLAYER_SCENE := preload("res://game/scenes/player/PlayerController.tscn")
 const _HUD_SCENE := preload("res://game/scenes/ui/hud/HUD.tscn")   ## the real in-mission HUD (task 15)
+const _ENV := preload("res://game/assets/default_env.tres")        ## shared mission environment (task 18)
+const _CIVILIAN_MODEL := preload("res://game/assets/models/characters/Casual.gltf")  ## civilian art (task 18)
 
 ## Category → Obstacle subclass. Branch on the def property, never on id (const via preload, per house rule).
 const _OBSTACLE_SCRIPTS := {
@@ -66,6 +68,7 @@ func realize() -> void:
 	var world := Node3D.new()
 	world.name = "World"
 	add_child(world)
+	_build_stage(world)
 	_build_floor(world)
 	_build_sections(world)
 	_build_actors(world)
@@ -103,6 +106,34 @@ func loot_total_value() -> int:
 			total += def.value
 	return total
 
+## WorldEnvironment + key/fill lighting for the generated mission (task 18, FR-18-7). Tuned so cast
+## shadows stay dark enough to hide in but the scene reads (the stealth readability pass). Skipped when
+## the scene already supplies its own environment (MissionGreybox.tscn ships a WorldEnvironment + Sun),
+## so we never double up.
+func _build_stage(_world: Node3D) -> void:
+	if _has_world_environment():
+		return
+	var we := WorldEnvironment.new()
+	we.name = "MissionEnv"
+	we.environment = _ENV
+	add_child(we)
+	var sun := DirectionalLight3D.new()
+	sun.name = "Sun"
+	sun.rotation_degrees = Vector3(-52, -40, 0)
+	sun.light_energy = 1.1
+	sun.shadow_enabled = true
+	add_child(sun)
+	var fill := DirectionalLight3D.new()
+	fill.name = "Fill"
+	fill.rotation_degrees = Vector3(-25, 140, 0)
+	fill.light_energy = 0.25
+	add_child(fill)
+
+func _has_world_environment() -> bool:
+	if get_tree() == null:
+		return false
+	return not get_tree().root.find_children("*", "WorldEnvironment", true, false).is_empty()
+
 func _build_floor(world: Node3D) -> void:
 	if layout.sections.is_empty():
 		return
@@ -127,21 +158,33 @@ func _build_floor(world: Node3D) -> void:
 	var bm := BoxMesh.new()
 	bm.size = size
 	mesh.mesh = bm
+	mesh.material_override = Palette.material(&"floor")
 	floor_body.add_child(mesh)
 	world.add_child(floor_body)
 
 func _build_sections(world: Node3D) -> void:
 	for ps in layout.sections:
+		# Real art (task 18, FR-18-7): a SectionDef.scene shell is instanced at the section centre; its
+		# footprint is synced from the def so it grid-snaps. Sections without an authored scene fall back
+		# to a master-materialed tile (so un-dressed archetypes/wings still build — the additive seam).
+		if ps.def.scene != null:
+			var section: Node3D = ps.def.scene.instantiate()
+			section.name = "Section_%d_%s" % [ps.index, ps.def.id]
+			if "footprint" in section:
+				section.set("footprint", ps.def.footprint)
+			section.position = ps.center_world(CELL)
+			world.add_child(section)
+			continue
 		var tile := MeshInstance3D.new()
 		tile.name = "Section_%d_%s" % [ps.index, ps.def.id]
 		var bm := BoxMesh.new()
 		bm.size = Vector3(float(ps.size().x) * CELL - 0.6, 0.1, float(ps.size().y) * CELL - 0.6)
 		tile.mesh = bm
 		tile.position = ps.center_world(CELL) + Vector3(0, 0.06, 0)
-		var mat := StandardMaterial3D.new()
+		# Master floor tinted toward brass by security tier so higher wings still read (no clash with Escape).
+		var mat := (Palette.material(&"floor").duplicate() as StandardMaterial3D)
 		var t := clampf(float(ps.def.security_tier) / 3.0, 0.0, 1.0)
-		# Blue-grey (low security) → amber (high security). Avoids clashing with the red Escape box.
-		mat.albedo_color = Color(0.3 + t * 0.5, 0.35 + t * 0.12, 0.55 - t * 0.4, 1.0)
+		mat.albedo_color = Palette.FLOOR.lerp(Palette.ACCENT, t * 0.5)
 		tile.material_override = mat
 		world.add_child(tile)
 
@@ -171,15 +214,20 @@ func _spawn_guard(world: Node3D, enemy_id: StringName, pos: Vector3, skill_mult:
 	cap.radius = 0.35; cap.height = 1.8
 	shape.shape = cap
 	guard.add_child(shape)
-	var mesh := MeshInstance3D.new()
-	var cm := CapsuleMesh.new()
-	cm.radius = 0.35; cm.height = 1.8
-	mesh.mesh = cm
-	var gmat := StandardMaterial3D.new()
-	# Gold = a keycard carrier (the Inspector); blue = a regular guard — so the vault-key holder is findable.
-	gmat.albedo_color = Color(0.9, 0.72, 0.12) if carried_item != &"" else Color(0.2, 0.35, 0.78)
-	mesh.material_override = gmat
-	guard.add_child(mesh)
+	# Visual: the real character model (task 18) over the kept capsule collider, with a tinted feet-ring so
+	# the threat read survives (gold = keycard carrier / the Inspector, blue = a regular guard). The cone
+	# wedge below keeps detection legible. Capsule mesh is the fallback when a def has no model.
+	var role: Color = Palette.TINT_KEYCARRIER if carried_item != &"" else Palette.TINT_GUARD
+	if edef.model != null:
+		_add_model(guard, edef.model, Vector3(0, -0.9, 0))
+		guard.add_child(_role_ring(role, Vector3(0, -0.88, 0)))
+	else:
+		var mesh := MeshInstance3D.new()
+		var cm := CapsuleMesh.new()
+		cm.radius = 0.35; cm.height = 1.8
+		mesh.mesh = cm
+		mesh.material_override = Palette.tinted(role)
+		guard.add_child(mesh)
 	# detection sensor child (auto-found by GuardAI) + a debug cone wedge so the player can read it
 	var sensor := Node3D.new()
 	sensor.name = "Sensor"
@@ -225,7 +273,12 @@ func _spawn_obstacle(world: Node3D, obstacle_id: StringName, pos: Vector3) -> vo
 	node.name = "Obstacle_%s" % obstacle_id
 	node.set("def_id", obstacle_id)
 	node.position = pos + Vector3(0, 1.0, 0)
-	_add_marker_body(node, Vector3(0.8, 2.0, 0.3), Color(0.7, 0.5, 0.2))
+	# Real art (task 18): the ObstacleDef.scene prop prefab brings its own collider, so the interaction ray
+	# resolves up to this Interactable exactly as it did for the marker body. Fallback: the colored marker.
+	if odef.scene != null:
+		_add_model(node, odef.scene, Vector3(0, -1.0, 0))
+	else:
+		_add_marker_body(node, Vector3(0.8, 2.0, 0.3), Color(0.7, 0.5, 0.2))
 	world.add_child(node)
 
 func _build_loot(world: Node3D) -> void:
@@ -233,20 +286,34 @@ func _build_loot(world: Node3D) -> void:
 		var node := Node3D.new()
 		node.set_script(load("res://game/systems/inventory/LootPickup.gd"))
 		node.name = "Loot_%s" % l.get("loot_id", &"")
-		node.set("def_id", StringName(l.get("loot_id", &"")))
+		var lid := StringName(l.get("loot_id", &""))
+		node.set("def_id", lid)
 		node.position = l.get("pos", Vector3.ZERO) + Vector3(0, 0.5, 0)
 		var col := Color(0.9, 0.8, 0.2) if bool(l.get("is_mark", false)) else Color(0.8, 0.75, 0.4)
-		_add_marker_body(node, Vector3(0.5, 0.5, 0.5), col)
+		# Real art (task 18): a LootDef.mesh is shown over an invisible collider (the raw .glb has none, so
+		# the interaction ray still needs one). Fallback: the colored marker box.
+		var ldef := (Content.loot.get_def(lid) as LootDef) if Content != null and Content.loot != null else null
+		if ldef != null and ldef.mesh != null:
+			_add_marker_body(node, Vector3(0.5, 0.5, 0.5), col, false)
+			_add_model(node, ldef.mesh, Vector3(0, -0.5, 0))
+		else:
+			_add_marker_body(node, Vector3(0.5, 0.5, 0.5), col)
 		world.add_child(node)
 	for c in layout.consumables:
 		_add_labeled_marker(world, "Consumable_%s" % c.get("gear_id", &""), c.get("pos", Vector3.ZERO),
 			Vector3(0.35, 0.35, 0.35), Color(0.4, 0.8, 0.9))
 	for civ in layout.civilians:
-		# Cyan box — clearly not a guard (blue capsule) or the gold Inspector; carries a keycard.
-		var m := _add_labeled_marker(world, "Civilian", civ.get("pos", Vector3.ZERO),
-			Vector3(0.4, 1.7, 0.4), Color(0.1, 0.75, 0.8))
+		# Real art (task 18): a civilian model over an invisible collider (a pickpocket target), tinted cyan
+		# by a feet-ring so it reads as clearly not-a-guard / not-the-gold-Inspector.
+		var m := Node3D.new()
+		m.name = "Civilian"
+		m.position = civ.get("pos", Vector3.ZERO) + Vector3(0, 0.85, 0)
+		_add_marker_body(m, Vector3(0.4, 1.7, 0.4), Palette.TINT_CIVILIAN, false)
+		_add_model(m, _CIVILIAN_MODEL, Vector3(0, -0.85, 0))
+		m.add_child(_role_ring(Palette.TINT_CIVILIAN, Vector3(0, -0.83, 0)))
 		m.add_to_group(&"civilian")
 		m.set_meta("carried_item", civ.get("carried_item", &""))
+		world.add_child(m)
 
 func _build_banking(world: Node3D) -> void:
 	for dp in layout.drop_points:
@@ -254,14 +321,14 @@ func _build_banking(world: Node3D) -> void:
 		node.set_script(load("res://game/systems/inventory/DropPoint.gd"))
 		node.name = "DropPoint"
 		node.position = dp.get("pos", Vector3.ZERO) + Vector3(0, 0.5, 0)
-		_add_marker_body(node, Vector3(1.0, 1.0, 1.0), Color(0.2, 0.7, 0.3))
+		_add_marker_body(node, Vector3(1.0, 1.0, 1.0), Palette.SIGNAL_OK)
 		world.add_child(node)
 	if layout.escape_index >= 0:
 		var e := Node3D.new()
 		e.set_script(load("res://game/systems/inventory/Escape.gd"))
 		e.name = "Escape"
 		e.position = layout.sections[layout.escape_index].center_world(CELL) + Vector3(0, 1.0, 0)
-		_add_marker_body(e, Vector3(1.5, 2.2, 0.4), Color(0.9, 0.3, 0.3))
+		_add_marker_body(e, Vector3(1.5, 2.2, 0.4), Palette.SIGNAL_DANGER)
 		world.add_child(e)
 
 # --- Pursuit + minigame wiring (closes ↩ From 10 / ↩ From 07) --------------
@@ -354,22 +421,64 @@ func _bonus_objective_cleared() -> bool:
 	return bool(objectives_done.get(String(contract.bonus_objective_id), false))
 
 # --- Small build helpers ---------------------------------------------------
-func _add_marker_body(parent: Node3D, size: Vector3, color: Color) -> void:
+## A box collider (+ optional visible tinted mesh) under `parent`. `visible == false` gives an invisible
+## collider — used when real art (task 18) supplies the look but the raw mesh has no collider of its own.
+func _add_marker_body(parent: Node3D, size: Vector3, color: Color, visible := true) -> void:
 	var body := StaticBody3D.new()
 	var shape := CollisionShape3D.new()
 	var bs := BoxShape3D.new()
 	bs.size = size
 	shape.shape = bs
 	body.add_child(shape)
-	var mesh := MeshInstance3D.new()
-	var bm := BoxMesh.new()
-	bm.size = size
-	mesh.mesh = bm
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = color
-	mesh.material_override = mat
-	body.add_child(mesh)
+	if visible:
+		var mesh := MeshInstance3D.new()
+		var bm := BoxMesh.new()
+		bm.size = size
+		mesh.mesh = bm
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = color
+		mesh.material_override = mat
+		body.add_child(mesh)
 	parent.add_child(body)
+
+## Instances an art scene (character / loot / prop prefab) as a visual child at a local offset, playing an
+## idle clip if it has one so characters don't T-pose. Task 18. Returns the instance.
+func _add_model(parent: Node3D, scene: PackedScene, local_pos: Vector3) -> Node3D:
+	var inst := scene.instantiate()
+	if inst is Node3D:
+		(inst as Node3D).position = local_pos
+	parent.add_child(inst)
+	_play_idle(inst)
+	return inst as Node3D
+
+func _play_idle(root: Node) -> void:
+	for ap in root.find_children("*", "AnimationPlayer", true, false):
+		var player := ap as AnimationPlayer
+		var list := player.get_animation_list()
+		if list.is_empty():
+			return
+		var anim_name: String = "Idle" if player.has_animation("Idle") else String(list[0])
+		var a := player.get_animation(anim_name)
+		if a != null:
+			a.loop_mode = Animation.LOOP_LINEAR
+		player.play(anim_name)
+		return
+
+## A thin emissive feet-ring marking an actor's role (blue guard / gold keycard-carrier / cyan civilian) —
+## keeps the threat read legible even in shadow now the body is a full character model. Task 18.
+func _role_ring(color: Color, local_pos: Vector3) -> MeshInstance3D:
+	var ring := MeshInstance3D.new()
+	var tm := TorusMesh.new()
+	tm.inner_radius = 0.35
+	tm.outer_radius = 0.55
+	ring.mesh = tm
+	ring.position = local_pos
+	var mat := Palette.tinted(color)
+	mat.emission_enabled = true
+	mat.emission = color
+	mat.emission_energy_multiplier = 0.6
+	ring.material_override = mat
+	return ring
 
 func _add_labeled_marker(world: Node3D, node_name: String, pos: Vector3, size: Vector3, color: Color) -> Node3D:
 	var n := Node3D.new()

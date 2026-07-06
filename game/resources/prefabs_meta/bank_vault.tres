@@ -1,9 +1,11 @@
-[gd_resource type="Resource" script_class="SectionDef" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="SectionDef" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://game/resources/_defs/SectionDef.gd" id="1_sec"]
+[ext_resource type="PackedScene" path="res://game/prefabs/sections/vault.tscn" id="2_art"]
 
 [resource]
 script = ExtResource("1_sec")
+scene = ExtResource("2_art")
 id = &"bank_vault"
 display_name = "Main Vault"
 kind = 2

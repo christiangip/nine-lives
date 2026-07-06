@@ -45,6 +45,7 @@ enum Category {
 @export var clue_id: StringName = &""        ## found combo / code id that skips the minigame (FR-06-2/5)
 
 @export var params: Dictionary = {}          ## category-specific extras (e.g. camera "mode", breach "method")
+@export var scene: PackedScene               ## optional art geometry (task 18); marker body built if null. Realized by MissionController.
 
 ## Solution ids that ARE a skill-minigame (task 07). Any other solution counts as an alternate.
 const MINIGAME_SOLUTIONS: Array[StringName] = [&"lockpick", &"safe_dial", &"hack", &"keypad", &"pickpocket"]

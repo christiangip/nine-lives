@@ -48,3 +48,21 @@ Nothing ships blank.
 3. Reassign to a master material / recolor to palette.
 4. Add a row to `ASSET_MANIFEST.csv` (+ `CREDITS.md` if CC-BY).
 5. If off-style or placeholder, add a row to `ART-TODO.md`.
+
+## Realized in the engine (task 18)
+- **Master materials + palette.** The locked palette + master `StandardMaterial3D` set live in
+  `game/assets/materials/*.tres`, read through one accessor `Palette` (`game/systems/art/Palette.gd`):
+  `Palette.material(&"floor"/&"wall"/&"metal"/…)` and `Palette.tinted(color)`. The mission realizer, the
+  section/prop prefabs and the Bank showcase all recolor through it, so a palette change is one edit; a
+  missing `.tres` falls back to a flat palette colour (never hard-fails — the `UITheme` philosophy).
+- **Grid + scale.** 1u = 1m; the mission grid is `CELL = 6 m` (`MissionLayout.CELL_SIZE`). Per-asset scale
+  is baked into each `*.import` (`nodes/root_scale`; Kenney env ≈×6, characters ×1). Section shells
+  (`game/prefabs/sections/`, `SectionShell`) size themselves `footprint × CELL` and leave a doorway on
+  every edge, so they snap into the assembler regardless of which socket orientation it picks.
+- **The art `scene` seams (data, not code).** Real geometry attaches to gameplay purely through def fields,
+  realized by `MissionController` with a greybox fallback when unset: `SectionDef.scene` (section shell),
+  `ObstacleDef.scene` (prop prefab), `LootDef.mesh` (loot model), `EnemyDef.model` (character). Actors keep
+  the detection-cone wedge + a tinted feet-ring so threats stay legible after the model swap.
+- **CI gate.** `tools/scripts/check_assets.sh` fails the build if any binary under `game/assets/` lacks a
+  manifest row or LFS tracking, or if a manifest row is stale. Runs in `.github/workflows/ci.yml` after the
+  GUT + doc-lint steps.

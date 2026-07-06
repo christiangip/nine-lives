@@ -1,9 +1,11 @@
-[gd_resource type="Resource" script_class="EnemyDef" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="EnemyDef" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://game/resources/_defs/EnemyDef.gd" id="1_enemy"]
+[ext_resource type="PackedScene" path="res://game/assets/models/characters/Swat.gltf" id="2_art"]
 
 [resource]
 script = ExtResource("1_enemy")
+model = ExtResource("2_art")
 id = &"responder"
 kind = 6
 display_name = "Responder"

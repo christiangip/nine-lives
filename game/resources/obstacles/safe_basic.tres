@@ -1,9 +1,11 @@
-[gd_resource type="Resource" script_class="ObstacleDef" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="ObstacleDef" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://game/resources/_defs/ObstacleDef.gd" id="1_obs"]
+[ext_resource type="PackedScene" path="res://game/prefabs/props/safe_body.tscn" id="2_art"]
 
 [resource]
 script = ExtResource("1_obs")
+scene = ExtResource("2_art")
 id = &"safe_basic"
 display_name = "Dial Safe"
 category = 2
