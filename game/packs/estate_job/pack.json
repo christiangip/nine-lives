@@ -1,0 +1,15 @@
+{
+	"id": "estate_job",
+	"name": "The Estate Job",
+	"version": "1.0",
+	"description": "Worked-example stealth expansion (task 19): a Private Estate night-burglary archetype, three ghost/mule Edges, a Locksmith station, and a near-silent Diamond Snips gadget — all data + scenes, no core code. Proves the drop-in-a-folder loop (FR-19-4). Ships disabled; enable it in the Expansion sandbox or via PackManager.set_enabled.",
+	"requires": [],
+	"default_enabled": false,
+	"content": {
+		"archetypes": 1,
+		"sections": 5,
+		"edges": 3,
+		"gear": 1,
+		"stations": 1
+	}
+}

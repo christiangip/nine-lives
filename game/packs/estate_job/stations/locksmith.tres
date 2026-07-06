@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="StationDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/StationDef.gd" id="1_station"]
+
+[resource]
+script = ExtResource("1_station")
+id = &"locksmith"
+display_name = "Locksmith"
+scene_path = "res://game/packs/estate_job/scenes/LocksmithPanel.tscn"
+unlock_legacy_cost = 0
+unlock_special_loot = &""
+ui_hooks = {
+"order": 9,
+"blurb": "A friend on the outside — restock lockpicks and picks-pouches between jobs.",
+"prop": "workbench"
+}

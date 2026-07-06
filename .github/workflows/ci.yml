@@ -23,6 +23,8 @@ jobs:
         run: >
           godot --headless -s addons/gut/gut_cmdln.gd
           -gconfig=game/tests/.gutconfig.json -gexit
+      - name: Validate content data (task 19)
+        run: bash tools/scripts/validate_content.sh
       - name: Lint task-list / doc links
         run: bash tools/scripts/check_docs.sh
       - name: Check asset manifest + LFS

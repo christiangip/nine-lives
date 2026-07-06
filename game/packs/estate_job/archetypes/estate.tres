@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ArchetypeDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/ArchetypeDef.gd" id="1_arch"]
+
+[resource]
+script = ExtResource("1_arch")
+id = &"estate"
+display_name = "Private Estate"
+security_flavor = {
+"camera_density": 0.3,
+"laser_density": 0.1,
+"lock_difficulty": 0.5,
+"silent_alarms": true
+}
+min_sections = 4
+max_sections = 7
+section_ids = Array[StringName]([&"estate_foyer", &"estate_study", &"estate_servants", &"estate_grounds"])
+setpiece_ids = Array[StringName]([&"estate_gallery"])
+objective_ids = Array[StringName]([&"mark_high_value", &"grab_value"])
+modifier_pool = Array[StringName]([&"extra_patrols", &"blackout", &"tight_security"])
+enemy_roster = Array[StringName]([&"guard"])
+loot_ids = Array[StringName]([&"masterpiece_painting", &"jewelry_case", &"cash_bundle", &"gold_bar"])

@@ -269,8 +269,18 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
   Museum/Warehouse; per-tier actor models; loot-model scale pass; grounded prop replacements. **F6
   cohesion/readability sign-off passed 2026-07-05 → task 18 first pass complete (`[x]`).** (Phase 18.4
   upkeep stays ongoing per import; the M2 gate still needs 06/07/09.)*
-- [ ] **19 — Expansion Framework** · `19_expansion_framework.md` · *(M3)*
+- [x] **19 — Expansion Framework** · `19_expansion_framework.md` · *(M3)*
   Hardening the data-driven "add content without code" path; authoring templates; mod-friendly loaders; content validation.
+  *Code + automated DoD complete & **verified green on Godot 4.6.3** (GUT **381/381**, +13 task-19 tests). New
+  pure-static `PackManager` (`res://game/packs/*/pack.json` + `user://packs.json` enable state) hooks into
+  `Content._make`/`reload()` — add-only, zero `ContentRegistry` changes. New `ContentValidator` (declarative
+  required-field/reference tables, reuses `EconomyValidator`) + CLI/editor-tool/CI. Forward-compat is
+  **preserve-but-dormant** via read-only `SaveReconcile` (audit found consumers already null-tolerant — no
+  strip, no schema bump). Docs: `AUTHORING.md`/`PREFAB_AUTHORING.md`/`CONTENT_PACKS.md`. Worked example
+  `game/packs/estate_job/` ("The Estate Job": archetype + 4 sections + 3 Edges + gear + a Locksmith
+  station/panel) installs by dropping the folder in, ships disabled by default. Demo
+  `game/scenes/expansion/ExpansionSandbox.tscn`. **F6 "feel" playtest signed off 2026-07-06** — Task 19
+  complete.*
 
 ### Live, polish, release (M4/M5)
 - [ ] **20 — Progression Milestones & Live Content** · `20_progression_milestones.md` · *(M4)*
@@ -292,9 +302,9 @@ Core stealth (M0) [x03][~04][~05·G][~06][~07][~08]   1 / 6
 Spine (M1)        [x11][x12][x13][x15][x16]          5 / 5
 Loud + breadth    [~09][x10][x14]                    2 / 3
 Presentation      [x17][x18]                        2 / 2
-Live + release    [19][20][21]                       0 / 3
+Live + release    [x19][20][21]                      1 / 3
 Onboarding        [22]                               0 / 1
-                                          TOTAL  12 / 22 lists
+                                          TOTAL  13 / 22 lists
 Milestones        [ ] M0  [x] M1  [ ] M2  [ ] M3  [ ] M4  [ ] M5
 ```
 

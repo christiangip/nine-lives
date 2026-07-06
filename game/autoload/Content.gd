@@ -64,9 +64,22 @@ func _build() -> void:
 	audio = _make(&"audio", AudioConfigDef, "audio")   # cue→asset map + music/crossfade tunables (task 17)
 
 func _make(key: StringName, def_script: GDScript, folder: String, json_files: Array = []) -> ContentRegistry:
-	var reg := ContentRegistry.new(def_script, [_RESOURCE_ROOT.path_join(folder)], json_files)
+	# Core folder is index 0; enabled content packs (task 19) append after it, so first-writer-wins
+	# keeps packs strictly ADD-ONLY — a pack can never silently override a base id.
+	var tres_dirs: Array = [_RESOURCE_ROOT.path_join(folder)]
+	tres_dirs.append_array(PackManager.tres_dirs_for(key))
+	var jsons: Array = json_files.duplicate()
+	jsons.append_array(PackManager.json_files_for(key))
+	var reg := ContentRegistry.new(def_script, tres_dirs, jsons)
 	_registries[key] = reg
 	return reg
+
+## Rebuild every registry from scratch — re-reads which content packs are enabled (task 19), then
+## rescans. Called after PackManager.set_enabled() so a pack toggle is visible immediately.
+func reload() -> void:
+	_registries.clear()
+	_build()
+	scan_all()
 
 ## Rescan every registry from disk (e.g. after authoring new content in-editor).
 func scan_all() -> void:

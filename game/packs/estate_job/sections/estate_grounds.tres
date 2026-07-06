@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="SectionDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/SectionDef.gd" id="1_sec"]
+
+[resource]
+script = ExtResource("1_sec")
+id = &"estate_grounds"
+display_name = "Garden Grounds"
+kind = 4
+footprint = Vector2i(3, 2)
+socket_count = 2
+security_tier = 1
+anchors = Array[Dictionary]([{
+"type": &"drop",
+"pos": Vector3(1.5, 0, 1)
+}, {
+"type": &"entry",
+"pos": Vector3(1.5, 0, 0.5)
+}, {
+"type": &"cover",
+"pos": Vector3(0.5, 0, 0.5)
+}, {
+"type": &"reinforce",
+"pos": Vector3(2.5, 0, 1.5)
+}])

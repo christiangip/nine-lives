@@ -26,3 +26,21 @@ static func rm_dir(dir: String) -> void:
 		entry = d.get_next()
 	d.list_dir_end()
 	DirAccess.remove_absolute(dir)
+
+## Recursive delete of a temp directory TREE (nested subfolders + files) — for content-pack fixtures,
+## which have category subfolders (loot/, edges/, …). See task-19 pack tests.
+static func rm_tree(dir: String) -> void:
+	var d := DirAccess.open(dir)
+	if d == null:
+		return
+	d.list_dir_begin()
+	var entry := d.get_next()
+	while entry != "":
+		var child := dir.path_join(entry)
+		if d.current_is_dir():
+			rm_tree(child)
+		else:
+			d.remove(entry)
+		entry = d.get_next()
+	d.list_dir_end()
+	DirAccess.remove_absolute(dir)
