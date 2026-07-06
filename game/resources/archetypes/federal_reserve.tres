@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="ArchetypeDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/ArchetypeDef.gd" id="1_arch"]
+
+[resource]
+script = ExtResource("1_arch")
+id = &"federal_reserve"
+display_name = "Federal Reserve"
+security_flavor = {
+"camera_density": 0.9,
+"laser_density": 0.5,
+"lock_difficulty": 0.8,
+"silent_alarms": true
+}
+min_sections = 6
+max_sections = 8
+section_ids = Array[StringName]([&"bank_entry_lobby", &"bank_office", &"bank_teller_hall", &"bank_server_room", &"bank_loading_dock"])
+setpiece_ids = Array[StringName]([&"bank_vault"])
+objective_ids = Array[StringName]([&"crack_vault", &"grab_value", &"mark_high_value"])
+modifier_pool = Array[StringName]([&"extra_patrols", &"tight_security", &"silent_alarm_heavy"])
+enemy_roster = Array[StringName]([&"guard", &"inspector"])
+loot_ids = Array[StringName]([&"cash_bundle", &"gold_bar", &"jewelry_case", &"stolen_data"])
+unlock_milestone = &"master_vault"

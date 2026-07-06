@@ -32,6 +32,7 @@ var sections: ContentRegistry
 var progression: ContentRegistry
 var economy: ContentRegistry
 var audio: ContentRegistry
+var milestones: ContentRegistry
 
 var _registries: Dictionary = {}    ## StringName -> ContentRegistry
 
@@ -62,6 +63,7 @@ func _build() -> void:
 	progression = _make(&"progression", ProgressionConfigDef, "progression")   # streak/legacy tunables (task 12)
 	economy = _make(&"economy", EconomyConfigDef, "economy", [_DATA_ROOT.path_join("economy.json")])   # central balance table, JSON-authored (task 14)
 	audio = _make(&"audio", AudioConfigDef, "audio")   # cue→asset map + music/crossfade tunables (task 17)
+	milestones = _make(&"milestones", MilestoneDef, "milestones")   # long-arc unlock milestones (task 20, pack-extensible)
 
 func _make(key: StringName, def_script: GDScript, folder: String, json_files: Array = []) -> ContentRegistry:
 	# Core folder is index 0; enabled content packs (task 19) append after it, so first-writer-wins

@@ -5,8 +5,8 @@ class_name MissionBoard
 ## slots so later pins read tougher. Each Contract carries its own reproducible seed (FR-11-8). Pure/
 ## static + deterministic given the seeded rng. See docs/tasks/11_mission_generation.md.
 
-static func build_board(difficulty_floor: int, heat: float, count: int, rng: RandomNumberGenerator) -> Array:
-	var archetypes := generatable_archetypes()
+static func build_board(difficulty_floor: int, heat: float, count: int, rng: RandomNumberGenerator, unlocked_archetypes: Array = []) -> Array:
+	var archetypes := generatable_archetypes(unlocked_archetypes)
 	var board: Array = []
 	if archetypes.is_empty():
 		return board
@@ -45,19 +45,23 @@ static func board_difficulty_floor(board: Array) -> int:
 	return lo
 
 # --- Content selection -----------------------------------------------------
-static func generatable_archetypes() -> Array:
+static func generatable_archetypes(unlocked_archetypes: Array = []) -> Array:
 	var out: Array = []
 	if Content == null or Content.archetypes == null:
 		return out
 	for a in Content.archetypes.all():
-		if is_generatable(a):
+		if is_generatable(a, unlocked_archetypes):
 			out.append(a)
 	return out
 
 ## An archetype can generate iff it resolves an ENTRY, an ESCAPE, ≥1 INTERIOR, an OBJECTIVE setpiece,
-## and declares ≥1 objective. (Malformed/JSON-only archetypes are safely skipped.)
-static func is_generatable(arch: ArchetypeDef) -> bool:
+## and declares ≥1 objective. (Malformed/JSON-only archetypes are safely skipped.) A milestone-gated
+## map (ArchetypeDef.unlock_milestone set) is also excluded until its id is in `unlocked_archetypes`
+## (task 20, FR-20-1) — empty gate / empty set keeps every base archetype on the board (back-compat).
+static func is_generatable(arch: ArchetypeDef, unlocked_archetypes: Array = []) -> bool:
 	if arch == null or arch.objective_ids.is_empty():
+		return false
+	if arch.unlock_milestone != &"" and arch.id not in unlocked_archetypes:
 		return false
 	if Content == null or Content.sections == null:
 		return false

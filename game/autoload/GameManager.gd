@@ -67,6 +67,13 @@ func goto_hideout() -> void:
 	_change_scene(HIDEOUT_SCENE)
 
 func goto_results(payload: Dictionary = {}) -> void:
+	# A standalone Challenge (task 20) overrides the payload with its own results and restores the real
+	# Streak snapshot, so both the escape path (MissionController) and the Catch path funnel through here.
+	if RunManager != null and RunManager.challenge_mode:
+		var cr := RunManager.consume_challenge_results()
+		if not cr.is_empty():
+			payload = cr
+		RunManager.end_challenge()
 	pending_results = payload   # MissionResults reads this in _ready (task 15, FR-15-8)
 	transition_to(State.MISSION_RESULTS)
 	_change_scene(MISSION_RESULTS_SCENE)
@@ -145,6 +152,25 @@ func enter_mission(contract) -> void:
 	var root := MissionGenerator.build(c)
 	if root == null:
 		push_error("GameManager.enter_mission: mission build failed; staying put")
+		return
+	transition_to(State.MISSION)
+	_swap_to_built_scene(root)
+
+## Build + swap into a standalone daily/weekly Challenge (task 20, FR-20-2). Isolated from the endless
+## Streak via RunManager.begin_challenge (snapshot/restore); results route back through goto_results.
+func enter_challenge(contract, kind: String, reward: int) -> void:
+	var c := contract as Contract
+	if c == null:
+		push_warning("GameManager.enter_challenge: no contract supplied")
+		return
+	if RunManager != null:
+		RunManager.last_contract = _contract_name(c)
+		RunManager.begin_challenge(c.mission_seed, kind, reward)
+	var root := MissionGenerator.build(c)
+	if root == null:
+		push_error("GameManager.enter_challenge: mission build failed; aborting Challenge")
+		if RunManager != null:
+			RunManager.end_challenge()
 		return
 	transition_to(State.MISSION)
 	_swap_to_built_scene(root)

@@ -41,9 +41,9 @@ func build(contract: Resource) -> Node3D:
 
 ## Produce a fresh set of available contracts for the Job Map (FR-11-10). Escalates with the streak's
 ## difficulty floor + Heat. Seeded deterministically from (floor, heat) so a board is reproducible.
-func refresh_board(difficulty_floor: int, heat: float, count: int = 4) -> Array:
+func refresh_board(difficulty_floor: int, heat: float, count: int = 4, unlocked_archetypes: Array = []) -> Array:
 	_rng.seed = hash([difficulty_floor, int(round(clampf(heat, 0.0, 1.0) * 1000.0))])
-	return MissionBoard.build_board(difficulty_floor, heat, count, _rng)
+	return MissionBoard.build_board(difficulty_floor, heat, count, _rng, unlocked_archetypes)
 
 func set_seed(seed_value: int) -> void:
 	_rng.seed = seed_value

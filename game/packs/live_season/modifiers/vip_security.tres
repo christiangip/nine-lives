@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ModifierDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/ModifierDef.gd" id="1_mod"]
+
+[resource]
+script = ExtResource("1_mod")
+id = &"vip_security"
+display_name = "VIP Security"
+description = "A private detail on high alert — sharper eyes and tighter patrols. Still beatable quiet."
+difficulty_delta = 2
+reward_multiplier = 1.25
+effects = {
+"guard_skill_mult": 1.2,
+"patrol_count_mult": 1.3
+}

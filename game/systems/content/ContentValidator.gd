@@ -17,6 +17,7 @@ const REGISTRY_KEYS: Array[StringName] = [
 	&"loot", &"gear", &"edges", &"perks", &"archetypes", &"objectives", &"modifiers",
 	&"enemies", &"attributes", &"stations", &"intel", &"detection", &"ai", &"obstacles",
 	&"minigames", &"loadout", &"pursuit", &"sections", &"progression", &"economy", &"audio",
+	&"milestones",
 ]
 
 ## registry key -> String fields that must be non-empty (id is checked on every def separately). Kept
@@ -39,12 +40,20 @@ const REFERENCES := {
 		{"field": &"modifier_pool", "kind": ARR, "target": &"modifiers"},
 		{"field": &"enemy_roster", "kind": ARR, "target": &"enemies"},
 		{"field": &"loot_ids", "kind": ARR, "target": &"loot"},
+		{"field": &"unlock_milestone", "kind": SN, "target": &"milestones"},   # task 20: milestone gate (empty = ungated)
 	],
 	&"enemies": [
 		{"field": &"loadout", "kind": ARR, "target": &"gear"},
 	],
 	&"pursuit": [
 		{"field": &"tier_ladder", "kind": ARR, "target": &"enemies"},
+	],
+	# task 20 milestone arcs: the grant fields are genuine registry-id references. require_special_loot is
+	# a LootDef *special_hook* (like StationDef.unlock_special_loot) so it's deliberately NOT listed here.
+	&"milestones": [
+		{"field": &"grant_stations", "kind": ARR, "target": &"stations"},
+		{"field": &"grant_gear", "kind": ARR, "target": &"gear"},
+		{"field": &"grant_archetypes", "kind": ARR, "target": &"archetypes"},
 	],
 }
 

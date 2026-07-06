@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="MilestoneDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/MilestoneDef.gd" id="1_ms"]
+
+[resource]
+script = ExtResource("1_ms")
+id = &"well_connected"
+display_name = "Well Connected"
+description = "A supplier slips you a Casing Visor and a small retainer."
+threshold_legacy = 3000
+grant_gear = Array[StringName]([&"casing_visor"])
+reward_legacy = 300
+order = 3

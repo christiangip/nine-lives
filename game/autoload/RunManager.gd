@@ -17,6 +17,14 @@ var committed: bool = false         ## true once an alarm is raised (strict save
 var last_contract: String = ""      ## display name of the most recent contract entered (save meta, task 16)
 var _loadout: Loadout               ## the Streak's equipped gear (task 09); lazily created
 
+# --- Live Challenges (task 20, FR-20-2) — a standalone daily/weekly run, ISOLATED from the Streak ---
+var challenge_mode: bool = false            ## true while a Challenge mission is active (transient)
+var _streak_snapshot: Dictionary = {}       ## the real Streak, snapshotted on begin_challenge, restored on end
+var _challenge_seed: int = 0
+var _challenge_kind: String = ""
+var _challenge_reward: int = 0
+var _challenge_results: Dictionary = {}      ## the results payload GameManager.goto_results consumes
+
 # Per-mission performance tracking (reset each mission; feeds the multiplier stack, FR-12-1).
 var _alarm_this_mission: bool = false
 var _spotted_this_mission: bool = false
@@ -61,7 +69,8 @@ func _on_alarm_tripped(kind: String, _position: Vector3) -> void:
 	# Strict saves (Q5, FR-16-5): flip the on-disk checkpoint flag the instant we commit, so a
 	# hot-quit mid-mission resolves as the Catch on next launch. One-way + un-save-scummable (it can
 	# only ever cost the player), so it's the one allowed mid-mission disk touch — no progress saved.
-	if SaveManager != null:
+	# NEVER during a standalone Challenge (task 20): a hot-quit mid-Challenge must not Catch the real Streak.
+	if SaveManager != null and not challenge_mode:
 		SaveManager.mark_committed()
 
 func _on_player_spotted(_by_actor_id: int) -> void:
@@ -79,6 +88,10 @@ func _heat_for_alarm(kind: String) -> float:
 ## Notoriety × this mission's performance multiplier (FR-12-1), then refresh the board so the
 ## next contract escalates (FR-11-10). A Catch never reaches here — it calls end_streak() directly.
 func _on_mission_completed(summary: Dictionary) -> void:
+	if challenge_mode:
+		# A completed Challenge escape: record it + stage results; never touches the endless Streak.
+		_record_challenge(summary, true)
+		return
 	streak_length += 1
 	var cfg := _cfg()          # ProgressionConfigDef — par time gates the speed flag
 	var econ := _econ()        # EconomyConfigDef — the tunable payout dials (FR-14-3)
@@ -175,7 +188,74 @@ func start_new_streak() -> void:
 ## on a fresh Streak and after each completed contract. The difficulty floor rises with streak_length.
 func refresh_board() -> void:
 	if MissionGenerator != null:
-		job_board = MissionGenerator.refresh_board(1 + streak_length, heat)
+		var unlocked: Array = ProgressionManager.unlocked_archetypes if ProgressionManager != null else []
+		job_board = MissionGenerator.refresh_board(1 + streak_length, heat, 4, unlocked)
+		_apply_global_modifiers()
+
+## Rotating global modifiers (task 20, FR-20-3): append the currently-active event modifier(s) to every
+## board contract, so a "blackout week" affects the whole board for its period. Flows through the existing
+## MissionPopulator._merged_effects with zero populator changes; deduped so a contract's own roll isn't doubled.
+func _apply_global_modifiers() -> void:
+	var active := LiveOps.active_modifiers(LiveOps.config())
+	if active.is_empty():
+		return
+	for c in job_board:
+		if c is Contract:
+			for mid in active:
+				var m := StringName(mid)
+				if m != &"" and m not in c.modifier_ids:
+					c.modifier_ids.append(m)
+
+# --- Live Challenges (task 20, FR-20-2): isolated standalone runs ----------
+## Enter Challenge mode: snapshot the real Streak, then zero the transient run currencies so the
+## Challenge mission starts clean (the equipped Loadout is kept — the player brings their gear).
+## Restored verbatim by end_challenge, so a Challenge (even a Catch in it) never touches the Streak.
+func begin_challenge(seed: int, kind: String, reward: int) -> void:
+	_streak_snapshot = to_dict()
+	challenge_mode = true
+	_challenge_seed = seed
+	_challenge_kind = kind
+	_challenge_reward = reward
+	_challenge_results = {}
+	notoriety = 0; streak_level = 1; heat = 0.0; take = 0
+	committed = false; edges.clear()
+	_reset_mission_tracking()
+
+## Leave Challenge mode, restoring the snapshotted Streak exactly. GameManager.goto_results calls this
+## after a Challenge ends (or enter_challenge calls it on a failed build).
+func end_challenge() -> void:
+	if not _streak_snapshot.is_empty():
+		from_dict(_streak_snapshot)
+	challenge_mode = false
+	_streak_snapshot = {}
+	_challenge_results = {}
+
+## Record a Challenge attempt to the local leaderboard + grant the one-time first-clear Legacy reward,
+## and stage the results payload GameManager.goto_results consumes. Does NOT restore/transition.
+func _record_challenge(summary: Dictionary, success: bool) -> void:
+	var elapsed := float(summary.get("elapsed_seconds", 0.0))
+	var secured := int(summary.get("secured_value", 0))
+	var already := LiveChallenges.is_completed(_challenge_seed)
+	LiveChallenges.record(_challenge_seed, _challenge_kind, elapsed, secured, success)
+	var reward := 0
+	if success and not already and _challenge_reward > 0:
+		reward = _challenge_reward
+		if ProgressionManager != null:
+			ProgressionManager.add_legacy(reward)
+	var best := LiveChallenges.best_for(_challenge_seed)
+	_challenge_results = {
+		"challenge": true,
+		"challenge_kind": _challenge_kind,
+		"outcome": "success" if success else "caught",
+		"secured_value": secured,
+		"elapsed_seconds": elapsed,
+		"best_seconds": float(best.get("best_seconds", elapsed if success else 0.0)),
+		"reward_legacy": reward,
+	}
+
+## GameManager.goto_results pulls the staged Challenge results (a copy; {} if none staged).
+func consume_challenge_results() -> Dictionary:
+	return _challenge_results.duplicate()
 
 # --- Planning Table: Intel (FR-13-3/8, closes ↩ From 06 reveal half) --------
 ## Buy an Intel packet for a specific board contract, spending its Take (and/or Legacy) cost, and
@@ -298,6 +378,11 @@ func heat_multiplier() -> float:
 ## for anti-frustration), bank it, announce streak_ended, then reset to a fresh low-difficulty
 ## Streak. Returns the Legacy awarded. Task 10's Catch handoff calls this.
 func end_streak(reason: String) -> int:
+	if challenge_mode:
+		# A Catch/abort during a Challenge ends the CHALLENGE, not the real Streak: record a fail, no
+		# Notoriety→Legacy conversion, no Streak reset. GameManager.goto_results restores the snapshot.
+		_record_challenge({"secured_value": 0}, false)
+		return 0
 	var econ := _econ()
 	var awarded := convert_to_legacy(notoriety, heat_multiplier(), econ.legacy_floor)
 	# Legacy-conversion Perks (e.g. Financier: +10% Legacy from every Catch) scale the payout — closes
@@ -307,6 +392,9 @@ func end_streak(reason: String) -> int:
 	_bump_stat(&"streaks_caught", 1)
 	_bump_stat(&"legacy_earned", awarded)
 	EventBus.streak_ended.emit(reason, awarded)
+	# Lifetime Legacy earned just grew — a milestone arc may unlock. It's evaluated + announced on the
+	# next Hideout arrival (every mission end routes through the hub), keeping this path free of the
+	# milestone reward side-effect (task 20, FR-20-1). See ProgressionManager.check_milestones.
 	start_new_streak()
 	return awarded
 

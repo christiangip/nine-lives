@@ -19,23 +19,49 @@ the "progression milestone adds / new maps" expansion surface the project target
 
 ## Phases
 ### Phase 20.1 — Milestone arcs
-- [ ] Define unlock-arc data; reveal/gating UI in the Hideout (13); milestone notifications.
+- [x] Define unlock-arc data; reveal/gating UI in the Hideout (13); milestone notifications.
+  *`MilestoneDef` (22nd `Content` registry `Content.milestones`, pack-extensible) + 5 base arcs;
+  `ProgressionManager.check_milestones()` auto-grants stations/gear/archetypes for free at a lifetime-
+  Legacy / special-loot threshold, emits the local `milestone_unlocked` signal; the Hideout drains a
+  toast + the "The Wire" station shows arc progress. Gated maps via `ArchetypeDef.unlock_milestone`.*
 
 ### Phase 20.2 — Daily/weekly contracts
-- [ ] Date→seed derivation; reproducible contract; local results tracking + a results screen.
+- [x] Date→seed derivation; reproducible contract; local results tracking + a results screen.
+  *`LiveOps.daily_seed/weekly_seed` (self-rolled stable FNV-1a — cross-machine identical) →
+  `challenge_contract`; **standalone** Challenge runs isolated from the Streak (`RunManager.begin/
+  end_challenge` snapshot/restore + suppressed `mark_committed`); best time/score in
+  `user://challenge_results.json` (`LiveChallenges`); `MissionResults` gained challenge lines.*
 
 ### Phase 20.3 — Modifiers & seasons
-- [ ] Rotating modifier scheduler; seasonal goal tracks + reward grants.
+- [x] Rotating modifier scheduler; seasonal goal tracks + reward grants.
+  *`LiveOps.active_modifiers` (ring by day-bucket) → `RunManager.refresh_board` appends board-wide;
+  `LiveOps.active_season` + `ProgressionManager` season seams (baseline-relative progress, claim →
+  Legacy + dormant title). All config in `game/data/liveops.json`.*
 
 ### Phase 20.4 — New-map delivery
-- [ ] Validate that a new-archetype content pack (19) lands on the board live.
+- [x] Validate that a new-archetype content pack (19) lands on the board live.
+  *`game/packs/live_season/` ("Casino Nights") ships a new archetype + milestone + modifier as data,
+  disabled by default; `test_new_archetype_pack.gd` proves it reaches `generatable_archetypes()` on
+  enable with no code change.*
 
-## Tests (GUT)
-- `test_daily_seed.gd` — the same date yields the same contract across runs/machines.
-- `test_milestone_gating.gd` — an unlock arc reveals content exactly at its Legacy/special-loot threshold.
-- `test_modifier_rotation.gd` — the scheduler applies/removes the active global modifier on schedule.
-- `test_new_archetype_pack.gd` — a packaged new archetype appears on the board with no code change.
+## Tests (GUT) — all green (Godot 4.6.3, 407/407)
+- [x] `test_daily_seed.gd` — the same date yields the same contract across runs/machines (stable-hash spec anchor).
+- [x] `test_milestone_gating.gd` — an unlock arc reveals + auto-grants content exactly at its Legacy/special-loot threshold.
+- [x] `test_modifier_rotation.gd` — the scheduler applies/removes the active global modifier on schedule.
+- [x] `test_new_archetype_pack.gd` — a packaged new archetype appears on the board with no code change.
+- [x] `test_challenge_isolation.gd` — a Challenge never mutates the Streak or the on-disk commit flag.
+- [x] `test_live_scenes.gd` — the Live Board panel + Live Sandbox instantiate cleanly (headless smoke).
 
 ## Definition of Done
-- [ ] FR-20-1..6 satisfied; phases checked; tests green.
-- [ ] A new map and a weekly modifier can be shipped purely as data/config.
+- [x] FR-20-1..6 satisfied; phases checked; tests green.
+- [x] A new map and a weekly modifier can be shipped purely as data/config.
+  *Proven by the `live_season` pack (map + modifier as data) and the `liveops.json` rotation manifest.*
+
+## Notes
+- **Decisions (user):** Daily/weekly = standalone Challenge mode; milestones auto-unlock for free;
+  seasonal rewards = Legacy + a dormant title id; live config = a local JSON manifest (no networking).
+- EventBus stayed **frozen** (milestone notify via a local `ProgressionManager` signal); stayed at
+  **10 autoloads** (`LiveOps`/`LiveChallenges` are pure-static, like `PackManager`). Persistence is
+  additive-with-defaults (no `SCHEMA_VERSION` bump). `validate_content.sh` green.
+- **Residual `[~]`:** in-editor F6 "feel" sign-off on `game/scenes/live/LiveSandbox.tscn` (mark `[x]`
+  after a human pass, mirroring prior greyboxes).

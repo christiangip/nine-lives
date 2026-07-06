@@ -22,3 +22,8 @@ class_name ArchetypeDef
 @export var modifier_pool: Array[StringName] = []   ## ModifierDef ids that can roll on this archetype
 @export var enemy_roster: Array[StringName] = []    ## EnemyDef ids populated as patrols/guards
 @export var loot_ids: Array[StringName] = []        ## LootDef ids scattered at loot anchors
+
+## Milestone gate (task 20, FR-20-1). Empty = always on the board; a non-empty MilestoneDef id keeps
+## this archetype OFF the board until that milestone is reached (ProgressionManager.unlocked_archetypes).
+## Branches on a property, never an id — a premium/late-game map ships as data. See MissionBoard.is_generatable.
+@export var unlock_milestone: StringName = &""

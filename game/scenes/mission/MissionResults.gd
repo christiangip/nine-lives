@@ -18,6 +18,7 @@ func _ready() -> void:
 	var data := GameManager.pending_results if GameManager != null else {}
 	var outcome := String(data.get("outcome", "success"))
 	var is_catch := outcome in _CATCH_OUTCOMES
+	var is_challenge := bool(data.get("challenge", false))
 
 	var box := VBoxContainer.new()
 	box.set_anchors_preset(Control.PRESET_CENTER)
@@ -28,7 +29,10 @@ func _ready() -> void:
 	var title := Label.new()
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 44)
-	if is_catch:
+	if is_challenge:
+		title.text = "CHALLENGE FAILED" if is_catch else "CHALLENGE COMPLETE"
+		title.add_theme_color_override("font_color", UITheme.WARN if is_catch else UITheme.OK)
+	elif is_catch:
 		title.text = "CAUGHT" if outcome != "aborted" else "STREAK ENDED"
 		title.add_theme_color_override("font_color", UITheme.WARN)
 	else:
@@ -52,10 +56,24 @@ func _ready() -> void:
 	box.add_child(cont)
 	cont.grab_focus()
 
-## The body lines, tailored to a clean escape vs the Catch.
+## The body lines, tailored to a clean escape vs the Catch (or a standalone Challenge, task 20).
 func _summary_lines(data: Dictionary, is_catch: bool) -> Array[String]:
 	var lines: Array[String] = []
 	var secured := int(data.get("secured_value", 0))
+	if bool(data.get("challenge", false)):
+		var kind := String(data.get("challenge_kind", "daily")).capitalize()
+		if is_catch:
+			lines.append("%s Challenge failed — no time recorded." % kind)
+			lines.append("Your endless Streak is untouched — try again from the Live Board.")
+		else:
+			var secs := float(data.get("elapsed_seconds", 0.0))
+			lines.append("%s Challenge cleared in %s." % [kind, _fmt_time(secs)])
+			lines.append("Your best: %s" % _fmt_time(float(data.get("best_seconds", secs))))
+			var reward := int(data.get("reward_legacy", 0))
+			if reward > 0:
+				lines.append("First-clear bonus: +%d Legacy." % reward)
+			lines.append("Your endless Streak is untouched.")
+		return lines
 	if is_catch:
 		lines.append("Loot secured before the Catch: $%d" % secured)
 		lines.append("Notoriety banked as permanent Legacy: +%d" % int(data.get("legacy_awarded", 0)))
@@ -69,3 +87,9 @@ func _summary_lines(data: Dictionary, is_catch: bool) -> Array[String]:
 			lines.append("Performance: %s" % ", ".join(perf))
 		lines.append("Streak continues — pull your next contract from the Job Map.")
 	return lines
+
+## m:ss for a Challenge time.
+static func _fmt_time(secs: float) -> String:
+	var s := int(round(maxf(0.0, secs)))
+	@warning_ignore("integer_division")
+	return "%d:%02d" % [s / 60, s % 60]

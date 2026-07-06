@@ -62,7 +62,36 @@ func _ready() -> void:
 	_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_grid)
 
+	# Grant + announce any milestone arcs newly reached since last visit (task 20, FR-20-1). Idempotent —
+	# most fire at the Catch (end_streak) and surface here as the safehouse visibly grows.
+	if ProgressionManager != null:
+		ProgressionManager.check_milestones()
+
 	_rebuild()
+	_show_milestone_toasts()
+
+## Pop a brief toast per milestone reached since the last drain (task 20). The unlock itself is already
+## persisted + reflected in the station grid; this is just the "new content!" flourish.
+func _show_milestone_toasts() -> void:
+	if ProgressionManager == null:
+		return
+	var index := 0
+	for mid in ProgressionManager.drain_milestone_toasts():
+		var def := Content.milestones.get_def(mid) as MilestoneDef if Content != null and Content.milestones != null else null
+		_toast("★ Milestone reached: %s" % (def.display_name if def != null else String(mid)), index)
+		index += 1
+
+func _toast(text: String, index: int) -> void:
+	var lbl := Label.new()
+	lbl.text = text
+	lbl.add_theme_font_size_override("font_size", 22)
+	lbl.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
+	lbl.position = Vector2(50, 92 + index * 34)
+	add_child(lbl)
+	var timer := get_tree().create_timer(5.0)
+	timer.timeout.connect(func() -> void:
+		if is_instance_valid(lbl):
+			lbl.queue_free())
 
 ## (Re)build the station grid from the manifest. Called on open + whenever an unlock changes the
 ## Hideout ("the safehouse visibly grows").

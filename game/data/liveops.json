@@ -1,0 +1,31 @@
+{
+	"id": "default",
+
+	"daily_legacy_reward": 200,
+	"weekly_legacy_reward": 600,
+	"challenge_tier": 3,
+	"daily_archetypes": [],
+	"weekly_archetypes": [],
+
+	"modifier_rotation": {
+		"epoch_unix": 1704067200,
+		"period_days": 7,
+		"slots": ["", "extra_patrols", "", "blackout", "tight_security", "", "silent_alarm_heavy"]
+	},
+
+	"seasons": [
+		{
+			"id": "founding_season",
+			"title": "Founding Season",
+			"start_unix": 1704067200,
+			"duration_days": 3650,
+			"goals": [
+				{ "id": "ten_scores", "kind": "contracts_completed", "target": 10, "reward_legacy": 500, "reward_title": "title_first_scores", "display": "Complete 10 contracts" },
+				{ "id": "big_take", "kind": "take_secured", "target": 50000, "reward_legacy": 800, "reward_title": "title_big_earner", "display": "Secure $50,000 in The Take" },
+				{ "id": "trophy_hunter", "kind": "special_loot", "target": 1, "reward_legacy": 1000, "reward_title": "title_collector", "display": "Deliver a special trophy to the Stash" }
+			]
+		}
+	],
+
+	"_notes": "Live-ops manifest (task 20, FR-20-6). Read directly as a raw Dictionary by LiveOps (game/systems/live/LiveOps.gd) — NOT hydrated into a typed def — so its nested arrays/objects load cleanly and the whole file is directly swappable for a fetched remote manifest later (remote-tolerant, no networking now). modifier_rotation.slots is a ring: index = floor((now-epoch)/86400/period_days) % slots.size(); an empty slot is a calm week (no global modifier). Seasons are [start_unix, start_unix+duration_days) windows; goal.kind in contracts_completed | take_secured | special_loot | legacy_earned, all already tracked. Modifiers/archetypes referenced here must exist as content (validated at author time). Keep modifiers stealth-viable — denser/harder, never forcing loud (grounded stealth focus)."
+}

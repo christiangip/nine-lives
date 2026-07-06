@@ -283,8 +283,20 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
   complete.*
 
 ### Live, polish, release (M4/M5)
-- [ ] **20 — Progression Milestones & Live Content** · `20_progression_milestones.md` · *(M4)*
+- [~] **20 — Progression Milestones & Live Content** · `20_progression_milestones.md` · *(M4)*
   Milestone unlock arcs (stations/gear gated by Legacy/special loot), daily/weekly seeded contracts, rotating modifiers, seasonal goals.
+  *Code + automated DoD **complete & verified green on Godot 4.6.3** (headless GUT **407/407**, +26 task-20
+  tests; `validate_content.sh` green). New **`MilestoneDef`** (**22nd `Content` registry** `Content.milestones`,
+  pack-extensible) + `ProgressionManager.check_milestones()` **auto-unlock content for free** at a lifetime-
+  Legacy / special-loot threshold (local `milestone_unlocked` signal → Hideout toast; gated maps via
+  `ArchetypeDef.unlock_milestone`). New pure-static **`LiveOps`**/**`LiveChallenges`** (`game/systems/live/`,
+  no 11th autoload) drive date→seed **standalone Challenges** (isolated from the Streak via begin/end_challenge
+  snapshot + suppressed `mark_committed`; local `challenge_results.json`), the **rotating global modifier**
+  (`RunManager.refresh_board` append), and **seasonal goals** (Legacy + dormant title) — all config in
+  **`game/data/liveops.json`** (read directly, remote-tolerant). "**The Wire**" station + `game/packs/live_season/`
+  ("Casino Nights": new archetype + milestone + modifier as data → lands on the board live, FR-20-5). EventBus
+  stayed **frozen**; persistence additive (no schema bump). Greybox `game/scenes/live/LiveSandbox.tscn`.
+  **Residual `[~]`:** the F6 "feel" sign-off on `LiveSandbox.tscn` (mark `[x]` after a human pass, mirroring prior greyboxes).*
 - [ ] **21 — Release, Polish, Accessibility & Performance** · `21_release_polish.md` · *(M4–M5)*
   Accessibility suite, perf budget & profiling, juice, export presets, QA pass, build pipeline.
 
@@ -302,7 +314,7 @@ Core stealth (M0) [x03][~04][~05·G][~06][~07][~08]   1 / 6
 Spine (M1)        [x11][x12][x13][x15][x16]          5 / 5
 Loud + breadth    [~09][x10][x14]                    2 / 3
 Presentation      [x17][x18]                        2 / 2
-Live + release    [x19][20][21]                      1 / 3
+Live + release    [x19][~20][21]                     1 / 3
 Onboarding        [22]                               0 / 1
                                           TOTAL  13 / 22 lists
 Milestones        [ ] M0  [x] M1  [ ] M2  [ ] M3  [ ] M4  [ ] M5

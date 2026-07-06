@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="MilestoneDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/MilestoneDef.gd" id="1_ms"]
+
+[resource]
+script = ExtResource("1_ms")
+id = &"first_score"
+display_name = "First Score"
+description = "Word gets around. A little seed money finds its way to the Hideout."
+threshold_legacy = 300
+reward_legacy = 150
+order = 1

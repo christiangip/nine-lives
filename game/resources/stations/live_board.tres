@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="StationDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/resources/_defs/StationDef.gd" id="1_station"]
+
+[resource]
+script = ExtResource("1_station")
+id = &"live_board"
+display_name = "The Wire"
+scene_path = "res://game/scenes/hideout/stations/LiveBoardStation.tscn"
+unlock_legacy_cost = 0
+unlock_special_loot = &""
+ui_hooks = {
+"order": 10,
+"blurb": "Daily & weekly Challenges, the week's event modifier, seasonal goals, and your milestone arcs.",
+"prop": "corkboard"
+}

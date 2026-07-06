@@ -15,6 +15,33 @@ var stash: Array[StringName] = []       ## delivered special/unique loot
 var stats: Dictionary = {}              ## lifetime statistics
 var playtime_seconds: float = 0.0       ## lifetime playtime (accumulated by SaveManager, task 16)
 
+# --- Live content (task 20) ------------------------------------------------
+var unlocked_archetypes: Array[StringName] = []  ## archetypes revealed by a milestone (gate: ArchetypeDef.unlock_milestone)
+var milestones_reached: Array[StringName] = []   ## milestone ids already granted (idempotency + announce-once)
+var season_progress: Dictionary = {}             ## season_id -> {"_baseline": {kind:int}, goal_id: {"claimed": bool}}
+var titles_earned: Array[StringName] = []        ## dormant cosmetic/title ids awarded by seasonal goals (rendered later)
+
+## Announced when a milestone is newly reached (EventBus stays frozen — this is a local manager signal,
+## the established pattern for readability, mirrored on AudioManager.caption_requested / StationPanel.closed).
+signal milestone_unlocked(milestone_id: StringName)
+
+## Milestones reached but not yet shown as a Hideout toast (transient; the unlock itself is persisted).
+var _pending_milestone_toasts: Array[StringName] = []
+
+func _ready() -> void:
+	# Lifetime stat accrual for seasonal-goal tracking (task 20). ProgressionManager subscribes to the
+	# frozen EventBus (never a direct ref to RunManager) — the downward dependency rule is respected.
+	if not EventBus.mission_completed.is_connected(_on_mission_completed_stat):
+		EventBus.mission_completed.connect(_on_mission_completed_stat)
+	if not EventBus.loot_secured.is_connected(_on_loot_secured_stat):
+		EventBus.loot_secured.connect(_on_loot_secured_stat)
+
+func _on_mission_completed_stat(_summary: Dictionary) -> void:
+	stats[&"contracts_completed"] = int(stats.get(&"contracts_completed", 0)) + 1
+
+func _on_loot_secured_stat(_loot_id: String, value: int) -> void:
+	stats[&"loot_value_secured"] = int(stats.get(&"loot_value_secured", 0)) + maxi(0, value)
+
 func add_legacy(amount: int) -> void:
 	if amount <= 0:
 		return
@@ -184,6 +211,9 @@ static func can_buy_perk(def: PerkDef, owned: Array, available_legacy: int) -> b
 func add_to_stash(hook_id: StringName) -> void:
 	if hook_id != &"" and hook_id not in stash:
 		stash.append(hook_id)
+		stats[&"special_delivered"] = int(stats.get(&"special_delivered", 0)) + 1
+		# A delivered trophy may satisfy a special-loot milestone; that's evaluated on the next Hideout
+		# arrival (check_milestones), not here — keeping mid-mission banking free of grant side-effects.
 
 ## Summed set-bonus value of a modifier key across every special loot in the Stash (FR-13-9). Each
 ## trophy's LootDef may carry params["set_bonus"] = {key: amount}; systems query this the same way
@@ -222,6 +252,134 @@ func _loot_by_hook(hook) -> LootDef:
 			return def
 	return null
 
+# --- Milestone unlock arcs (task 20, FR-20-1) ------------------------------
+## The milestone ids whose thresholds are met (lifetime Legacy earned AND, if required, the special loot
+## delivered) but which haven't been granted yet. Pure — takes the defs + lifetime metric + stash +
+## already-reached set, so it's headless-testable and never branches on an id (only its properties).
+static func milestones_satisfied(defs: Array, legacy_earned: int, delivered_stash: Array, reached: Array) -> Array:
+	var out: Array = []
+	for d in defs:
+		var m := d as MilestoneDef
+		if m == null or m.id in reached:
+			continue
+		if legacy_earned < m.threshold_legacy:
+			continue
+		if m.require_special_loot != &"" and m.require_special_loot not in delivered_stash:
+			continue
+		out.append(m.id)
+	return out
+
+## Resolve any newly-satisfied milestones, AUTO-GRANT each one's unlocks for free (stations/gear/
+## archetypes + a one-off Legacy bonus), announce them, and return the ids granted this pass. Idempotent
+## (milestones_reached guards re-grants). Called on Hideout entry — every mission end (Catch or escape,
+## which is when lifetime Legacy grows and trophies are delivered) routes through the hub — and by the
+## Live sandbox demo. Kept OUT of end_streak/add_to_stash so those stay side-effect-free (task 20).
+func check_milestones() -> Array:
+	var newly: Array = []
+	if Content == null or Content.milestones == null:
+		return newly
+	var earned := int(stats.get(&"legacy_earned", 0))
+	for mid in milestones_satisfied(Content.milestones.all(), earned, stash, milestones_reached):
+		var m := Content.milestones.get_def(mid) as MilestoneDef
+		if m == null:
+			continue
+		_grant_milestone(m)
+		milestones_reached.append(m.id)
+		_pending_milestone_toasts.append(m.id)
+		newly.append(m.id)
+		milestone_unlocked.emit(m.id)
+	return newly
+
+func _grant_milestone(m: MilestoneDef) -> void:
+	for sid in m.grant_stations:
+		if sid not in stations_unlocked:
+			stations_unlocked.append(sid)
+	for gid in m.grant_gear:
+		if gid not in unlocked_gear:
+			unlocked_gear.append(gid)
+	for aid in m.grant_archetypes:
+		if aid not in unlocked_archetypes:
+			unlocked_archetypes.append(aid)
+	if m.reward_legacy > 0:
+		add_legacy(m.reward_legacy)   # a bonus, not "earned via play" — intentionally NOT added to legacy_earned (no chain-trigger)
+
+## Is this archetype revealed by a milestone? (MissionBoard consults ProgressionManager.unlocked_archetypes
+## to keep a gated map off the board until earned — passed in by RunManager.refresh_board.)
+func is_archetype_unlocked(id: StringName) -> bool:
+	return id in unlocked_archetypes
+
+## Take (and clear) the milestone ids reached since the last drain — the Hideout shows a toast per id.
+func drain_milestone_toasts() -> Array:
+	var out := _pending_milestone_toasts.duplicate()
+	_pending_milestone_toasts.clear()
+	return out
+
+# --- Seasonal goals (task 20, FR-20-4) -------------------------------------
+## Snapshot the current lifetime metrics as this season's baseline on first engagement, so goal progress
+## is measured from when the player joined the season (not lifetime totals). Idempotent.
+func ensure_season(season: Dictionary) -> void:
+	var sid := String(season.get("id", ""))
+	if sid == "" or season_progress.has(sid):
+		return
+	var baseline: Dictionary = {}
+	for g in season.get("goals", []):
+		if g is Dictionary:
+			var kind := String(g.get("kind", ""))
+			baseline[kind] = _lifetime_stat(kind)
+	season_progress[sid] = {"_baseline": baseline}
+
+## Progress toward a season goal: the lifetime metric for its kind minus the season baseline (≥ 0).
+func season_goal_progress(season: Dictionary, goal: Dictionary) -> int:
+	var sid := String(season.get("id", ""))
+	var kind := String(goal.get("kind", ""))
+	var base := 0
+	if season_progress.has(sid):
+		var bl = season_progress[sid].get("_baseline", {})
+		if bl is Dictionary:
+			base = int(bl.get(kind, 0))
+	return maxi(0, _lifetime_stat(kind) - base)
+
+## Pure: is a goal met? (target treated as ≥ 1 so a mis-authored 0 can't auto-complete.)
+static func season_goal_complete(target: int, progress: int) -> bool:
+	return progress >= maxi(1, target)
+
+func is_season_goal_claimed(season_id: String, goal_id: String) -> bool:
+	if not season_progress.has(season_id):
+		return false
+	var g = season_progress[season_id].get(goal_id, {})
+	return g is Dictionary and bool(g.get("claimed", false))
+
+## Claim a completed, unclaimed season goal: grant its Legacy + record its (dormant) title id. Returns
+## true only when a claim actually happens.
+func claim_season_reward(season: Dictionary, goal: Dictionary) -> bool:
+	ensure_season(season)
+	var sid := String(season.get("id", ""))
+	var gid := String(goal.get("id", ""))
+	if sid == "" or gid == "" or is_season_goal_claimed(sid, gid):
+		return false
+	if not season_goal_complete(int(goal.get("target", 0)), season_goal_progress(season, goal)):
+		return false
+	var sp: Dictionary = season_progress[sid]
+	sp[gid] = {"claimed": true}
+	season_progress[sid] = sp
+	add_legacy(int(goal.get("reward_legacy", 0)))
+	var title := StringName(goal.get("reward_title", &""))
+	if title != &"" and title not in titles_earned:
+		titles_earned.append(title)
+	return true
+
+## Lifetime metric a season-goal kind reads (task 20). Maps a goal `kind` to its `stats` counter.
+func _lifetime_stat(kind: String) -> int:
+	return int(stats.get(_stat_key(kind), 0))
+
+func _stat_key(kind: String) -> StringName:
+	match kind:
+		"contracts_completed": return &"contracts_completed"
+		"loot_value": return &"loot_value_secured"
+		"special_loot": return &"special_delivered"
+		"legacy_earned": return &"legacy_earned"
+	return &""
+
 # --- Serialization (task 16, FR-16-2) --------------------------------------
 ## Snapshot the whole permanent account into a JSON-safe Dictionary (StringName → String). The save
 ## schema's "permanent" block. Restored by from_dict(); round-tripped by test_save_roundtrip.gd.
@@ -236,6 +394,12 @@ func to_dict() -> Dictionary:
 		"stash": _sn_array_to_str(stash),
 		"stats": _sn_dict_to_str(stats),
 		"playtime_seconds": playtime_seconds,
+		# Live content (task 20). Additive with defaults → backward-compatible, no SCHEMA_VERSION bump
+		# (matches task 19's audited "preserve dormant" policy; from_dict defaults every missing key).
+		"unlocked_archetypes": _sn_array_to_str(unlocked_archetypes),
+		"milestones_reached": _sn_array_to_str(milestones_reached),
+		"season_progress": season_progress.duplicate(true),
+		"titles_earned": _sn_array_to_str(titles_earned),
 	}
 
 ## Rehydrate the permanent account from a to_dict() snapshot (missing keys keep defaults).
@@ -249,6 +413,12 @@ func from_dict(d: Dictionary) -> void:
 	stash = _str_array_to_sn(d.get("stash", []))
 	stats = _str_dict_to_sn(d.get("stats", {}))
 	playtime_seconds = float(d.get("playtime_seconds", 0.0))
+	# Live content (task 20) — additive; a pre-task-20 save simply keeps the defaults.
+	unlocked_archetypes = _str_array_to_sn(d.get("unlocked_archetypes", []))
+	milestones_reached = _str_array_to_sn(d.get("milestones_reached", []))
+	var sp = d.get("season_progress", {})
+	season_progress = (sp as Dictionary).duplicate(true) if sp is Dictionary else {}
+	titles_earned = _str_array_to_sn(d.get("titles_earned", []))
 
 # JSON has no StringName type: arrays/dicts of StringName ids serialize as String and rehydrate back.
 static func _sn_array_to_str(arr: Array) -> Array:
