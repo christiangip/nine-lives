@@ -255,7 +255,7 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
   caption line gated on `audio.subtitles`. Demo `game/scenes/audio/AudioSandbox.tscn`. **M2 manual F6
   sign-off 2026-07-05** (tell calm/tense/combat apart + locate a guard by footsteps); real music stems +
   bespoke SFX noted pending in ART-TODO.*
-- [~] **18 — Art & Asset Pipeline** · `18_art_asset_pipeline.md` · *(M2 first pass · ongoing)*
+- [x] **18 — Art & Asset Pipeline** · `18_art_asset_pipeline.md` · *(M2 first pass · ongoing)*
   Sourcing pass, glTF import standards, master materials/palette, manifest/credits/ART-TODO upkeep.
   *First M2 pass **code + automated DoD complete & verified green on Godot 4.6.3** (headless GUT **98/98**,
   +2 art tests; `check_assets.sh` green). New **`Palette`** master-material accessor (`game/systems/art/`) +
@@ -266,8 +266,9 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
   green + un-dressed archetypes still build; + a WorldEnvironment/lighting pass tuned for stealth shadows.
   Standalone showcase `bank_test.tscn` recolored to the palette. `check_assets.sh` (manifest-row + LFS gate)
   authored + CI-wired. **Deferred (↩ logged in ART-TODO):** section shells for the other 4 Bank sections +
-  Museum/Warehouse; per-tier actor models; loot-model scale pass; grounded prop replacements. **Residual
-  `[~]`:** the M2 F6 cohesion/readability sign-off.*
+  Museum/Warehouse; per-tier actor models; loot-model scale pass; grounded prop replacements. **F6
+  cohesion/readability sign-off passed 2026-07-05 → task 18 first pass complete (`[x]`).** (Phase 18.4
+  upkeep stays ongoing per import; the M2 gate still needs 06/07/09.)*
 - [ ] **19 — Expansion Framework** · `19_expansion_framework.md` · *(M3)*
   Hardening the data-driven "add content without code" path; authoring templates; mod-friendly loaders; content validation.
 
@@ -290,10 +291,10 @@ Foundation        [x01][x02]                        2 / 2
 Core stealth (M0) [x03][~04][~05·G][~06][~07][~08]   1 / 6
 Spine (M1)        [x11][x12][x13][x15][x16]          5 / 5
 Loud + breadth    [~09][x10][x14]                    2 / 3
-Presentation      [x17][~18]                        1 / 2
+Presentation      [x17][x18]                        2 / 2
 Live + release    [19][20][21]                       0 / 3
 Onboarding        [22]                               0 / 1
-                                          TOTAL  11 / 22 lists
+                                          TOTAL  12 / 22 lists
 Milestones        [ ] M0  [x] M1  [ ] M2  [ ] M3  [ ] M4  [ ] M5
 ```
 

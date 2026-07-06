@@ -600,5 +600,6 @@ consequence logic tested behind a hook and added `↩ From 06` banners to `07`�
   and prop prefabs are `StaticBody3D` on layer 1 exactly like the old markers, so obstacle/loot pickup is
   unchanged. **Deferred (↩ logged in `ART-TODO.md`):** section shells for the other 4 Bank sections +
   Museum/Warehouse; per-tier actor variants; loot-model scale pass; grounded prop replacements (vault
-  door/laser/sensors still CC0 stand-ins). **Residual (`[~]`):** the M2 **F6 cohesion/readability sign-off**
-  (walk `MissionGreybox.tscn` / `bank_test.tscn` / `gallery_hub.tscn`) — mark `[x]` after, mirroring 03–08.
+  door/laser/sensors still CC0 stand-ins). **F6 cohesion/readability sign-off passed 2026-07-05**
+  (`MissionGreybox.tscn` / `bank_test.tscn` / `gallery_hub.tscn`) — **Task 18 first pass complete (`[x]`).**
+  (Phase 18.4 upkeep stays ongoing per import; the **M2 gate** itself still needs 06/07/09's own residuals.)

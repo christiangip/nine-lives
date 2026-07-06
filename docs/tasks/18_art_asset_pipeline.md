@@ -38,15 +38,17 @@ import standards, master materials, and the manifest/credits/ART-TODO discipline
       logged in `ART-TODO.md`. Characters share the Quaternius Modular Men rig (FR-18-5).*
 
 ### Phase 18.3 — Vertical-slice dressing (M2)
-- [~] Light + material pass on the slice archetype; readability check against Pillar 1.
-      *Code complete: master materials on the floor/section tiles/showcase shell, a WorldEnvironment + key/fill
-      lighting on the generated mission (skipped when a scene ships its own), and actors get real models with a
-      tinted feet-ring so blue-guard / gold-keycarrier / cyan-civilian threats stay legible in shadow. Manual
-      F6 readability/cohesion sign-off is the residual — mark `[x]` after.*
+- [x] Light + material pass on the slice archetype; readability check against Pillar 1.
+      *Master materials on the floor/section tiles/showcase shell, a WorldEnvironment + key/fill lighting on
+      the generated mission (skipped when a scene ships its own), and actors get real models with a tinted
+      feet-ring so blue-guard / gold-keycarrier / cyan-civilian threats stay legible in shadow. **F6
+      readability/cohesion sign-off passed 2026-07-05.***
 
 ### Phase 18.4 — Ongoing upkeep
-- [~] Keep manifest/credits/ART-TODO current at every import; periodic placeholder-replacement sweeps.
-      *Current as of this pass; `check_assets.sh` now guards manifest/LFS discipline in CI so drift fails the build.*
+- [x] Keep manifest/credits/ART-TODO current at every import; periodic placeholder-replacement sweeps.
+      *Current as of this pass; `check_assets.sh` now guards manifest/LFS discipline in CI so drift fails the
+      build. (Upkeep continues per import — the replacement sweeps for the logged stand-ins are tracked in
+      `ART-TODO.md`.)*
 
 ## Tests / checks
 - `tools/scripts/check_assets.sh` — **authored + CI-wired**; fails on a missing manifest row, a non-LFS
@@ -54,14 +56,12 @@ import standards, master materials, and the manifest/credits/ART-TODO discipline
 - `game/tests/unit/test_palette_materials.gd` + `game/tests/integration/test_art_scenes.gd` — the master
   material set resolves, the `scene`/`mesh`/`model` def seams exist + are populated, and the dressed
   generated mission builds with real `SectionShell` nodes in-tree (headless).
-- Manual: palette consistency review; silhouette-readability review per archetype — F6 pending.
+- Manual: palette consistency review; silhouette-readability review per archetype — **signed off 2026-07-05.**
 
 ## Definition of Done
-- [~] FR-18-1..7 satisfied; phases checked; asset check passes in CI.
-      *Done: FR-18-1 (glTF 1u=1m + `CELL` grid snap), FR-18-2 (master materials + locked palette via
-      `Palette`), FR-18-3 (manifest rows + `check_assets.sh`), FR-18-4 (gaps logged in ART-TODO),
-      FR-18-5 (shared Quaternius Modular Men rig/anim across actors), FR-18-6 (LFS, CI-gated). FR-18-7
-      (M2 Bank slice dressed) — code done both in the generated mission and the standalone showcase;
-      manual F6 cohesion sign-off is the residual.*
-- [~] M2 slice looks cohesive; no *missing* art (off-style stand-ins allowed but logged).
-      *Automated build green; the F6 cohesion/readability sign-off is the only residual.*
+- [x] FR-18-1..7 satisfied; phases checked; asset check passes in CI.
+      *FR-18-1 (glTF 1u=1m + `CELL` grid snap), FR-18-2 (master materials + locked palette via `Palette`),
+      FR-18-3 (manifest rows + `check_assets.sh`), FR-18-4 (gaps logged in ART-TODO), FR-18-5 (shared
+      Quaternius Modular Men rig/anim across actors), FR-18-6 (LFS, CI-gated), FR-18-7 (M2 Bank slice dressed
+      in both the generated mission and the standalone showcase). F6 cohesion sign-off passed 2026-07-05.*
+- [x] M2 slice looks cohesive; no *missing* art (off-style stand-ins allowed but logged in `ART-TODO.md`).
