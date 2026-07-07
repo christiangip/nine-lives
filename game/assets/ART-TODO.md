@@ -8,6 +8,12 @@ later replacement.
 kit gallery; each shows a 1.8 m human capsule beside its rows. Flag any kit that reads
 off-scale here for a per-file import-scale pass (`AssetGallery.gd` / phase-1-art.md).
 
+**Release (M5 / 1.0.0) triage — task 21, FR-21-6:** every entry below is an **off-style CC0/CC-BY
+stand-in or a wiring nicety — none are blank/missing assets and none block M5**. `check_assets.sh` is green
+(every binary has a manifest row + is LFS-tracked; no stale rows), so nothing renders pink/absent. The two
+"license marker not provided" items (Safe, Gold Bars) are **credited either way** in `CREDITS.md`; confirming
+the exact CC0/CC-BY marker is Low priority. All items carry forward as post-1.0 art polish.
+
 | Placeholder asset | Stands in for | Style mismatch | Priority | Replace with |
 |---|---|---|---|---|
 | `scifi_megakit` (Quaternius) | high-security / server-room / vault dressing | Sci-fi look vs. grounded-crime pillar | Med | On-style grounded vault door + security fixtures |

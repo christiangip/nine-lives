@@ -36,6 +36,10 @@ class_name PursuitConfigDef
 @export var guard_range_band: float = 0.25       ## +/- fraction around desired range that reads as "hold"
 @export var guard_advance_speed_mult: float = 1.0  ## fraction of move_speed while advancing under Pursuit
 
+# --- Aim assist (task 21, FR-21-1; loud only, deliberately light) -----------
+@export var aim_assist_cone_deg: float = 12.0    ## only a target within this half-cone of the aim is assisted
+@export var aim_assist_max_deg: float = 6.0      ## the aim is nudged toward it by at most this (never a full snap-lock)
+
 # --- Downs / capture / Get-Out-of-Jail (FR-10-6/FR-10-7) --------------------
 @export var self_revive_window: float = 8.0      ## seconds Downed before it becomes Caught
 @export var revive_health_fraction: float = 0.5  ## Health restored (fraction of max) on a self-revive

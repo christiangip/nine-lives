@@ -15,6 +15,14 @@ class_name MainMenu
 func _ready() -> void:
 	theme = UITheme.build()
 	_add_background()
+	_add_version_stamp()
+	# Localization scaffold (task 21, FR-21-1): button text is set to translation KEYS; Godot's Control
+	# auto-translation renders the active locale and re-renders live when it changes in Options.
+	Localization.ensure_registered()
+	_new_game_button.text = "MENU_NEW_GAME"
+	_continue_button.text = "MENU_CONTINUE"
+	_options_button.text = "MENU_OPTIONS"
+	_quit_button.text = "MENU_EXIT"
 	_refresh_continue()
 	_continue_button.pressed.connect(_on_continue_pressed)
 	_new_game_button.pressed.connect(_on_new_game_pressed)
@@ -39,7 +47,23 @@ func _on_options_pressed() -> void:
 	OptionsMenu.open(self)
 
 func _on_quit_pressed() -> void:
-	ConfirmPopup.open(self, "Exit Nine Lives?", "Exit").confirmed.connect(GameManager.quit_game)
+	ConfirmPopup.open(self, tr("MENU_EXIT_CONFIRM"), tr("MENU_EXIT")).confirmed.connect(GameManager.quit_game)
+
+## The build/version stamp in the bottom-right corner (task 21, FR-21-7).
+func _add_version_stamp() -> void:
+	var v := Label.new()
+	v.text = Version.string()
+	v.add_theme_color_override("font_color", UITheme.MUTED)
+	v.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	v.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	v.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	v.offset_left = -220
+	v.offset_top = -34
+	v.offset_right = -14
+	v.offset_bottom = -8
+	v.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(v)
 
 ## A dark backdrop behind the menu (the theme colours text/buttons; the root Control is otherwise bare).
 func _add_background() -> void:

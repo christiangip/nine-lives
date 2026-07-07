@@ -37,3 +37,15 @@ class_name DetectionConfigDef
 ## clear rays is the visibility: none clear = full cover (blocks), some = partial cover
 ## (reduces fill), all = full visibility.
 @export var los_sample_heights: Array[float] = [1.5, 0.9, 0.2]
+
+# --- AI performance LOD (task 21, FR-21-2 — the deferred 05.5 budget) -------
+## The expensive cone/LoS/light sense runs EVERY frame within lod_full_range of the player, every
+## lod_mid_interval frames out to lod_mid_range, every lod_far_interval frames out to lod_sleep_range, and
+## not at all beyond it (a guard that far can't gain fill anyway — only cheap decay is skipped). Guards at
+## equal distance are staggered across frames so their raycasts don't bunch on one frame. Keep lod_full_range
+## comfortably past any actor's vision_range so on-screen detection is NEVER throttled (behaviour unchanged).
+@export var lod_full_range: float = 22.0
+@export var lod_mid_range: float = 40.0
+@export var lod_sleep_range: float = 70.0
+@export var lod_mid_interval: int = 2
+@export var lod_far_interval: int = 4

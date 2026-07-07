@@ -297,8 +297,24 @@ manual playtest checklist (bottom of this file) is signed off. Tag the commit `m
   ("Casino Nights": new archetype + milestone + modifier as data → lands on the board live, FR-20-5). EventBus
   stayed **frozen**; persistence additive (no schema bump). Greybox `game/scenes/live/LiveSandbox.tscn`.
   **Residual `[~]`:** the F6 "feel" sign-off on `LiveSandbox.tscn` (mark `[x]` after a human pass, mirroring prior greyboxes).*
-- [ ] **21 — Release, Polish, Accessibility & Performance** · `21_release_polish.md` · *(M4–M5)*
+- [~] **21 — Release, Polish, Accessibility & Performance** · `21_release_polish.md` · *(M4–M5)*
   Accessibility suite, perf budget & profiling, juice, export presets, QA pass, build pipeline.
+  *Code + automated DoD **complete & verified green on Godot 4.6.3** (headless GUT **436/436**, +29 task-21
+  tests; content/asset/doc validators exit 0). **Accessibility (FR-21-1):** colorblind detection-band palettes
+  (`UITheme.detection_color_for` + `CompassEye`), real Reduce Flashing (noise ring/shake/vignette/pulse), a
+  trauma-based `CameraShake` (`video/camera_shake`), controller `Haptics`, a light loud-only aim-assist
+  (`PlayerCombat.assist_aim`), and a language scaffold (`Localization`: code-registered en/es/fr/de +
+  `strings.csv`; `SettingsManager._apply_gameplay` locale; Menu/Pause `tr()` flip live); removed the dead
+  Motion Blur toggle. **Performance (FR-21-2, the deferred 05.5):** distance-LOD sensing + round-robin stagger
+  + sleep tier (`DetectionSensor` pure seams; `DetectionConfigDef` LOD tunables) and a population cap
+  (`AIConfigDef.max_active_guards`); `docs/PERFORMANCE.md`. **Juice (FR-21-3):** camera shake, HUD damage
+  vignette, compass escalation pulse, loud-only hit marker — all reduce-flashing-aware. **Export/QA
+  (FR-21-4/6/7):** `export_presets.cfg` (Win/Linux), a `Version` stamp (project 0.0.1→**1.0.0**, shown on Main
+  Menu + Pause), `test_migration_release.gd`, `CHANGELOG`/`RELEASE_CHECKLIST`/`QA_MATRIX`, CREDITS/ART-TODO
+  triage, a CI export smoke step. EventBus stayed **frozen**; the spine stayed at 10 autoloads. Demo
+  `game/scenes/polish/PolishSandbox.tscn`. **Residual (`[~]`):** the manual F6 "feel", the 60-FPS target-spec
+  measurement, and the real Windows/Linux export smoke-run. **M5** also gates on task 22 + the residual F6
+  sign-offs on 04–09 / 20.*
 
 ### Onboarding (woven through M0→M2)
 - [ ] **22 — Onboarding & Tutorial** · `22_onboarding_tutorial.md` · *(M1 stub · M2 full)*
@@ -314,7 +330,7 @@ Core stealth (M0) [x03][~04][~05·G][~06][~07][~08]   1 / 6
 Spine (M1)        [x11][x12][x13][x15][x16]          5 / 5
 Loud + breadth    [~09][x10][x14]                    2 / 3
 Presentation      [x17][x18]                        2 / 2
-Live + release    [x19][~20][21]                     1 / 3
+Live + release    [x19][~20][~21]                    1 / 3
 Onboarding        [22]                               0 / 1
                                           TOTAL  13 / 22 lists
 Milestones        [ ] M0  [x] M1  [ ] M2  [ ] M3  [ ] M4  [ ] M5

@@ -94,7 +94,6 @@ func _build_graphics(body: VBoxContainer) -> void:
 	_option_int(body, "Shadows", "video", "shadows", _SHADOWS)
 	_slider(body, "Field of View", "video", "fov", 50.0, 120.0, 1.0)
 	_slider(body, "Gamma", "video", "gamma", 0.5, 2.0, 0.05)
-	_check(body, "Motion Blur", "video", "motion_blur")
 	_check(body, "Camera Shake", "video", "camera_shake")
 
 func _build_audio(body: VBoxContainer) -> void:

@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://l837ughj1prn"
+
+[deps]
+
+files=["res://game/assets/i18n/strings.en.translation", "res://game/assets/i18n/strings.es.translation", "res://game/assets/i18n/strings.fr.translation", "res://game/assets/i18n/strings.de.translation"]
+
+source_file="res://game/assets/i18n/strings.csv"
+dest_files=["res://game/assets/i18n/strings.en.translation", "res://game/assets/i18n/strings.es.translation", "res://game/assets/i18n/strings.fr.translation", "res://game/assets/i18n/strings.de.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true

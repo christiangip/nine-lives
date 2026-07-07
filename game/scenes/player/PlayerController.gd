@@ -60,10 +60,17 @@ var _sens: float = 0.3
 var _invert_y: bool = false
 var _crouch_toggle: bool = false
 var _sprint_toggle: bool = false
+var _camera_shake_on: bool = true       ## video/camera_shake
+var _reduce_flashing: bool = false      ## gameplay/reduce_flashing (also suppresses shake)
+
+# --- Camera shake (task 21 juice; gated by the two settings above) ----------
+var _cam_shake: CameraShake
+var _cam_base_rot: Vector3 = Vector3.ZERO   ## the camera's authored local rotation; shake is added on top
 
 signal stance_changed(new_stance: int)
 signal stamina_changed(current: float, maximum: float)
 signal interaction_target_changed(interactable: Interactable)
+signal shot_landed   ## a fired shot connected with a hostile (HUD hit-marker, task 21)
 
 func _ready() -> void:
 	add_to_group(&"player")
@@ -75,6 +82,8 @@ func _ready() -> void:
 	_refresh_settings()
 	if not EventBus.settings_changed.is_connected(_on_settings_changed):
 		EventBus.settings_changed.connect(_on_settings_changed)
+	if not EventBus.alarm_tripped.is_connected(_on_alarm_tripped):
+		EventBus.alarm_tripped.connect(_on_alarm_tripped)
 	stamina = _stamina_max()
 	inventory = Inventory.new()
 	inventory.weight_cap = config.carry_weight_base * (1.0 + attr_effect(&"strength"))
@@ -82,6 +91,7 @@ func _ready() -> void:
 	loadout = _resolve_loadout()
 	_build_health()
 	_mount_combat()
+	_setup_camera_shake()
 	# Don't mutate the shared scene resource — each instance gets its own capsule.
 	if _collider != null and _collider.shape != null:
 		_collider.shape = _collider.shape.duplicate()
@@ -162,6 +172,49 @@ func _physics_process(delta: float) -> void:
 	_update_throw_input()
 	_update_drop_input()
 	_update_takedown_input()
+	_apply_camera_shake(delta)
+
+# --- Camera shake / feedback (task 21 — FR-21-3 juice + FR-21-1 toggles) ----
+
+## Build the FP camera-shake driver from PlayerConfigDef and remember the camera's authored rotation.
+func _setup_camera_shake() -> void:
+	_cam_shake = CameraShake.new()
+	_cam_shake.max_angle_rad = deg_to_rad(config.shake_max_angle_deg)
+	_cam_shake.max_offset = config.shake_max_offset
+	_cam_shake.decay_per_sec = config.shake_decay_per_sec
+	if _camera != null:
+		_cam_base_rot = _camera.rotation
+
+## Apply (or settle) the additive camera shake each frame. Gated OFF by video/camera_shake=false or
+## gameplay/reduce_flashing=true (accessibility), in which case the camera returns to its base pose.
+func _apply_camera_shake(delta: float) -> void:
+	if _cam_shake == null or _camera == null:
+		return
+	if not _camera_shake_on or _reduce_flashing:
+		_cam_shake.trauma = 0.0
+		_camera.rotation = _cam_base_rot
+		_camera.h_offset = 0.0
+		_camera.v_offset = 0.0
+		return
+	var s := _cam_shake.tick(delta)
+	_camera.rotation = _cam_base_rot + (s["rot"] as Vector3)
+	var ofs: Vector2 = s["ofs"]
+	_camera.h_offset = ofs.x
+	_camera.v_offset = ofs.y
+
+## Add camera trauma (respecting the gate at apply time). Feedback sites call the typed helpers below.
+func add_camera_trauma(amount: float) -> void:
+	if _cam_shake != null:
+		_cam_shake.add_trauma(amount)
+
+## Recoil feedback: PlayerCombat calls this on a successful shot.
+func on_weapon_fired() -> void:
+	add_camera_trauma(config.shake_trauma_fire)
+	Haptics.pulse_fire()
+
+func _on_alarm_tripped(_kind: String, _position: Vector3) -> void:
+	add_camera_trauma(config.shake_trauma_alarm)
+	Haptics.pulse_alarm()
 
 # --- Stamina (FR-03-1) -----------------------------------------------------
 
@@ -584,11 +637,17 @@ func _mount_combat() -> void:
 		return
 	_combat = PlayerCombat.new()
 	_hands.add_child(_combat)
+	_combat.shot_hit.connect(func() -> void: shot_landed.emit())   # forward hit-confirm to the HUD (task 21)
 
 ## Incoming damage entry point — hostiles (GuardAI combat) call this. Routes armor→health via Health.
 func apply_damage(damage: float) -> void:
 	if health != null:
 		health.take_damage(damage)
+	# Juice/accessibility feedback (task 21): a knock of camera trauma + rumble scaled by the hit.
+	if damage > 0.0:
+		var scale := clampf(damage / maxf(1.0, config.health_base * 0.5), 0.15, 1.0)
+		add_camera_trauma(config.shake_trauma_hit * scale)
+		Haptics.pulse_hit()
 
 ## The Streak's currently-selected weapon (for the HUD loud-block ammo readout, task 15). Null if
 ## unarmed or combat isn't mounted yet.
@@ -642,6 +701,8 @@ func _refresh_settings() -> void:
 	_invert_y = bool(s.get_value("gameplay", "invert_y"))
 	_crouch_toggle = bool(s.get_value("gameplay", "crouch_toggle"))
 	_sprint_toggle = bool(s.get_value("gameplay", "sprint_toggle"))
+	_reduce_flashing = bool(s.get_value("gameplay", "reduce_flashing"))
+	_camera_shake_on = bool(s.get_value("video", "camera_shake"))
 	# Field of view is a graphics option (GDD §15.2) but only the player camera can apply it (task 15).
 	if _camera != null:
 		_camera.fov = clampf(float(s.get_value("video", "fov")), 50.0, 120.0)

@@ -75,6 +75,14 @@ class_name PlayerConfigDef
 # --- Combat / survivability (task 10; max scaled by the "health" attribute) --
 @export var health_base: float = 100.0           ## base Health pool before the Health attribute scales it (§5.5)
 
+# --- Camera shake (task 21 juice; gated by video/camera_shake + gameplay/reduce_flashing) --
+@export var shake_max_angle_deg: float = 2.5     ## peak additive camera rotation at full trauma (deg)
+@export var shake_max_offset: float = 0.08       ## peak additive camera projection offset at full trauma
+@export var shake_decay_per_sec: float = 1.6     ## trauma bled off per second
+@export var shake_trauma_fire: float = 0.32      ## trauma added per shot fired
+@export var shake_trauma_hit: float = 0.55       ## trauma added when the player takes damage
+@export var shake_trauma_alarm: float = 0.25     ## trauma added when an alarm trips
+
 # --- Carry (task 08; scaled by the "strength" attribute) -------------------
 @export var carry_weight_base: float = 40.0      ## kg, before Strength scaling
 @export var carry_volume_base: float = 20.0      ## L/slots, before Strength scaling

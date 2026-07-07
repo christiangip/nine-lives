@@ -17,12 +17,34 @@ var _actors: Dictionary = {}      ## actor_id:int -> [state:int, fill:float]
 var _primary_state: int = 0
 var _primary_fill: float = 0.0
 var _primary_tick: int = -1       ## lit direction tick, or -1 when unknown/ahead-only
+var _colorblind: int = 0          ## gameplay/colorblind palette mode (task 21, FR-21-1)
+var _reduce_flashing: bool = false
+var _prev_state: int = 0
+var _pulse_t: float = 0.0         ## 0..1 escalation pulse, decays; set to 1 when the state rises (task 21 juice)
 
 func _ready() -> void:
 	custom_minimum_size = Vector2(120, 120)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_colorblind = _read_colorblind()
+	_reduce_flashing = _read_reduce_flashing()
 	if not EventBus.detection_changed.is_connected(_on_detection_changed):
 		EventBus.detection_changed.connect(_on_detection_changed)
+	if not EventBus.settings_changed.is_connected(_on_settings_changed):
+		EventBus.settings_changed.connect(_on_settings_changed)
+
+func _on_settings_changed(section: String) -> void:
+	if section == "gameplay":
+		_colorblind = _read_colorblind()
+		_reduce_flashing = _read_reduce_flashing()
+		queue_redraw()
+
+func _read_colorblind() -> int:
+	var s := Services.settings()
+	return int(s.get_value("gameplay", "colorblind")) if s != null else 0
+
+func _read_reduce_flashing() -> bool:
+	var s := Services.settings()
+	return s != null and bool(s.get_value("gameplay", "reduce_flashing"))
 
 func _on_detection_changed(actor_id: int, state: int, fill: float) -> void:
 	# Drop fully-recovered detectors so they stop skewing the "most alarming" pick.
@@ -31,18 +53,25 @@ func _on_detection_changed(actor_id: int, state: int, fill: float) -> void:
 	else:
 		_actors[actor_id] = [state, fill]
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	_recompute_primary()
+	# Escalation pulse: a brief expanding ring when the alert state rises (suppressed by Reduce Flashing).
+	if _primary_state > _prev_state and not _reduce_flashing:
+		_pulse_t = 1.0
+	_prev_state = _primary_state
+	if _pulse_t > 0.0:
+		_pulse_t = maxf(0.0, _pulse_t - delta * 2.5)
 	queue_redraw()
 
 # --- Pure seams (headless-testable) --------------------------------------------
-## Visual mapping for a detection (state, fill). Returns the clamped fill, the state colour band, and a
-## redundant symbol so the cue survives colour-blindness / greyscale (FR-15-7). Pure.
-static func detection_visual(state: int, fill: float) -> Dictionary:
+## Visual mapping for a detection (state, fill) under a colorblind `mode` (task 21). Returns the clamped fill,
+## the (mode-adjusted) state colour band, and a redundant symbol so the cue survives colour-blindness /
+## greyscale (FR-15-7 / FR-21-1). Pure. `mode` defaults to 0 so existing callers/tests are unaffected.
+static func detection_visual(state: int, fill: float, mode: int = 0) -> Dictionary:
 	var s := clampi(state, 0, UITheme.DETECTION_COLORS.size() - 1)
 	return {
 		"fill": clampf(fill, 0.0, 1.0),
-		"color": UITheme.detection_color(s),
+		"color": UITheme.detection_color_for(s, mode),
 		"symbol": STATE_SYMBOLS[clampi(s, 0, STATE_SYMBOLS.size() - 1)],
 	}
 
@@ -97,7 +126,7 @@ func _tick_for_actor(actor_id: int) -> int:
 func _draw() -> void:
 	var center := size * 0.5
 	var ring_r := minf(size.x, size.y) * 0.5 - 8.0
-	var vis := detection_visual(_primary_state, _primary_fill)
+	var vis := detection_visual(_primary_state, _primary_fill, _colorblind)
 	var col: Color = vis["color"]
 
 	# Direction tick ring: tick 0 at top (12 o'clock), clockwise. The bearing tick is lit + enlarged.
@@ -117,6 +146,11 @@ func _draw() -> void:
 	draw_circle(center, iris_r, Color(col.r, col.g, col.b, 0.85))
 	draw_circle(center, maxf(2.0, eye_r * 0.18), Color(0.05, 0.05, 0.07, 0.95))
 	draw_arc(center, eye_r, 0.0, TAU, 40, Color(1, 1, 1, 0.28), 2.0)
+
+	# Escalation pulse: a brief expanding ring when the state just rose (juice; off under reduce_flashing).
+	if _pulse_t > 0.0:
+		var pr := ring_r + (1.0 - _pulse_t) * 10.0
+		draw_arc(center, pr, 0.0, TAU, 32, Color(col.r, col.g, col.b, _pulse_t * 0.6), 3.0)
 
 	# Redundant, colour-independent state symbol above the eye.
 	var symbol := String(vis["symbol"])

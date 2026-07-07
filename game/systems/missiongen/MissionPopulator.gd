@@ -20,6 +20,8 @@ var _camera_density := 0.0
 var _lock_difficulty := 0.3
 var _lock_diff_add := 0
 var _base_enemy: StringName = &"guard"
+var _guard_count := 0        ## patrol guards placed so far (against the AI budget cap, FR-21-2)
+var _max_guards := 24
 
 func populate(layout: MissionLayout, archetype: ArchetypeDef, contract: Contract, rng: RandomNumberGenerator) -> void:
 	_layout = layout
@@ -35,6 +37,8 @@ func populate(layout: MissionLayout, archetype: ArchetypeDef, contract: Contract
 	_lock_difficulty = float(_flavor.get("lock_difficulty", 0.3))
 	_lock_diff_add = int(_effects.get("lock_difficulty_add", 0)) + int(round(_layout_heat() * 2.0))
 	_base_enemy = _first_roster_of_kind(EnemyDef.Kind.GUARD)
+	_guard_count = 0
+	_max_guards = _resolve_max_guards()
 
 	_collect_anchor_points(&"entry", _layout.entry_points)
 	_collect_anchor_points(&"drop", _layout.drop_points)
@@ -66,6 +70,9 @@ func _place_patrols() -> void:
 				_add_guard(i, a.get("pos", Vector3.ZERO) + Vector3(0.4, 0, 0.4), _base_enemy)
 
 func _add_guard(section: int, local: Vector3, enemy_id: StringName) -> void:
+	if _guard_count >= _max_guards:
+		return   # AI budget cap (FR-21-2): trim density overflow; essential carriers are placed separately
+	_guard_count += 1
 	_layout.actors.append({
 		"enemy_id": enemy_id,
 		"section": section,
@@ -73,6 +80,10 @@ func _add_guard(section: int, local: Vector3, enemy_id: StringName) -> void:
 		"carried_item": &"",
 		"skill_mult": _guard_skill_mult,
 	})
+
+func _resolve_max_guards() -> int:
+	var cfg := Content.ai.get_def(&"default") as AIConfigDef if Content != null and Content.ai != null else null
+	return cfg.max_active_guards if cfg != null else 24
 
 ## Tougher roster members appear in higher-security wings / higher tiers.
 func _pick_patrol_enemy(security_tier: int) -> StringName:

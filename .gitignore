@@ -2,7 +2,7 @@
 .godot/
 .import/
 export.cfg
-export_presets.cfg
+# export_presets.cfg is intentionally committed (task 21, FR-21-4): portable Windows/Linux presets, no secrets.
 *.translation
 
 # Mono / C# (if hot paths are added later)

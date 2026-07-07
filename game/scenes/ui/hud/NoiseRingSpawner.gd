@@ -28,11 +28,26 @@ func _on_noise_emitted(position: Vector3, radius: float, source: String) -> void
 	ring.material_override = mat
 	add_child(ring)
 	ring.global_position = position + Vector3(0.0, RING_HEIGHT, 0.0)
-	ring.scale = Vector3.ONE * 0.2
-
+	var full := Vector3.ONE * maxf(0.3, radius)
 	var start: Color = mat.albedo_color
+	var faded := Color(start.r, start.g, start.b, 0.0)
+
+	if reduce_flashing():
+		# Reduce Flashing (FR-21-1): the ring appears at full size and only fades — no expanding pulse.
+		ring.scale = full
+		var tw := create_tween()
+		tw.tween_property(mat, "albedo_color", faded, EXPAND_TIME)
+		tw.tween_callback(ring.queue_free)
+		return
+
+	ring.scale = Vector3.ONE * 0.2
 	var tween := create_tween().set_parallel(true)
-	tween.tween_property(ring, "scale", Vector3.ONE * maxf(0.3, radius), EXPAND_TIME) \
+	tween.tween_property(ring, "scale", full, EXPAND_TIME) \
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tween.tween_property(mat, "albedo_color", Color(start.r, start.g, start.b, 0.0), EXPAND_TIME)
+	tween.tween_property(mat, "albedo_color", faded, EXPAND_TIME)
 	tween.chain().tween_callback(ring.queue_free)
+
+## The Reduce Flashing accessibility option (gameplay/reduce_flashing); false without SettingsManager.
+func reduce_flashing() -> bool:
+	var s := Services.settings()
+	return s != null and bool(s.get_value("gameplay", "reduce_flashing"))

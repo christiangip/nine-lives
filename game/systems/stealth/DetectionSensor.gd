@@ -25,6 +25,7 @@ var last_heard_position: Vector3 = Vector3.ZERO    ## consumed by GuardAI (05)
 
 const _FILL_EMIT_EPSILON := 0.02   ## throttle per-tick detection_changed to meaningful deltas
 var _last_emitted_fill: float = 0.0
+var _accum_delta: float = 0.0      ## time since the last full sense (LOD staggers senses; step_fill gets the real elapsed)
 
 func _ready() -> void:
 	# Content is an autoload; fall back to the registered default config when unassigned.
@@ -51,15 +52,33 @@ func hearing() -> float:
 func _physics_process(delta: float) -> void:
 	if config == null or not is_inside_tree():
 		return
+	_accum_delta += delta
 	var player := get_tree().get_first_node_in_group(&"player")
 	if player == null:
 		fill = step_fill(fill, 0.0, delta)
+		_accum_delta = 0.0
 		_update_state()
 		return
+	# AI performance LOD (task 21, FR-21-2): the full sense (cone + multi-ray LoS + light) is the hotspot, so
+	# throttle it by distance and stagger guards across frames. Near enough to actually see → every frame
+	# (behaviour unchanged); far → occasional; beyond sleep range → skipped (can't gain fill out there anyway).
+	var dist := global_position.distance_to((player as Node3D).global_position)
+	var interval := sense_interval_for_distance(dist, config)
+	if interval <= 0:
+		_accum_delta = 0.0   # sleeping: fill holds; drop accumulated time so waking doesn't jump
+		return
+	if not should_sense(Engine.get_physics_frames(), int(get_instance_id()) % interval, interval):
+		return
+	var elapsed := minf(_accum_delta, 0.5)   # clamp against a physics stall
+	_accum_delta = 0.0
+	_sense_player(player, elapsed)
 
+## The full per-actor sense: cone test → multi-ray LoS/cover → distance/light/movement → advance the meter.
+## `delta` is the real time since the previous sense (LOD may skip frames), so the meter stays framerate-fair.
+func _sense_player(player: Node, delta: float) -> void:
 	var origin := global_position
 	var forward := -global_transform.basis.z
-	var target_pos: Vector3 = player.global_position
+	var target_pos: Vector3 = (player as Node3D).global_position
 	var half_angle := deg_to_rad(cone_angle_deg() * 0.5)
 	var max_range := cone_range()
 
@@ -67,8 +86,8 @@ func _physics_process(delta: float) -> void:
 	if is_in_cone(origin, forward, target_pos, half_angle, max_range):
 		var visibility := _visibility_fraction(origin, player)
 		if visibility > 0.0:
-			var dist := origin.distance_to(target_pos)
-			var df := distance_factor(dist, max_range)
+			var d := origin.distance_to(target_pos)
+			var df := distance_factor(d, max_range)
 			var light := _sample_light_level(target_pos)
 			var stance_profile := _target_stance_profile(player)
 			var mf := movement_factor(_target_speed(player))
@@ -78,6 +97,25 @@ func _physics_process(delta: float) -> void:
 
 	fill = step_fill(fill, gain, delta)
 	_update_state()
+
+## Frames between full senses for a guard `dist` metres from the player (LOD): 1 (every frame) when near
+## enough to see, throttled at mid range, 0 (sleep) beyond the sleep range. Pure. (FR-21-2)
+static func sense_interval_for_distance(dist: float, cfg: DetectionConfigDef) -> int:
+	if cfg == null:
+		return 1
+	if dist <= cfg.lod_full_range:
+		return 1
+	if dist <= cfg.lod_mid_range:
+		return maxi(1, cfg.lod_mid_interval)
+	if dist <= cfg.lod_sleep_range:
+		return maxi(1, cfg.lod_far_interval)
+	return 0   # sleep — too far to matter this frame
+
+## Round-robin gate: a sensor with stagger `phase` senses on physics `frame` at cadence `interval`. Pure.
+static func should_sense(frame: int, phase: int, interval: int) -> bool:
+	if interval <= 1:
+		return true
+	return (frame + phase) % interval == 0
 
 # --- Pure seams (deterministic; unit-tested headless) ----------------------
 ## Is `target` inside the cone defined by `origin`, `forward`, half-angle and range?

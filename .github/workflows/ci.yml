@@ -17,6 +17,7 @@ jobs:
         with:
           version: 4.6.0
           use-dotnet: false
+          include-templates: true   # export templates for the smoke step (task 21, FR-21-4)
       - name: Import project (build caches)
         run: godot --headless --import || true
       - name: Run GUT tests
@@ -29,3 +30,13 @@ jobs:
         run: bash tools/scripts/check_docs.sh
       - name: Check asset manifest + LFS
         run: bash tools/scripts/check_assets.sh
+      - name: Export smoke test (Linux, best-effort)
+        continue-on-error: true   # skips cleanly if export templates are unavailable — real builds are the manual matrix
+        run: |
+          mkdir -p build/linux
+          godot --headless --export-release "Linux/X11" build/linux/NineLives.x86_64 || true
+          if [ -f build/linux/NineLives.x86_64 ]; then
+            echo "Linux export produced a binary ($(du -h build/linux/NineLives.x86_64 | cut -f1)) — see docs/RELEASE_CHECKLIST.md."
+          else
+            echo "Export skipped (templates absent / version mismatch); build manually per docs/RELEASE_CHECKLIST.md."
+          fi

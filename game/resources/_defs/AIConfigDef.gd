@@ -30,3 +30,9 @@ class_name AIConfigDef
 # --- Coordination / discovery ----------------------------------------------
 @export var alert_propagation_radius: float = 12.0   ## nearby guards within this raise on a spotting/search (FR-05-2)
 @export var body_discovery_range: float = 8.0        ## a guard notices an unhidden body within this + LoS (FR-05-2)
+
+# --- Performance budget (task 21, FR-21-2) ----------------------------------
+## Hard ceiling on the number of PATROL guards a single mission spawns. Density scaling (Tier/Heat/modifiers)
+## can multiply patrols; this caps the instance/AI budget so a dense mission still holds frame rate. Essential
+## actors (e.g. a key-carrying Inspector) are placed regardless — this only trims the density overflow.
+@export var max_active_guards: int = 24

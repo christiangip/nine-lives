@@ -1,0 +1,10 @@
+keys,en,es,fr,de
+MENU_NEW_GAME,New Game,Nuevo Juego,Nouvelle Partie,Neues Spiel
+MENU_CONTINUE,Continue,Continuar,Continuer,Fortsetzen
+MENU_OPTIONS,Options,Opciones,Options,Optionen
+MENU_EXIT,Exit,Salir,Quitter,Beenden
+MENU_EXIT_CONFIRM,Exit Nine Lives?,¿Salir de Nine Lives?,Quitter Nine Lives ?,Nine Lives beenden?
+PAUSE_TITLE,Paused,Pausa,En Pause,Pausiert
+PAUSE_RESUME,Resume,Reanudar,Reprendre,Fortsetzen
+PAUSE_OPTIONS,Options,Opciones,Options,Optionen
+PAUSE_ABORT,Abort Mission,Abortar Misión,Abandonner la Mission,Mission abbrechen

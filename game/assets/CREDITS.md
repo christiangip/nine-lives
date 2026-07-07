@@ -49,8 +49,14 @@ CC0 — attribution not required, credited voluntarily:
 
 ## Fonts
 CC0:
-- **Kenney** — Kenney Future, Kenney Future Narrow. CC0.
-- _body/primary font (Google Fonts — Barlow/Inter): none yet_
+- **Kenney** — Kenney Future, Kenney Future Narrow. CC0. *(Kenney Future is the shipped UI font — the
+  `UITheme` default; the 1.0.0 base game needs no separate body font. A dedicated body typeface is a
+  post-1.0 nicety.)*
+
+## Localization
+- UI language scaffold (en/es/fr/de) uses **in-code sample translations** authored for Nine Lives
+  (`game/systems/core/Localization.gd`, source `game/assets/i18n/strings.csv`) — no third-party translation
+  assets. A full localization pass is post-1.0.
 
 ## Generators / Tools
 - _none yet_

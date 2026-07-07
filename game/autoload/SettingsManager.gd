@@ -20,8 +20,7 @@ const DEFAULTS := {
 		"shadows": 2,        # 0 off · 1 low · 2 medium · 3 high (read on demand by the renderer)
 		"fov": 75.0,         # camera field of view (deg); PlayerController reads it on settings_changed
 		"gamma": 1.0,        # display gamma (read on demand)
-		"motion_blur": false,
-		"camera_shake": true,
+		"camera_shake": true,  # FP camera shake on fire/damage/alarm (task 21; also gated by reduce_flashing)
 	},
 	"audio": {
 		"master": 1.0,       # linear 0..1, applied as bus volume
@@ -108,7 +107,7 @@ func _apply_section(section: String) -> void:
 		"audio":
 			_apply_audio()
 		"gameplay":
-			pass  # read on demand by camera/UI; nothing global to push
+			_apply_gameplay()
 
 func _apply_video() -> void:
 	var fullscreen: bool = get_value("video", "fullscreen")
@@ -136,6 +135,11 @@ func _set_bus_linear(bus: String, linear: float) -> void:
 	var idx := AudioServer.get_bus_index(bus)
 	if idx >= 0:
 		AudioServer.set_bus_volume_db(idx, linear_to_db(clampf(linear, 0.0001, 1.0)))
+
+## Gameplay settings are mostly read on demand (camera/UI/input), but the UI language is a global side
+## effect: push it to the TranslationServer via the localization scaffold (task 21, FR-21-1).
+func _apply_gameplay() -> void:
+	Localization.apply_locale(String(get_value("gameplay", "language")))
 
 # --- helpers ---------------------------------------------------------------
 

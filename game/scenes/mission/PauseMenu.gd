@@ -13,6 +13,7 @@ func _ready() -> void:
 	theme = UITheme.build()
 	get_tree().paused = true
 	_set_mouse(Input.MOUSE_MODE_VISIBLE)
+	Localization.ensure_registered()   # localization scaffold (task 21) — keyed text auto-translates
 
 	var dim := ColorRect.new()
 	dim.color = Color(0, 0, 0, 0.55)
@@ -29,7 +30,7 @@ func _ready() -> void:
 	panel.add_child(box)
 
 	var title := Label.new()
-	title.text = "Paused"
+	title.text = "PAUSE_TITLE"
 	title.add_theme_font_size_override("font_size", 32)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(title)
@@ -47,9 +48,15 @@ func _ready() -> void:
 	box.add_child(status)
 	box.add_child(HSeparator.new())
 
-	_menu_button(box, "Resume", _resume)
-	_menu_button(box, "Options", _open_options)
-	_menu_button(box, "Abort Mission", _abort)
+	_menu_button(box, "PAUSE_RESUME", _resume)
+	_menu_button(box, "PAUSE_OPTIONS", _open_options)
+	_menu_button(box, "PAUSE_ABORT", _abort)
+
+	var ver := Label.new()   # build/version stamp (task 21, FR-21-7)
+	ver.text = Version.string()
+	ver.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	ver.add_theme_color_override("font_color", UITheme.MUTED)
+	box.add_child(ver)
 
 func _menu_button(box: VBoxContainer, text: String, cb: Callable) -> Button:
 	var b := Button.new()

@@ -15,6 +15,8 @@ var weapons: Array[Weapon] = []
 var active_index: int = 0
 var suppression: float = 0.0        ## 0..1, raised by incoming near-misses; widens spread while it lasts
 
+signal shot_hit                     ## a fired shot connected with a hostile (HUD hit-marker, task 21)
+
 func _ready() -> void:
 	_resolve_player()
 	rebuild_weapons()
@@ -50,6 +52,20 @@ static func blindfire_spread(spread: float, blindfiring: bool, mult: float) -> f
 static func suppressed_spread(spread: float, suppression_amount: float, mult: float) -> float:
 	return spread * (1.0 + clampf(suppression_amount, 0.0, 1.0) * mult)
 
+## Loud aim-assist (FR-21-1): nudge `aim_dir` toward `target_dir` by at most `max_deg`. If the target is
+## already within the cap it snaps to it, otherwise it rotates the cap amount toward it — never a hard lock,
+## and only ever applied while firing (stealth is untouched). Both inputs need not be normalized. Pure.
+static func assist_aim(aim_dir: Vector3, target_dir: Vector3, max_deg: float) -> Vector3:
+	if aim_dir.length() < 0.0001 or target_dir.length() < 0.0001:
+		return aim_dir
+	var a := aim_dir.normalized()
+	var t := target_dir.normalized()
+	var ang := a.angle_to(t)
+	if ang <= 0.0001:
+		return a
+	var frac := clampf(deg_to_rad(max_deg) / ang, 0.0, 1.0)
+	return a.slerp(t, frac)
+
 # --- Firing glue -----------------------------------------------------------
 func _physics_process(delta: float) -> void:
 	var w := active_weapon()
@@ -79,6 +95,8 @@ func fire() -> Dictionary:
 	var shot := w.fire(global_position, marks)
 	if shot.is_empty():
 		return shot
+	if player != null:
+		player.on_weapon_fired()   # recoil camera shake + rumble (task 21)
 	_resolve_hit(float(shot["damage"]))
 	return shot
 
@@ -95,7 +113,7 @@ func _resolve_hit(damage: float) -> void:
 	if space == null:
 		return
 	var from := global_position
-	var to := from + (-global_transform.basis.z) * _aim_range()
+	var to := from + _aim_direction() * _aim_range()
 	var q := PhysicsRayQueryParameters3D.create(from, to)
 	if player != null:
 		q.exclude = [player.get_rid()]
@@ -107,9 +125,52 @@ func _resolve_hit(damage: float) -> void:
 		target = target.get_parent() if target is Node else null
 	if target != null and target.has_method("apply_damage"):
 		target.apply_damage(damage)
+		shot_hit.emit()   # hit confirmation (HUD marker, task 21)
+
+## The firing direction: the raw aim, nudged by loud aim-assist toward a nearby hostile when the option is on
+## (FR-21-1). Off/stealth → the raw camera forward.
+func _aim_direction() -> Vector3:
+	var base := -global_transform.basis.z
+	if not _aim_assist_on():
+		return base
+	var cfg := _pursuit_cfg()
+	if cfg == null:
+		return base
+	var target := _nearest_target_in_cone(base, cfg.aim_assist_cone_deg)
+	if target == null:
+		return base
+	var to := ((target as Node3D).global_position + Vector3.UP * 1.0) - global_position
+	return assist_aim(base, to, cfg.aim_assist_max_deg)
+
+## Nearest hostile (group &"guard") within `cone_deg` of `dir` and inside aim range, or null.
+func _nearest_target_in_cone(dir: Vector3, cone_deg: float) -> Node:
+	var best: Node = null
+	var best_d := INF
+	var half := deg_to_rad(cone_deg)
+	var d := dir.normalized()
+	for g in get_tree().get_nodes_in_group(&"guard"):
+		if not (g is Node3D):
+			continue
+		var to := (g as Node3D).global_position - global_position
+		var dist := to.length()
+		if dist < 0.05 or dist > _aim_range():
+			continue
+		if d.angle_to(to / dist) > half:
+			continue
+		if dist < best_d:
+			best_d = dist
+			best = g
+	return best
+
+func _aim_assist_on() -> bool:
+	var s := Services.settings()
+	return s != null and bool(s.get_value("gameplay", "aim_assist"))
+
+func _pursuit_cfg() -> PursuitConfigDef:
+	if Content != null and Content.pursuit != null:
+		return Content.pursuit.get_def(&"default") as PursuitConfigDef
+	return null
 
 func _aim_range() -> float:
-	var cfg: PursuitConfigDef = null
-	if Content != null and Content.pursuit != null:
-		cfg = Content.pursuit.get_def(&"default") as PursuitConfigDef
+	var cfg := _pursuit_cfg()
 	return cfg.guard_engage_range * 4.0 if cfg != null else 60.0

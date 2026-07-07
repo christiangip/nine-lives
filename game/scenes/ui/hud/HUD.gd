@@ -33,10 +33,20 @@ var _ui_scale: float = 1.0
 var _caption_label: Label = null       ## audio captions (task 17, FR-17-7); shown only when subtitles on
 var _caption_token: int = 0            ## generation guard so a new caption cancels the old clear timer
 
+# --- Damage feedback + hit marker (task 21 juice; honour reduce_flashing) ---
+var _reduce_flashing: bool = false
+var _damage_vignette: ColorRect = null
+var _vignette_tween: Tween = null
+var _last_health: float = -1.0
+var _dot: Label = null                 ## crosshair centre; briefly tints on a confirmed hit
+var _hit_flash: float = 0.0            ## 0..1, decays; a landed shot sets it to 1
+var _hit_player: Node = null           ## the player whose shot_landed we're connected to
+
 func _ready() -> void:
 	layer = 20
 	process_mode = Node.PROCESS_MODE_ALWAYS   # keep drawing + catch the resume key while the tree is paused
 	_ui_scale = _read_ui_scale()
+	_reduce_flashing = _read_reduce_flashing()
 	_build()
 	if not EventBus.pursuit_phase_changed.is_connected(_on_pursuit_phase):
 		EventBus.pursuit_phase_changed.connect(_on_pursuit_phase)
@@ -64,6 +74,13 @@ func _build() -> void:
 	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root.theme = UITheme.build()
 	add_child(_root)
+
+	# Full-rect damage vignette, drawn behind the readouts so it never obscures them (FR-21-3).
+	_damage_vignette = ColorRect.new()
+	_damage_vignette.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_damage_vignette.color = Color(0.8, 0.05, 0.05, 0.0)
+	_damage_vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_root.add_child(_damage_vignette)
 
 	_build_crosshair()
 	_compass = CompassEye.new()
@@ -115,6 +132,7 @@ func _build_crosshair() -> void:
 	dot.add_theme_color_override("font_color", Color(1, 1, 1, 0.7))
 	dot.position = Vector2(-8, -16)
 	_crosshair.add_child(dot)
+	_dot = dot
 	_prompt_label = Label.new()
 	_prompt_label.add_theme_font_size_override("font_size", int(18 * _ui_scale))
 	_prompt_label.add_theme_color_override("font_color", UITheme.ACCENT)
@@ -168,13 +186,59 @@ func _mk_bar(parent: Control, caption: String, fill_color: Color) -> ColorRect:
 	return fill
 
 # --- Per-frame update ----------------------------------------------------------
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	var player := _player()
 	_update_carry(player)
 	_update_prompt(player)
 	_update_objective()
 	_update_pursuit()
 	_update_loud(player)
+	_update_damage_feedback(player)
+	_update_hit_marker(player, delta)
+
+# --- Damage vignette + hit marker (task 21, FR-21-3) ---------------------------
+## Watch the player's Health for a drop and flash a red vignette on damage. Under Reduce Flashing the flash
+## is a low, gentle fade instead of a bright pulse (FR-21-1).
+func _update_damage_feedback(player: Node) -> void:
+	if player == null:
+		return
+	var health = player.get("health")
+	if health == null:
+		return
+	var cur := float(health.current)
+	if _last_health < 0.0:
+		_last_health = cur
+		return
+	if cur < _last_health - 0.01:
+		_flash_damage()
+	_last_health = cur
+
+func _flash_damage() -> void:
+	if _damage_vignette == null:
+		return
+	if _vignette_tween != null and _vignette_tween.is_valid():
+		_vignette_tween.kill()
+	var peak := 0.12 if _reduce_flashing else 0.30
+	var dur := 0.5 if _reduce_flashing else 0.35
+	_damage_vignette.color.a = peak
+	_vignette_tween = create_tween()
+	_vignette_tween.tween_property(_damage_vignette, "color:a", 0.0, dur)
+
+## Connect once to the player's shot_landed and briefly tint the crosshair on a confirmed hit (loud-only
+## feedback, FR-21-3). Kept minimal so it never clutters the stealth read.
+func _update_hit_marker(player: Node, delta: float) -> void:
+	if player != _hit_player:
+		_hit_player = player
+		if player != null and player.has_signal("shot_landed") and not player.shot_landed.is_connected(_on_shot_landed):
+			player.shot_landed.connect(_on_shot_landed)
+	if _dot == null:
+		return
+	if _hit_flash > 0.0:
+		_hit_flash = maxf(0.0, _hit_flash - delta * 4.0)
+		_dot.add_theme_color_override("font_color", Color(1, 1, 1, 0.7).lerp(Color(1.0, 0.4, 0.3, 1.0), _hit_flash))
+
+func _on_shot_landed() -> void:
+	_hit_flash = 1.0
 
 func _update_carry(player: Node) -> void:
 	if player == null or player.get("inventory") == null:
@@ -272,6 +336,7 @@ func _subtitles_on() -> bool:
 
 func _on_settings_changed(section: String) -> void:
 	if section == "gameplay":
+		_reduce_flashing = _read_reduce_flashing()
 		var s := _read_ui_scale()
 		if not is_equal_approx(s, _ui_scale):
 			# UI scale changed — rebuild the HUD at the new scale (cheap; happens only on an Options change).
@@ -298,6 +363,10 @@ func _objective_name(mission: Node) -> String:
 func _read_ui_scale() -> float:
 	var s := Services.settings()
 	return clampf(float(s.get_value("gameplay", "ui_scale")), 0.75, 1.5) if s != null else 1.0
+
+func _read_reduce_flashing() -> bool:
+	var s := Services.settings()
+	return s != null and bool(s.get_value("gameplay", "reduce_flashing"))
 
 # --- Small UI helpers ----------------------------------------------------------
 func _corner_box(preset: int, offset: Vector2) -> VBoxContainer:

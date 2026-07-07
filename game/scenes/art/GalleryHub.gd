@@ -10,6 +10,7 @@ const GALLERIES := [
 	{"title": "★ Phase 5-7 Demo (weapons/audio/UI)", "count": 3, "path": "res://game/scenes/art/phase567_demo.tscn"},
 	{"title": "★ Expansion Sandbox (content packs)", "count": 1, "path": "res://game/scenes/expansion/ExpansionSandbox.tscn"},
 	{"title": "★ Live Sandbox (milestones/challenges/season)", "count": 1, "path": "res://game/scenes/live/LiveSandbox.tscn"},
+	{"title": "★ Polish & Performance Sandbox (task 21)", "count": 1, "path": "res://game/scenes/polish/PolishSandbox.tscn"},
 	{"title": "★ Prefabs — Bank set", "count": 12, "path": "res://game/scenes/art/gallery_prefabs.tscn"},
 	{"title": "★ Characters", "count": 8, "path": "res://game/scenes/art/gallery_characters.tscn"},
 	{"title": "★ Heist Props (loot/security)", "count": 18, "path": "res://game/scenes/art/gallery_heist_props.tscn"},

@@ -29,6 +29,32 @@ const DETECTION_COLORS := [
 	Color(0.80, 0.10, 0.30),   # PURSUIT  — deep red
 ]
 
+# Colorblind-adjusted detection bands (task 21, FR-21-1). Keyed by SettingsManager gameplay/colorblind
+# (1 protanopia · 2 deuteranopia · 3 tritanopia). Red-green modes escalate along the blue↔yellow axis;
+# the blue-yellow mode escalates along the cyan↔red axis. Every ramp keeps luminance rising with the state,
+# so it reads even in full colour-blindness — and CompassEye's redundant ?/?!/!/!! symbol is a further cue.
+const DETECTION_COLORS_PROT := [
+	Color(0.55, 0.58, 0.62),   # grey
+	Color(0.30, 0.55, 0.95),   # blue
+	Color(0.40, 0.78, 0.98),   # cyan
+	Color(0.98, 0.85, 0.20),   # yellow
+	Color(1.00, 0.55, 0.05),   # amber
+]
+const DETECTION_COLORS_DEUT := [
+	Color(0.55, 0.58, 0.62),   # grey
+	Color(0.20, 0.50, 0.95),   # blue
+	Color(0.45, 0.72, 0.98),   # light blue
+	Color(0.99, 0.80, 0.15),   # yellow
+	Color(1.00, 0.60, 0.10),   # amber
+]
+const DETECTION_COLORS_TRIT := [
+	Color(0.58, 0.60, 0.60),   # grey
+	Color(0.20, 0.80, 0.80),   # teal/cyan
+	Color(0.95, 0.50, 0.60),   # pink
+	Color(0.96, 0.22, 0.26),   # red
+	Color(0.70, 0.05, 0.15),   # dark red
+]
+
 static var _theme: Theme = null
 
 ## The shared Theme (built once, cached). Apply to any Control root: `control.theme = UITheme.build()`.
@@ -98,6 +124,16 @@ static func _flat(color: Color) -> StyleBoxFlat:
 	sb.set_border_width_all(1)
 	return sb
 
-## Colour for a detection state (safe-indexed). Shared by the HUD compass-eye + any state readout.
+## Colour for a detection state (safe-indexed), default palette. Shared by the HUD compass-eye + any readout.
 static func detection_color(state: int) -> Color:
-	return DETECTION_COLORS[clampi(state, 0, DETECTION_COLORS.size() - 1)]
+	return detection_color_for(state, 0)
+
+## Colour for a detection state under a colorblind `mode` (0 none · 1 protanopia · 2 deuteranopia ·
+## 3 tritanopia). Safe-indexed. CompassEye passes the live gameplay/colorblind setting. Pure.
+static func detection_color_for(state: int, mode: int) -> Color:
+	var band: Array = DETECTION_COLORS
+	match mode:
+		1: band = DETECTION_COLORS_PROT
+		2: band = DETECTION_COLORS_DEUT
+		3: band = DETECTION_COLORS_TRIT
+	return band[clampi(state, 0, band.size() - 1)]
