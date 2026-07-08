@@ -48,9 +48,10 @@ func _ready() -> void:
 	box.add_child(status)
 	box.add_child(HSeparator.new())
 
-	_menu_button(box, "PAUSE_RESUME", _resume)
+	var resume_btn := _menu_button(box, "PAUSE_RESUME", _resume)
 	_menu_button(box, "PAUSE_OPTIONS", _open_options)
 	_menu_button(box, "PAUSE_ABORT", _abort)
+	resume_btn.grab_focus()   # every other overlay in the game defaults focus somewhere; this didn't (gamepad/KB-only nav was stuck)
 
 	var ver := Label.new()   # build/version stamp (task 21, FR-21-7)
 	ver.text = Version.string()
@@ -95,11 +96,17 @@ func _abort_as_catch() -> void:
 		var player := get_tree().get_first_node_in_group(&"player")
 		if player != null and player.get("inventory") != null:
 			secured = int(player.inventory.secured_value())
-		awarded = RunManager.end_streak("aborted")
+		awarded = RunManager.end_streak("aborted", secured)
 	GameManager.goto_results({"outcome": "aborted", "legacy_awarded": awarded, "secured_value": secured})
 
 func _abort_clean() -> void:
 	get_tree().paused = false
+	# A standalone Challenge (task 20) has no "Streak" of its own to keep intact — bugging out just
+	# abandons the attempt, so restore the real Streak the Challenge snapshotted rather than leaving
+	# its zeroed scratch state in place (which goto_hideout's autosave would otherwise persist over
+	# the player's real save). No result is recorded: a clean bug-out isn't a completion or a Catch.
+	if RunManager != null and RunManager.challenge_mode:
+		RunManager.end_challenge()
 	# Clean bug-out: Streak + secured loot intact (Q5). Straight back to the hub.
 	GameManager.goto_hideout()
 

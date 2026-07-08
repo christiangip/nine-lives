@@ -17,6 +17,27 @@ func test_main_menu_builds() -> void:
 func test_hud_builds() -> void:
 	_smoke("res://game/scenes/ui/hud/HUD.tscn")
 
+## Regression (FP mouse-look): NO Control in the HUD may keep the default MOUSE_FILTER_STOP. In captured
+## mouse mode the cursor is pinned to screen centre, so a STOP Control there (the crosshair) consumes
+## InputEventMouseMotion before it reaches PlayerController._unhandled_input, silently killing camera look
+## while WASD still works. HUD._make_mouse_transparent(_root) enforces this; this test locks it in so a
+## future HUD element added without a filter can't re-break look. See HUD._build.
+func test_hud_never_blocks_the_mouse() -> void:
+	var packed := load("res://game/scenes/ui/hud/HUD.tscn") as PackedScene
+	assert_not_null(packed, "the HUD scene loads")
+	var hud := packed.instantiate()
+	add_child_autofree(hud)
+	var blockers: Array[String] = []
+	_collect_mouse_blockers(hud, blockers)
+	assert_eq(blockers.size(), 0,
+		"every HUD Control must be MOUSE_FILTER_IGNORE so it can't eat FP camera look; blockers: %s" % [blockers])
+
+func _collect_mouse_blockers(node: Node, out: Array[String]) -> void:
+	if node is Control and (node as Control).mouse_filter != Control.MOUSE_FILTER_IGNORE:
+		out.append(node.name)
+	for child in node.get_children():
+		_collect_mouse_blockers(child, out)
+
 func test_results_builds() -> void:
 	_smoke("res://game/scenes/mission/MissionResults.tscn")
 

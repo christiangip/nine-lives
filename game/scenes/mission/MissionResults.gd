@@ -10,6 +10,11 @@ const _CATCH_OUTCOMES := ["caught", "captured", "aborted"]
 
 func _ready() -> void:
 	theme = UITheme.build()
+	# The mission that just ended (escape or Catch) leaves the mouse MOUSE_MODE_CAPTURED for FP look;
+	# this is the one screen every ending funnels through (PlayerController never gets a chance to
+	# release it itself), so free the cursor here rather than at each trigger site.
+	if not Engine.is_editor_hint() and DisplayServer.get_name() != "headless":
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	var bg := ColorRect.new()
 	bg.color = UITheme.BG
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)

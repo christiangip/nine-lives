@@ -121,12 +121,17 @@ func _unhandled_input(event: InputEvent) -> void:
 func _physics_process(delta: float) -> void:
 	if config == null:
 		return
-	if Input.is_action_just_pressed(&"pause"):
-		# Convenience for the greybox playtest; full pause/menu is task 15.
-		Input.mouse_mode = (Input.MOUSE_MODE_VISIBLE if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
-			else Input.MOUSE_MODE_CAPTURED)
+	# The "pause" action itself is owned entirely by HUD/PauseMenu (task 15), including the mouse-mode
+	# toggle — this used to also flip Input.mouse_mode here as a pre-task-15 greybox convenience, which
+	# left two systems racing to set the same global on the same keypress.
 	if health != null:
 		health.tick(delta)
+		# Self-revive (§8.7): while Downed, a press of the existing "interact" action within the
+		# window revives (Health.revive() already gates on state==DOWNED and always succeeds within
+		# it — no separate skill-check, unlike Get-Out-of-Jail's capture()). Reuses the existing
+		# action rather than a new bindable one to keep this a minimal wire-up of an already-tested seam.
+		if health.state == Health.State.DOWNED and Input.is_action_just_pressed(&"interact"):
+			health.revive()
 	_apply_gamepad_look(delta)
 	_update_toggle_inputs()
 	_update_stance_input()
@@ -668,7 +673,7 @@ func _on_health_state_changed(new_state: int) -> void:
 		var awarded := 0
 		var run := Services.run()
 		if run != null and run.has_method("end_streak"):
-			awarded = run.end_streak("caught")   # banks Notoriety × Heat-mult → Legacy + resets the Streak (task 12)
+			awarded = run.end_streak("caught", secured)   # banks Notoriety × Heat-mult → Legacy + resets the Streak (task 12)
 		var gm := Services.game()
 		if gm != null and gm.has_method("goto_results"):
 			# Feed the Results/Catch screen (task 15, FR-15-8) the real payout + what survived.

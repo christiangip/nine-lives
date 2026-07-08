@@ -121,6 +121,24 @@ func _build() -> void:
 	_caption_label.add_theme_constant_override("outline_size", _OUTLINE)
 	_root.add_child(_caption_label)
 
+	# CRITICAL (FP mouse-look): every HUD element is a passive readout — none is meant to be clicked —
+	# but Godot Controls default to MOUSE_FILTER_STOP, and mouse_filter does NOT inherit from a parent.
+	# In captured mouse mode the cursor is pinned to screen centre, so the centre crosshair (and any
+	# other element under the cursor) would CONSUME InputEventMouseMotion in the GUI phase before it
+	# reaches PlayerController._unhandled_input — silently killing camera look while WASD still worked.
+	# Force the whole display subtree transparent to the mouse. The Pause overlay is added as a separate
+	# child of this CanvasLayer (not under _root), so its buttons stay clickable.
+	_make_mouse_transparent(_root)
+
+## Recursively set MOUSE_FILTER_IGNORE on a Control and all its descendants, so no passive HUD element
+## can intercept mouse motion/clicks meant for gameplay (see the call site in _build). Future HUD
+## elements are covered automatically — no need to remember to set the filter on each new Label.
+static func _make_mouse_transparent(node: Node) -> void:
+	if node is Control:
+		(node as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for child in node.get_children():
+		_make_mouse_transparent(child)
+
 func _build_crosshair() -> void:
 	_crosshair = Control.new()
 	_crosshair.set_anchors_preset(Control.PRESET_CENTER)

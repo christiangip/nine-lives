@@ -118,6 +118,13 @@ func _reset_mission_tracking() -> void:
 	_alarm_this_mission = false
 	_spotted_this_mission = false
 
+## Public seam for GameManager: clear this-mission tracking at the start of every mission entry, so a
+## previous mission's exit path that deliberately skips the normal end-of-mission bookkeeping (a clean
+## Pause-Menu bug-out, Q5) can never leak a stale spotted/alarm flag forward into the next contract's
+## performance bonuses.
+func reset_mission_tracking() -> void:
+	_reset_mission_tracking()
+
 # --- Loadout ---------------------------------------------------------------
 ## The per-Streak equipped Loadout (FR-09-8). The Armory (task 13) mutates it between missions and
 ## the save system (task 16) serializes it; PlayerController reads it for gadget queries. Lazily
@@ -377,11 +384,11 @@ func heat_multiplier() -> float:
 ## The Streak ends (Caught). Convert accrued Notoriety × Heat-multiplier → permanent Legacy (floored
 ## for anti-frustration), bank it, announce streak_ended, then reset to a fresh low-difficulty
 ## Streak. Returns the Legacy awarded. Task 10's Catch handoff calls this.
-func end_streak(reason: String) -> int:
+func end_streak(reason: String, secured_value: int = 0) -> int:
 	if challenge_mode:
 		# A Catch/abort during a Challenge ends the CHALLENGE, not the real Streak: record a fail, no
 		# Notoriety→Legacy conversion, no Streak reset. GameManager.goto_results restores the snapshot.
-		_record_challenge({"secured_value": 0}, false)
+		_record_challenge({"secured_value": secured_value}, false)
 		return 0
 	var econ := _econ()
 	var awarded := convert_to_legacy(notoriety, heat_multiplier(), econ.legacy_floor)

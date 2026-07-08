@@ -32,6 +32,7 @@ static func open(parent: Node, pause_aware: bool = false) -> OptionsMenu:
 
 var _pause_aware: bool = false            ## keep processing while the tree is paused (opened from Pause)
 var _tabs: TabContainer
+var _back_button: Button
 var _listening_action: StringName = &""
 var _listening_button: Button = null
 
@@ -62,10 +63,10 @@ func _ready() -> void:
 	title.add_theme_font_size_override("font_size", 30)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title)
-	var back := Button.new()
-	back.text = "← Back"
-	back.pressed.connect(_close)
-	header.add_child(back)
+	_back_button = Button.new()
+	_back_button.text = "← Back"
+	_back_button.pressed.connect(_close)
+	header.add_child(_back_button)
 	root.add_child(HSeparator.new())
 
 	_tabs = TabContainer.new()
@@ -73,10 +74,14 @@ func _ready() -> void:
 	_tabs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	root.add_child(_tabs)
 	_populate()
-	back.grab_focus()
+	_back_button.grab_focus()
 
 func _populate() -> void:
 	for c in _tabs.get_children():
+		# remove_child BEFORE queue_free: queue_free is deferred, so a still-in-tree old tab named
+		# "Graphics" would force the rebuilt one to an auto name ("@ScrollContainer@NN") — which the
+		# TabContainer then shows as the tab title. Removing frees the name immediately. (Reset bug.)
+		_tabs.remove_child(c)
 		c.queue_free()
 	_build_graphics(_tab("Graphics"))
 	_build_audio(_tab("Audio"))
@@ -133,7 +138,11 @@ func _on_reset_pressed() -> void:
 	var c := ConfirmPopup.open(self, "Reset ALL options to their defaults?", "Reset")
 	c.confirmed.connect(func() -> void:
 		SettingsManager.reset_to_defaults()
-		_populate())
+		_populate()
+		# _populate() frees every tab body — including whatever had focus (the Reset button that was
+		# just clicked) — so gamepad/keyboard-only navigation would otherwise be stranded with nothing
+		# focused. _back_button lives outside the tabs and always survives a repopulate.
+		_back_button.grab_focus())
 
 # --- Control builders ----------------------------------------------------------
 func _tab(title: String) -> VBoxContainer:
@@ -276,7 +285,11 @@ func _fmt_num(v: float, step: float) -> String:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if _listening_action == &"":
-		if event.is_action_pressed("ui_cancel"):
+		# Also close on the "pause" action, not just ui_cancel: both map to Escape by default, but
+		# "pause" is remappable from this very Controls tab. Without this, a rebound Pause key would
+		# fall through this overlay to PauseMenu underneath, whose own handler resumes the (paused)
+		# game and force-recaptures the mouse while this overlay is still open on top of it.
+		if event.is_action_pressed("ui_cancel") or event.is_action_pressed(&"pause"):
 			_close()
 			get_viewport().set_input_as_handled()
 

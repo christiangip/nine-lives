@@ -13,12 +13,14 @@ const FADE_TIME := 0.25
 
 ## Legal state adjacency. Mirrors the boot/scene-flow diagram in ARCHITECTURE.md:
 ## BOOT → MAIN_MENU → HIDEOUT ⇄ MISSION → MISSION_RESULTS → HIDEOUT, plus PAUSED
-## overlay during a mission and "quit to menu" from safe states.
+## overlay during a mission and "quit to menu" from safe states. MISSION → HIDEOUT is the
+## Q5 clean-abort path (PauseMenu._abort_clean): the in-mission pause overlay never routes
+## through State.PAUSED (it pauses the SceneTree directly), so this edge must be direct.
 const _TRANSITIONS := {
 	State.BOOT: [State.MAIN_MENU],
 	State.MAIN_MENU: [State.HIDEOUT],
 	State.HIDEOUT: [State.MISSION, State.MAIN_MENU],
-	State.MISSION: [State.MISSION_RESULTS, State.PAUSED],
+	State.MISSION: [State.MISSION_RESULTS, State.PAUSED, State.HIDEOUT],
 	State.PAUSED: [State.MISSION, State.MAIN_MENU],
 	State.MISSION_RESULTS: [State.HIDEOUT, State.MAIN_MENU],
 }
@@ -54,12 +56,14 @@ func transition_to(next_state: int) -> bool:
 	return true
 
 func goto_main_menu() -> void:
-	transition_to(State.MAIN_MENU)
+	if not transition_to(State.MAIN_MENU):
+		return   # illegal from the current state; state is untouched, so don't swap the scene under it
 	active_slot = -1
 	_change_scene(MAIN_MENU_SCENE)
 
 func goto_hideout() -> void:
-	transition_to(State.HIDEOUT)
+	if not transition_to(State.HIDEOUT):
+		return
 	# Between-mission autosave (FR-16-4): landing at the hub is a safe checkpoint, and it clears the
 	# mid-mission commit flag so a subsequent quit doesn't re-resolve a Catch.
 	if SaveManager != null:
@@ -74,8 +78,9 @@ func goto_results(payload: Dictionary = {}) -> void:
 		if not cr.is_empty():
 			payload = cr
 		RunManager.end_challenge()
+	if not transition_to(State.MISSION_RESULTS):
+		return
 	pending_results = payload   # MissionResults reads this in _ready (task 15, FR-15-8)
-	transition_to(State.MISSION_RESULTS)
 	_change_scene(MISSION_RESULTS_SCENE)
 
 func _on_transition_requested(target: String, payload: Dictionary) -> void:
@@ -140,9 +145,12 @@ func enter_mission(contract) -> void:
 	if c == null:
 		push_warning("GameManager.enter_mission: no contract supplied")
 		return
-	# Record the contract name for the save slot summary (task 16 meta.last_contract).
+	# Record the contract name for the save slot summary (task 16 meta.last_contract), and start this
+	# mission's spotted/alarm tracking clean — a prior mission could have left it dirty via a path that
+	# skips normal end-of-mission bookkeeping (e.g. PauseMenu's clean bug-out).
 	if RunManager != null:
 		RunManager.last_contract = _contract_name(c)
+		RunManager.reset_mission_tracking()
 	# FR-09-8: validate the Streak's equipped loadout before entering (the Armory fixes it, task 13).
 	var run := Services.run()
 	if run != null and run.has_method("loadout"):
@@ -153,7 +161,10 @@ func enter_mission(contract) -> void:
 	if root == null:
 		push_error("GameManager.enter_mission: mission build failed; staying put")
 		return
-	transition_to(State.MISSION)
+	if not transition_to(State.MISSION):
+		push_error("GameManager.enter_mission: illegal transition to MISSION from %s; discarding built scene" % State.keys()[state])
+		root.queue_free()   # never adopted into the tree; free it ourselves
+		return
 	_swap_to_built_scene(root)
 
 ## Build + swap into a standalone daily/weekly Challenge (task 20, FR-20-2). Isolated from the endless
@@ -172,7 +183,12 @@ func enter_challenge(contract, kind: String, reward: int) -> void:
 		if RunManager != null:
 			RunManager.end_challenge()
 		return
-	transition_to(State.MISSION)
+	if not transition_to(State.MISSION):
+		push_error("GameManager.enter_challenge: illegal transition to MISSION from %s; aborting Challenge" % State.keys()[state])
+		root.queue_free()
+		if RunManager != null:
+			RunManager.end_challenge()
+		return
 	_swap_to_built_scene(root)
 
 ## Swap an already-built Node (a MissionController) in as the current scene, sharing the fade seam.

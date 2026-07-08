@@ -62,7 +62,10 @@ func _ready() -> void:
 	confirm.grab_focus()
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("ui_cancel"):
+	# Also cancel on "pause": both map to Escape by default, but "pause" is remappable, and this
+	# popup can sit over PauseMenu (Abort confirm) — a rebound Pause key must not fall through to
+	# PauseMenu's own handler and resume gameplay while this dialog is still open on top of it.
+	if event.is_action_pressed("ui_cancel") or event.is_action_pressed(&"pause"):
 		_on_cancel()
 		get_viewport().set_input_as_handled()
 
