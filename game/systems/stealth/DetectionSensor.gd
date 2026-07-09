@@ -249,15 +249,25 @@ func _visibility_fraction(origin: Vector3, player: Node) -> float:
 			clear += 1
 	return float(clear) / float(heights.size())
 
-## Sampled light at `pos`: 1.0 lit, config.min_light_factor inside any &"shadow" Area3D.
-## Hook point for 06/§9.5 (shoot/switch lights expands shadow). FR-04-5.
+## Sampled light at `pos`: 1.0 lit → config.min_light_factor in shadow. FR-04-5 / world-gen Phase 1C.
+##   1. An explicit &"shadow" Area3D always forces shadow (authored dark zones; a shot-out light). Wins.
+##   2. Fixture-driven model: a mission scatters LightFixtures (group &"lit") under its ceilings — a point
+##      is lit ONLY inside a fixture's pool, shadowed everywhere else. Cutting/shooting a light removes its
+##      pool → the area goes dark → detection eases (closes the 06/§9.5 shoot/switch hook for real).
+##   3. No fixtures in the scene at all (every pre-existing greybox + unit test) → fully lit, unchanged.
 func _sample_light_level(pos: Vector3) -> float:
 	if config == null:
 		return 1.0
 	for node in get_tree().get_nodes_in_group(&"shadow"):
 		if node is Area3D and _area_contains(node as Area3D, pos):
 			return config.min_light_factor
-	return 1.0
+	var fixtures := get_tree().get_nodes_in_group(&"lit")
+	if fixtures.is_empty():
+		return 1.0
+	for f in fixtures:
+		if f is Node3D and f.has_method(&"lights_point") and (f as Object).call(&"lights_point", pos):
+			return 1.0
+	return config.min_light_factor
 
 func _area_contains(area: Area3D, pos: Vector3) -> bool:
 	for body in area.get_overlapping_bodies():

@@ -39,8 +39,13 @@ func _set_lit(value: bool, _method: StringName) -> void:
 	_apply()
 	state_changed.emit()
 
-## Expanding shadow = the light's shadow area registers with the group task 04 samples.
+## Turning the light off removes its lit pool → the area goes dark → detection eases there.
 func _apply() -> void:
+	# Generated wiring (world-gen Phase 1C): a child LightFixture is the real emitter + &"lit" pool.
+	for c in get_children():
+		if c is LightFixture:
+			(c as LightFixture).set_on(lit)
+	# Legacy hand-authored wiring: a Light3D to toggle + an Area3D that joins &"shadow" while dark.
 	var light := get_node_or_null(light_path)
 	if light != null:
 		light.visible = lit

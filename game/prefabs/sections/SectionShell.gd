@@ -19,6 +19,10 @@ const DECOR_INSET := 1.3 ## how far wall-hugging decor sits inside a wall
 
 ## Footprint in grid cells (the realizer sets this from SectionDef.footprint; the .tscn default matches its def).
 @export var footprint: Vector2i = Vector2i(2, 2)
+## Which edges get a central doorway: &"north"(+Z) / &"south"(-Z) / &"east"(+X) / &"west"(-X). The realizer
+## sets this to the sides facing graph-neighbours so the room seals on its outward walls (world-gen Phase 1B).
+## EMPTY = all four open (back-compat for hand-authored showcase scenes that predate this).
+@export var open_sides: Array[StringName] = []
 ## Dressing preset: &"vault" / &"lobby" / &"office" / &"dock" / &"generic" — chooses wall material + decor.
 @export var dressing: StringName = &"generic"
 ## Editor convenience: toggle to rebuild the preview.
@@ -42,15 +46,21 @@ func _build() -> void:
 	var fz: int = maxi(1, footprint.y)
 	var half := Vector3(float(fx) * CELL * 0.5, 0.0, float(fz) * CELL * 0.5)
 	_build_floor(half)
+	_build_ceiling(half)
 	_build_pillars(half)
-	_build_edge(Vector3(0, 0, half.z), Vector3(1, 0, 0), float(fx) * CELL)   # north
-	_build_edge(Vector3(0, 0, -half.z), Vector3(1, 0, 0), float(fx) * CELL)  # south
-	_build_edge(Vector3(half.x, 0, 0), Vector3(0, 0, 1), float(fz) * CELL)   # east
-	_build_edge(Vector3(-half.x, 0, 0), Vector3(0, 0, 1), float(fz) * CELL)  # west
+	_build_edge(&"north", Vector3(0, 0, half.z), Vector3(1, 0, 0), float(fx) * CELL)
+	_build_edge(&"south", Vector3(0, 0, -half.z), Vector3(1, 0, 0), float(fx) * CELL)
+	_build_edge(&"east", Vector3(half.x, 0, 0), Vector3(0, 0, 1), float(fz) * CELL)
+	_build_edge(&"west", Vector3(-half.x, 0, 0), Vector3(0, 0, 1), float(fz) * CELL)
 	_dress(half)
 
 func _build_floor(half: Vector3) -> void:
 	_box(Vector3(0, -0.1, 0), Vector3(half.x * 2.0 - 0.4, 0.2, half.z * 2.0 - 0.4), &"floor")
+
+## A ceiling caps the room so the exterior sun no longer floods it — interiors go dark and the light
+## fixtures (world-gen Phase 1C) create the lit pools stealth reads. Sits just above the wall tops.
+func _build_ceiling(half: Vector3) -> void:
+	_box(Vector3(0, WALL_H + 0.1, 0), Vector3(half.x * 2.0 - 0.4, 0.2, half.z * 2.0 - 0.4), &"trim")
 
 func _build_pillars(half: Vector3) -> void:
 	var m: StringName = &"metal" if dressing == &"vault" else &"trim"
@@ -59,17 +69,27 @@ func _build_pillars(half: Vector3) -> void:
 			var p := Vector3(sx * (half.x - PILLAR * 0.5), WALL_H * 0.5, sz * (half.z - PILLAR * 0.5))
 			_box(p, Vector3(PILLAR, WALL_H, PILLAR), m)
 
-## Two wall segments along an edge, leaving a central DOOR_W gap. `edge` is the edge-centre (local),
-## `along` a unit direction, `length` the edge length. Whatever edge the socket lands on, the gap is open.
-func _build_edge(edge: Vector3, along: Vector3, length: float) -> void:
+## One wall along an edge. If the side is OPEN (`open_sides` empty or contains it), leave a central DOOR_W
+## gap (two segments) so a neighbour connects there; otherwise seal it with a solid full-length wall so the
+## room is enclosed on its outward faces (world-gen Phase 1B). `edge` is the edge-centre (local), `along` a
+## unit direction, `length` the edge length.
+func _build_edge(side: StringName, edge: Vector3, along: Vector3, length: float) -> void:
+	var mat: StringName = _wall_material()
+	if not _side_open(side):
+		var solid := Vector3(length, WALL_H, WALL_T) if along.x > 0.5 else Vector3(WALL_T, WALL_H, length)
+		_box(edge + Vector3(0, WALL_H * 0.5, 0), solid, mat)
+		return
 	var seg := (length - DOOR_W) * 0.5
 	if seg <= 0.2:
-		return
-	var mat: StringName = _wall_material()
+		return   # too short to wall around a doorway — leave the whole edge open
 	var size := Vector3(seg, WALL_H, WALL_T) if along.x > 0.5 else Vector3(WALL_T, WALL_H, seg)
 	for s in [-1.0, 1.0]:
 		var c: Vector3 = edge + along * (float(s) * (DOOR_W * 0.5 + seg * 0.5)) + Vector3(0, WALL_H * 0.5, 0)
 		_box(c, size, mat)
+
+## Empty open_sides = every edge open (hand-authored back-compat); otherwise only listed sides open.
+func _side_open(side: StringName) -> bool:
+	return open_sides.is_empty() or side in open_sides
 
 func _wall_material() -> StringName:
 	match dressing:

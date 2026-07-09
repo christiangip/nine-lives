@@ -52,6 +52,8 @@ var _sprint_locked: bool = false      ## true after depletion until regen passes
 var _regen_cooldown: float = 0.0
 var _step_accum: float = 0.0
 var _current_interactable: Interactable = null
+var _last_grounded_pos: Vector3 = Vector3.ZERO   ## fall-backstop anchor (world-gen Phase 1A)
+var _has_grounded: bool = false
 var _hold_timer: float = 0.0          ## -1.0 = an interaction already fired this press (latched)
 var _crouch_toggle_state: bool = false
 var _sprint_toggle_state: bool = false
@@ -169,6 +171,7 @@ func _physics_process(delta: float) -> void:
 	velocity.z = horizontal.z
 
 	move_and_slide()
+	_update_fall_backstop()
 
 	_update_lean(delta)
 	_update_footsteps(delta, Vector2(velocity.x, velocity.z).length(), _is_sprinting)
@@ -178,6 +181,17 @@ func _physics_process(delta: float) -> void:
 	_update_drop_input()
 	_update_takedown_input()
 	_apply_camera_shake(delta)
+
+## Out-of-bounds safety net behind the mission envelope (world-gen Phase 1A): remember the last grounded
+## spot, and if the player somehow ends up below the floor plane, snap back instead of falling forever.
+## Cheap, scene-agnostic — the real enclosure is the per-room shells + the invisible envelope walls.
+func _update_fall_backstop() -> void:
+	if is_on_floor():
+		_last_grounded_pos = global_position
+		_has_grounded = true
+	elif config != null and global_position.y < config.fall_reset_y:
+		velocity = Vector3.ZERO
+		global_position = _last_grounded_pos if _has_grounded else Vector3(global_position.x, 1.0, global_position.z)
 
 # --- Camera shake / feedback (task 21 — FR-21-3 juice + FR-21-1 toggles) ----
 

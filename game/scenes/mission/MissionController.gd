@@ -13,8 +13,18 @@ class_name MissionController
 const CELL := MissionLayout.CELL_SIZE
 const _PLAYER_SCENE := preload("res://game/scenes/player/PlayerController.tscn")
 const _HUD_SCENE := preload("res://game/scenes/ui/hud/HUD.tscn")   ## the real in-mission HUD (task 15)
-const _ENV := preload("res://game/assets/default_env.tres")        ## shared mission environment (task 18)
+const _INTERIOR_ENV := preload("res://game/assets/interior_env.tres")  ## dim ambient so fixtures read (world-gen 1C)
 const _CIVILIAN_MODEL := preload("res://game/assets/models/characters/Casual.gltf")  ## civilian art (task 18)
+
+# --- Greybox geometry tunables (world-gen Phase 1; realization consts, mirrors SectionShell's local set) --
+const _ENVELOPE_MARGIN := 3.0     ## metres the boundary walls sit beyond the section bounding box (inside the floor slab)
+const _ENVELOPE_HEIGHT := 8.0     ## boundary wall height (m) — well over the 3.4 m room walls
+const _ENVELOPE_THICK := 1.0      ## boundary wall/cap thickness (m)
+const _CAMERA_MOUNT_HEIGHT := 2.6 ## camera mount height (m) when the def doesn't override it
+const _CAMERA_FOV := 60.0
+const _CAMERA_RANGE := 12.0
+const _CAMERA_PITCH_DEG := 22.0   ## downward tilt so a ceiling camera watches the floor
+const _CAMERA_SWEEP_PERIOD := 6.0
 
 ## Category → Obstacle subclass. Branch on the def property, never on id (const via preload, per house rule).
 const _OBSTACLE_SCRIPTS := {
@@ -76,7 +86,9 @@ func realize() -> void:
 	add_child(world)
 	_build_stage(world)
 	_build_floor(world)
+	_build_envelope(world)
 	_build_sections(world)
+	_build_fixtures(world)
 	_build_actors(world)
 	_build_obstacles(world)
 	_build_loot(world)
@@ -123,18 +135,18 @@ func _build_stage(_world: Node3D) -> void:
 		return
 	var we := WorldEnvironment.new()
 	we.name = "MissionEnv"
-	we.environment = _ENV
+	we.environment = _INTERIOR_ENV   # dim ambient — ceilings + fixtures now do the interior lighting (world-gen 1C)
 	add_child(we)
 	var sun := DirectionalLight3D.new()
 	sun.name = "Sun"
 	sun.rotation_degrees = Vector3(-52, -40, 0)
-	sun.light_energy = 1.1
+	sun.light_energy = 0.9
 	sun.shadow_enabled = true
 	add_child(sun)
 	var fill := DirectionalLight3D.new()
 	fill.name = "Fill"
 	fill.rotation_degrees = Vector3(-25, 140, 0)
-	fill.light_energy = 0.25
+	fill.light_energy = 0.15
 	add_child(fill)
 
 func _has_world_environment() -> bool:
@@ -170,31 +182,138 @@ func _build_floor(world: Node3D) -> void:
 	floor_body.add_child(mesh)
 	world.add_child(floor_body)
 
+## Invisible boundary so the player can't walk off the connective floor slab into the void, or get
+## launched out the (open) top (world-gen Phase 1A). Four perimeter walls + a high cap around the section
+## bounding box + a margin. Collision-only — the visible enclosure is the per-room shells; this is the
+## guaranteed backstop behind them (paired with PlayerController's fall reset).
+func _build_envelope(world: Node3D) -> void:
+	if layout.sections.is_empty():
+		return
+	var lo := Vector2i(1 << 30, 1 << 30)
+	var hi := Vector2i(-(1 << 30), -(1 << 30))
+	for ps in layout.sections:
+		var r := ps.rect()
+		lo.x = mini(lo.x, r.position.x); lo.y = mini(lo.y, r.position.y)
+		hi.x = maxi(hi.x, r.end.x); hi.y = maxi(hi.y, r.end.y)
+	var min_x := float(lo.x) * CELL - _ENVELOPE_MARGIN
+	var min_z := float(lo.y) * CELL - _ENVELOPE_MARGIN
+	var max_x := float(hi.x) * CELL + _ENVELOPE_MARGIN
+	var max_z := float(hi.y) * CELL + _ENVELOPE_MARGIN
+	var span_x := max_x - min_x
+	var span_z := max_z - min_z
+	var cx := (min_x + max_x) * 0.5
+	var cz := (min_z + max_z) * 0.5
+	var h := _ENVELOPE_HEIGHT
+	var t := _ENVELOPE_THICK
+	_add_collider(world, Vector3(cx, h * 0.5, min_z), Vector3(span_x + t, h, t))   # south (-Z)
+	_add_collider(world, Vector3(cx, h * 0.5, max_z), Vector3(span_x + t, h, t))   # north (+Z)
+	_add_collider(world, Vector3(min_x, h * 0.5, cz), Vector3(t, h, span_z + t))   # west (-X)
+	_add_collider(world, Vector3(max_x, h * 0.5, cz), Vector3(t, h, span_z + t))   # east (+X)
+	_add_collider(world, Vector3(cx, h + t, cz), Vector3(span_x + t, t, span_z + t))  # cap
+
+## An invisible collision-only box (boundary wall / cap). No mesh — it just stops movement.
+func _add_collider(world: Node3D, pos: Vector3, size: Vector3) -> void:
+	var body := StaticBody3D.new()
+	body.name = "Bound"
+	body.position = pos
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = size
+	shape.shape = box
+	body.add_child(shape)
+	world.add_child(body)
+
 func _build_sections(world: Node3D) -> void:
 	for ps in layout.sections:
+		# Edge-aware enclosure (world-gen Phase 1B): open a doorway only on the walls facing a graph-neighbour
+		# so the room seals on its outward faces. The shell falls back to all-open if handed no sides.
+		var open_sides := _open_sides_for(ps.index)
 		# Real art (task 18, FR-18-7): a SectionDef.scene shell is instanced at the section centre; its
-		# footprint is synced from the def so it grid-snaps. Sections without an authored scene fall back
-		# to a master-materialed tile (so un-dressed archetypes/wings still build — the additive seam).
+		# footprint + open sides are synced from the layout so it grid-snaps and seals correctly.
 		if ps.def.scene != null:
 			var section: Node3D = ps.def.scene.instantiate()
 			section.name = "Section_%d_%s" % [ps.index, ps.def.id]
 			if "footprint" in section:
 				section.set("footprint", ps.def.footprint)
+			if "open_sides" in section:
+				section.set("open_sides", open_sides)
 			section.position = ps.center_world(CELL)
 			world.add_child(section)
 			continue
-		var tile := MeshInstance3D.new()
-		tile.name = "Section_%d_%s" % [ps.index, ps.def.id]
-		var bm := BoxMesh.new()
-		bm.size = Vector3(float(ps.size().x) * CELL - 0.6, 0.1, float(ps.size().y) * CELL - 0.6)
-		tile.mesh = bm
-		tile.position = ps.center_world(CELL) + Vector3(0, 0.06, 0)
-		# Master floor tinted toward brass by security tier so higher wings still read (no clash with Escape).
-		var mat := (Palette.material(&"floor").duplicate() as StandardMaterial3D)
-		var t := clampf(float(ps.def.security_tier) / 3.0, 0.0, 1.0)
-		mat.albedo_color = Palette.FLOOR.lerp(Palette.ACCENT, t * 0.5)
-		tile.material_override = mat
-		world.add_child(tile)
+		# No authored scene: build a sealed procedural room (walls + ceiling + doors) via SectionShell rather
+		# than a flat tile, so un-dressed archetypes (estate pack, museum/warehouse) are enclosed + lit too.
+		var shell := SectionShell.new()
+		shell.name = "Section_%d_%s" % [ps.index, ps.def.id]
+		shell.footprint = ps.def.footprint
+		shell.open_sides = open_sides
+		shell.dressing = _dressing_for(ps.def)
+		shell.position = ps.center_world(CELL)
+		world.add_child(shell)
+
+## Ceiling light fixtures per room (world-gen Phase 1C): honour authored &"light" anchors, else auto-scatter
+## by footprint. Each fixture pools light + joins group &"lit" so detection reads exposed-vs-shadow.
+func _build_fixtures(world: Node3D) -> void:
+	for ps in layout.sections:
+		var lights := ps.def.anchors_of(&"light")
+		if not lights.is_empty():
+			for a in lights:
+				_add_fixture(world, ps.anchor_world(a.get("pos", Vector3.ZERO), CELL))
+			continue
+		var s := ps.size()
+		var count := clampi(int(round(float(s.x * s.y) / 4.0)), 1, 4)
+		var center := ps.center_world(CELL)
+		if count <= 1:
+			_add_fixture(world, center)
+			continue
+		var long_x := s.x >= s.y
+		for i in count:
+			var frac := (float(i) + 0.5) / float(count) - 0.5   # -0.5 .. 0.5 along the long axis
+			var off := Vector3(float(s.x) * CELL * frac, 0, 0) if long_x else Vector3(0, 0, float(s.y) * CELL * frac)
+			_add_fixture(world, center + off)
+
+func _add_fixture(world: Node3D, pos: Vector3) -> void:
+	var f := LightFixture.new()
+	f.name = "Fixture"
+	f.position = pos
+	world.add_child(f)
+
+## Pure seam (unit-tested): the cardinal side of `from_center` that faces `to_center` — used to open a
+## room's wall toward each graph-neighbour so sealed rooms stay traversable (world-gen Phase 1B).
+static func dominant_side(from_center: Vector3, to_center: Vector3) -> StringName:
+	var dx := to_center.x - from_center.x
+	var dz := to_center.z - from_center.z
+	if absf(dx) >= absf(dz):
+		return &"east" if dx >= 0.0 else &"west"
+	return &"north" if dz >= 0.0 else &"south"
+
+## Which of this section's walls face a connected neighbour (so the shell opens a doorway there).
+func _open_sides_for(index: int) -> Array[StringName]:
+	var sides: Array[StringName] = []
+	var c0 := layout.sections[index].center_world(CELL)
+	for e in layout.edges:
+		var other := -1
+		if int(e.get("a", -1)) == index:
+			other = int(e.get("b", -1))
+		elif int(e.get("b", -1)) == index:
+			other = int(e.get("a", -1))
+		if other < 0 or other >= layout.sections.size():
+			continue
+		var side := dominant_side(c0, layout.sections[other].center_world(CELL))
+		if side not in sides:
+			sides.append(side)
+	if sides.is_empty():
+		sides.append(&"north")   # isolated safety (a connected graph never hits this)
+	return sides
+
+## Dressing preset for a procedurally-shelled (scene-less) room, by section kind.
+func _dressing_for(def: SectionDef) -> StringName:
+	match def.kind:
+		SectionDef.Kind.ENTRY:
+			return &"lobby"
+		SectionDef.Kind.OBJECTIVE, SectionDef.Kind.SETPIECE:
+			return &"vault"
+		_:
+			return &"generic"
 
 func _build_actors(world: Node3D) -> void:
 	for a in layout.actors:
@@ -267,11 +386,14 @@ func _spawn_guard(world: Node3D, enemy_id: StringName, pos: Vector3, skill_mult:
 func _build_obstacles(world: Node3D) -> void:
 	for g in layout.gates:
 		var pos := _edge_midpoint(int(g.get("edge", -1)))
-		_spawn_obstacle(world, StringName(g.get("obstacle_id", &"")), pos)
+		_spawn_obstacle(world, StringName(g.get("obstacle_id", &"")), pos, pos)
 	for h in layout.hazards:
-		_spawn_obstacle(world, StringName(h.get("obstacle_id", &"")), h.get("pos", Vector3.ZERO))
+		var hp: Vector3 = h.get("pos", Vector3.ZERO)
+		var sec := int(h.get("section", -1))
+		var center := layout.sections[sec].center_world(CELL) if sec >= 0 and sec < layout.sections.size() else hp
+		_spawn_obstacle(world, StringName(h.get("obstacle_id", &"")), hp, center)
 
-func _spawn_obstacle(world: Node3D, obstacle_id: StringName, pos: Vector3) -> void:
+func _spawn_obstacle(world: Node3D, obstacle_id: StringName, pos: Vector3, watch_center: Vector3) -> void:
 	var odef := _obstacle_def(obstacle_id)
 	if odef == null:
 		return
@@ -280,14 +402,50 @@ func _spawn_obstacle(world: Node3D, obstacle_id: StringName, pos: Vector3) -> vo
 	node.set_script(script)
 	node.name = "Obstacle_%s" % obstacle_id
 	node.set("def_id", obstacle_id)
-	node.position = pos + Vector3(0, 1.0, 0)
+	# A camera mounts high and aims down at the floor it guards (world-gen Phase 1D); everything else sits at
+	# floor level like before. mount_height/vision live in the def's params (data-driven, no id branching).
+	var is_cam := _is_camera(odef)
+	var mount_y: float = float(odef.params.get("mount_height", _CAMERA_MOUNT_HEIGHT)) if is_cam else 1.0
+	node.position = pos + Vector3(0, mount_y, 0)
 	# Real art (task 18): the ObstacleDef.scene prop prefab brings its own collider, so the interaction ray
 	# resolves up to this Interactable exactly as it did for the marker body. Fallback: the colored marker.
 	if odef.scene != null:
-		_add_model(node, odef.scene, Vector3(0, -1.0, 0))
+		_add_model(node, odef.scene, Vector3.ZERO if is_cam else Vector3(0, -1.0, 0))
+	elif is_cam:
+		_add_marker_body(node, Vector3(0.4, 0.3, 0.6), Palette.TINT_KEYCARRIER)
 	else:
 		_add_marker_body(node, Vector3(0.8, 2.0, 0.3), Color(0.7, 0.5, 0.2))
+	if is_cam:
+		_attach_camera_eye(node, odef, pos, watch_center)
 	world.add_child(node)
+
+func _is_camera(odef: ObstacleDef) -> bool:
+	return odef.category == ObstacleDef.Category.HACK_TARGET and String(odef.params.get("device", "")) == "camera"
+
+## Give a camera a real detection cone: a CameraEye child (the full DetectionSensor vision core) pitched
+## down and yawed toward the room, with a debug wedge, gated on the HackTarget's defeated state. Reuses
+## the guard sensor template — a camera now sees like a guard and alerts the same way (world-gen Phase 1D).
+func _attach_camera_eye(node: Node3D, odef: ObstacleDef, floor_pos: Vector3, watch_center: Vector3) -> void:
+	var eye := CameraEye.new()
+	eye.name = "Sensor"
+	eye.vision_angle_deg = float(odef.params.get("vision_angle", _CAMERA_FOV))
+	eye.vision_range = float(odef.params.get("vision_range", _CAMERA_RANGE))
+	eye.sweep_deg = float(odef.params.get("ptz_sweep_deg", 0.0))
+	eye.sweep_period = float(odef.params.get("ptz_period", _CAMERA_SWEEP_PERIOD))
+	eye.host = node
+	var det_cfg := _detection_config()
+	if det_cfg != null:
+		eye.config = det_cfg
+	var pitch := deg_to_rad(float(odef.params.get("pitch_deg", _CAMERA_PITCH_DEG)))
+	var dx := watch_center.x - floor_pos.x
+	var dz := watch_center.z - floor_pos.z
+	var yaw := atan2(-dx, -dz) if (dx * dx + dz * dz) > 1.0 else 0.0
+	eye.rotation = Vector3(-pitch, yaw, 0.0)   # -Z forward: negative X-rot looks down, yaw faces the room
+	var cone := MeshInstance3D.new()
+	cone.name = "ConeDebug"
+	cone.set_script(load("res://game/systems/stealth/DetectionConeDebug.gd"))
+	eye.add_child(cone)
+	node.add_child(eye)
 
 func _build_loot(world: Node3D) -> void:
 	for l in layout.loot:

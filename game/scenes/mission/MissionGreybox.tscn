@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://da8258qadi582"]
 
 [ext_resource type="Script" uid="uid://bxj6nijiocy52" path="res://game/scenes/mission/MissionGreyboxDebug.gd" id="1_driver"]
-[ext_resource type="Environment" uid="uid://ctcd4chavk0k8" path="res://game/assets/default_env.tres" id="2_env"]
+[ext_resource type="Environment" path="res://game/assets/interior_env.tres" id="2_env"]
 
 [node name="MissionGreybox" type="Node3D" unique_id=1549769155]
 script = ExtResource("1_driver")

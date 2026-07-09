@@ -48,11 +48,19 @@ func _build_mission() -> void:
 	else:
 		push_error("[MissionGreybox] build failed for '%s' seed %d" % [archetype, mission_seed])
 
-## Force go-loud (L) — the mission has no scripted alarm trigger, so this stands in for tripping one.
+## Dev keys: L force go-loud (no scripted alarm exists yet); B toggle all light fixtures (blackout) so the
+## light → shadow → detection coupling is testable (world-gen Phase 1C).
 func _input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_L:
-		var p := _player()
-		EventBus.alarm_tripped.emit("loud", p.global_position if p != null else global_position)
+	if not (event is InputEventKey and event.pressed and not event.echo):
+		return
+	match (event as InputEventKey).keycode:
+		KEY_L:
+			var p := _player()
+			EventBus.alarm_tripped.emit("loud", p.global_position if p != null else global_position)
+		KEY_B:
+			for f in get_tree().get_nodes_in_group(&"lit"):
+				if f.has_method("toggle"):
+					f.toggle()
 
 # --- Debug overlay ---------------------------------------------------------
 func _build_overlay() -> void:
@@ -77,7 +85,7 @@ func _process(_delta: float) -> void:
 
 func _controls() -> String:
 	return "[TASK 11 DEV GREYBOX — real HUD is task 15]  WASD move · mouse look · Shift sprint · C crouch · Z prone · Q/E lean\n" + \
-		"F interact/pick-up · V takedown · T throw bag · G drop body · LMB fire · 1 weapon · 4 gadget · L = GO LOUD · Esc pause"
+		"F interact/pick-up · V takedown · T throw bag · G drop body · LMB fire · 1 weapon · 4 gadget · L = GO LOUD · B = blackout · Esc pause"
 
 func _player() -> Node3D:
 	return get_tree().get_first_node_in_group(&"player") as Node3D

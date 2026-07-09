@@ -12,6 +12,7 @@ class_name PlayerConfigDef
 @export var air_control: float = 0.3         ## 0..1 fraction of accel applied airborne
 @export var jump_velocity: float = 4.5       ## upward m/s on jump
 @export var gravity: float = -1.0            ## < 0 -> use ProjectSettings default_gravity
+@export var fall_reset_y: float = -8.0       ## below this world-Y, snap back to the last grounded spot (out-of-bounds safety net, world-gen Phase 1A)
 
 # --- Stances (flat per-stance fields, indexed by PlayerController.Stance) ---
 @export var stand_speed: float = 3.2         ## m/s walking while standing
