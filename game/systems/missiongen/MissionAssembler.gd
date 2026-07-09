@@ -111,17 +111,41 @@ func _attach(layout: MissionLayout, parent_i: int, def: SectionDef, rng: RandomN
 
 ## First free grid rectangle near the parent, scanning outward deterministically (adjacent first, then
 ## perpendicular offsets, then larger gaps). The grid is unbounded/sparse, so a spot always exists.
+## Pass 1 prefers a placement that shares a real wall face with the parent (≥1 cell of perpendicular
+## overlap) so the edge realizes as an aligned doorway / straight corridor rather than a diagonal elbow
+## (world-gen Phase 2D — fewer corridor clips). Pass 2 falls back to any free spot, and an unbounded
+## east scan guarantees success without the old far-jump fallback that could strand a room (lock-out).
 func _find_free_origin(layout: MissionLayout, parent: PlacedSection, fp: Vector2i, rng: RandomNumberGenerator) -> Vector2i:
 	var pr := parent.rect()
 	var dirs := [Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(0, -1)]
 	_shuffle(dirs, rng)
+	# Pass 1 — face-sharing placements only (aligned doors / straight corridors, never a diagonal).
+	for gap in range(0, 48):
+		for d in dirs:
+			for perp_i in range(0, 10):
+				var origin := _origin_for(pr, fp, d, gap, _perp_offset(perp_i))
+				if _shares_face(pr, origin, fp, d) and layout.rect_free(Rect2i(origin, fp)):
+					return origin
+	# Pass 2 — any free spot (a diagonal elbow only if no aligned spot exists in range; corridors handle it).
 	for gap in range(0, 48):
 		for d in dirs:
 			for perp_i in range(0, 10):
 				var origin := _origin_for(pr, fp, d, gap, _perp_offset(perp_i))
 				if layout.rect_free(Rect2i(origin, fp)):
 					return origin
-	return Vector2i(1000 + layout.sections.size() * 16, 0)   # extreme fallback (never hit in practice)
+	# Guaranteed terminator: scan straight east from the parent until a free strip (sparse grid → quick).
+	var ox := pr.end.x
+	while not layout.rect_free(Rect2i(Vector2i(ox, pr.position.y), fp)):
+		ox += 1
+	return Vector2i(ox, pr.position.y)
+
+## Would a child placed at `origin` (footprint `fp`, attached in direction `d`) share ≥1 cell of wall face
+## with the parent `pr` — i.e. overlap on the axis perpendicular to `d`? Face overlap → the realizer opens
+## an aligned doorway (shared/straight) instead of routing a diagonal corridor.
+func _shares_face(pr: Rect2i, origin: Vector2i, fp: Vector2i, d: Vector2i) -> bool:
+	if d.x != 0:   # east/west adjacency → need overlap on the Z (grid-y) axis
+		return mini(pr.end.y, origin.y + fp.y) - maxi(pr.position.y, origin.y) >= 1
+	return mini(pr.end.x, origin.x + fp.x) - maxi(pr.position.x, origin.x) >= 1
 
 func _origin_for(pr: Rect2i, fp: Vector2i, d: Vector2i, gap: int, perp: int) -> Vector2i:
 	if d == Vector2i(1, 0):
