@@ -45,6 +45,12 @@ var _realized := false
 var _finished := false
 var _start_msec: int = 0                 ## Time.get_ticks_msec() at mission start (feeds the speed bonus)
 
+## Debug/QA self-damage chunk (Part C) — ~3 hits down a 100 HP player, enough to exercise down → revive → Catch.
+const _DEBUG_SELF_DAMAGE := 34.0
+## Dev loadout equipped by the debug arm key so firing/gadgets are testable in a real mission (a fresh
+## player is intentionally unarmed — weapons are Armory-researched). Mirrors MissionGreyboxDebug._DEV_GEAR.
+const _DEBUG_GEAR: Array[StringName] = [&"suppressed_pistol", &"keycard_cloner", &"lockpick_set", &"emp", &"smoke"]
+
 ## Called by MissionGenerator.build() before this node enters the tree.
 func setup(p_layout: MissionLayout, p_contract: Contract) -> void:
 	layout = p_layout
@@ -80,6 +86,8 @@ func realize() -> void:
 	_build_minigame_host(world)
 	_spawn_player(world)
 	_build_hud(world)
+	if _debug_enabled():
+		_build_debug_hint()
 
 ## Mount the real task-15 HUD (compass-eye / carry / objective / pursuit / loud) + the on-world noise-ring
 ## spawner. Replaces the MissionGreyboxDebug stand-in label. A greybox that already added its own HUD is
@@ -360,6 +368,67 @@ func _on_reinforcements(tier: StringName, count: int) -> void:
 		var pos: Vector3 = _reinforce_points[_reinforce_cursor % _reinforce_points.size()]
 		_reinforce_cursor += 1
 		_spawn_guard(world, tier, pos, 1.0 + 0.15 * float(maxi(0, contract.tier - 1)), &"")
+
+# --- Debug / QA affordances (Part C; gated OFF in release builds) ----------
+## Port the greybox's testing keys into a *realized* mission so the going-loud / down → self-revive →
+## Catch loop is reproducible from the real New Game flow (not only the F6 greybox). Inert unless
+## GameManager.debug_mode (defaults to OS.is_debug_build()), so an exported release never sees these.
+func _debug_enabled() -> bool:
+	return GameManager != null and GameManager.debug_mode
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not _debug_enabled():
+		return
+	if not (event is InputEventKey and event.pressed and not event.echo):
+		return
+	match (event as InputEventKey).keycode:
+		KEY_L:   # force go-loud (no scripted alarm exists yet) — drives RunManager + PursuitDirector
+			var p := _debug_player()
+			EventBus.alarm_tripped.emit("loud", p.global_position if p != null else global_position)
+		KEY_K:   # self-damage — exercise down / self-revive / Catch without relying on AI aim
+			var p := _debug_player()
+			if p != null and p.has_method("apply_damage"):
+				p.apply_damage(_DEBUG_SELF_DAMAGE)
+		KEY_J:   # spawn a responder at a reinforcement anchor via the real pursuit spawn path
+			_on_reinforcements(&"responder", 1)
+		KEY_H:   # arm the player with a dev loadout (a fresh player is unarmed by design) so firing is testable
+			_debug_arm_player()
+
+func _debug_player() -> Node3D:
+	if get_tree() == null:
+		return null
+	return get_tree().get_first_node_in_group(&"player") as Node3D
+
+## Dev-unlock + equip the dev gear onto the Streak loadout, then rebuild the player's weapons so `fire`
+## works immediately (a real mission's player is otherwise unarmed until the Armory).
+func _debug_arm_player() -> void:
+	if RunManager == null or ProgressionManager == null or Content == null:
+		return
+	var lo := RunManager.loadout()
+	for gid in _DEBUG_GEAR:
+		if gid not in ProgressionManager.unlocked_gear:
+			ProgressionManager.unlocked_gear.append(gid)
+		var gd := Content.gear.get_def(gid) as GearDef
+		if gd != null:
+			lo.equip(gd)
+	var p := _debug_player()
+	if p != null and p.has_method("rebuild_weapons"):
+		p.rebuild_weapons()
+
+func _build_debug_hint() -> void:
+	var layer := CanvasLayer.new()
+	layer.name = "DebugHint"
+	layer.layer = 45
+	add_child(layer)
+	var lbl := Label.new()
+	lbl.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	lbl.position = Vector2(16, 16)
+	lbl.text = "[DEBUG]  L go-loud · K self-damage · J spawn responder · H arm weapon"
+	lbl.add_theme_color_override("font_color", Color(1.0, 1.0, 0.4))
+	lbl.add_theme_color_override("font_outline_color", Color.BLACK)
+	lbl.add_theme_constant_override("outline_size", 5)
+	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(lbl)
 
 func _spawn_player(world: Node3D) -> void:
 	if get_tree() != null and not get_tree().get_nodes_in_group(&"player").is_empty():

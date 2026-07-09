@@ -18,5 +18,7 @@ params = {
 "noise_radius": 24.0,
 "spread_base": 1.0,
 "recoil_per_shot": 1.0,
-"fire_interval": 0.2
+"fire_interval": 0.2,
+"reserve": 36,
+"reload_time": 1.4
 }

@@ -37,6 +37,11 @@ func _ready() -> void:
 func _exit_tree() -> void:
 	if EventBus.noise_emitted.is_connected(_on_noise_emitted):
 		EventBus.noise_emitted.disconnect(_on_noise_emitted)
+	# Announce we're no longer detecting anything, so the HUD/CompassEye drop this actor. Without this, a
+	# taken-down/killed guard's last detection state lingers forever (no more ticks to decay it), leaving
+	# the compass "suspicious" with no guard actually aware of the player.
+	if Engine.get_main_loop() is SceneTree:
+		EventBus.detection_changed.emit(get_instance_id(), DetectionState.UNAWARE, 0.0)
 
 # --- Geometry resolution (per-actor from EnemyDef, else local @exports) -----
 func cone_angle_deg() -> float:

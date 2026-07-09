@@ -43,6 +43,12 @@ func device_kind() -> String:
 func is_disabled() -> bool:
 	return disabled or solved
 
+## Proximity-hack fill as 0..1 for the HUD hold ring (this hack is a timed fill, not the tap/hold timer).
+func interaction_progress() -> float:
+	if not hacking or def == null or def.time_seconds <= 0.0:
+		return 0.0
+	return clampf(progress / def.time_seconds, 0.0, 1.0)
+
 # --- Hack lifecycle --------------------------------------------------------
 ## Begin a hack. If the actor holds the found code/payload (def.clue_id), it resolves instantly with no
 ## minigame. Returns true if already finished (shortcut), false if a timed hack started.

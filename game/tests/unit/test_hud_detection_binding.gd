@@ -37,3 +37,27 @@ func test_signal_updates_indicator() -> void:
 	assert_almost_eq(eye._primary_fill, 0.8, 0.0001, "the indicator reflects the fill")
 	EventBus.detection_changed.emit(id, 0, 0.0)   # fully recovered
 	assert_false(eye._actors.has(id), "a fully-recovered detector is dropped")
+
+# --- HUD survival/stamina/objective seams (Part B) -----------------------------
+func test_survival_visible_adds_detected() -> void:
+	# Pure stealth, full health, not committed, no pursuit, but a guard is onto you → the block shows (B1).
+	assert_false(MissionHUD.survival_visible(false, 0, 1.0, false), "hidden while clean + unseen")
+	assert_true(MissionHUD.survival_visible(false, 0, 1.0, true), "a guard onto you fades the survival block in")
+	assert_true(MissionHUD.survival_visible(true, 0, 1.0, false), "committed keeps it up (persists once loud)")
+	assert_true(MissionHUD.survival_visible(false, 0, 0.8, false), "having taken damage shows it")
+
+func test_any_detected_threshold() -> void:
+	assert_false(MissionHUD.any_detected([0, 0]), "all Unaware → not detected")
+	assert_true(MissionHUD.any_detected([0, 1]), "a Suspicious detector counts as detected")
+	assert_true(MissionHUD.any_detected([3]), "an Alerted detector counts as detected")
+
+func test_stamina_visible_only_below_full() -> void:
+	assert_false(MissionHUD.stamina_visible(100.0, 100.0), "full stamina hides the bar")
+	assert_true(MissionHUD.stamina_visible(60.0, 100.0), "draining stamina shows the bar")
+	assert_false(MissionHUD.stamina_visible(0.0, 0.0), "no max → hidden (avoids a divide-by-zero flash)")
+
+func test_objective_fraction_clamps() -> void:
+	assert_almost_eq(MissionHUD.objective_fraction(0, 1000), 0.0, 0.0001, "nothing secured → empty")
+	assert_almost_eq(MissionHUD.objective_fraction(500, 1000), 0.5, 0.0001, "half secured → half bar")
+	assert_almost_eq(MissionHUD.objective_fraction(1500, 1000), 1.0, 0.0001, "over-secured clamps to full")
+	assert_almost_eq(MissionHUD.objective_fraction(50, 0), 0.0, 0.0001, "no loot total → empty (no divide-by-zero)")

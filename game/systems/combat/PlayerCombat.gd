@@ -100,9 +100,9 @@ func fire() -> Dictionary:
 	_resolve_hit(float(shot["damage"]))
 	return shot
 
-func reload() -> int:
+func reload() -> bool:
 	var w := active_weapon()
-	return w.reload() if w != null else 0
+	return w.reload() if w != null else false
 
 ## Raycast down the aim direction; deal the shot's damage to whatever hostile it strikes. Hostiles
 ## expose apply_damage(float) (GuardAI); a killed guard drops to a discoverable Body via its own logic.

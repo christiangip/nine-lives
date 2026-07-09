@@ -420,6 +420,19 @@ func current_prompt() -> String:
 		return _current_interactable.prompt
 	return ""
 
+## Progress 0..1 of the interaction on the aimed target, for the HUD hold ring. Covers both the tap/hold
+## timer (hold_seconds obstacles like a fuse box) AND an in-world timed interaction the target drives
+## itself (e.g. a HackTarget's proximity-hack fill) via Interactable.interaction_progress(). 0 when idle.
+func interaction_hold_progress() -> float:
+	if _current_interactable == null:
+		return 0.0
+	var p: float = _current_interactable.interaction_progress()   # in-world timed interactions (hacks, …)
+	var required: float = _current_interactable.hold_seconds
+	if required > 0.0:
+		var held := 1.0 if _hold_timer < 0.0 else clampf(_hold_timer / required, 0.0, 1.0)
+		p = maxf(p, held)
+	return clampf(p, 0.0, 1.0)
+
 # --- Noise (FR-03-6) -------------------------------------------------------
 
 func _update_footsteps(delta: float, horizontal_speed: float, is_running: bool) -> void:
@@ -658,6 +671,13 @@ func apply_damage(damage: float) -> void:
 ## unarmed or combat isn't mounted yet.
 func active_weapon() -> Weapon:
 	return _combat.active_weapon() if _combat != null else null
+
+## Rebuild the FP combat weapons from the current loadout. Called after the loadout changes mid-mission
+## (the debug arm key; a future Armory re-equip). The player's `loadout` is the Streak's shared instance,
+## so equipping onto RunManager.loadout() then calling this picks the new weapon up.
+func rebuild_weapons() -> void:
+	if _combat != null:
+		_combat.rebuild_weapons()
 
 ## Move-speed multiplier from equipped armor weight (never freezes; Armor.agility_mult floors it).
 func _armor_speed_mult() -> float:

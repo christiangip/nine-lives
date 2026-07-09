@@ -222,6 +222,10 @@ func _tick_combat(delta: float) -> void:
 	var w := _combat_weapon()
 	if w != null:
 		w.tick(delta)
+		# Empty magazine with rounds in reserve → reload during the standoff (else the guard fires its
+		# opening mag then is disarmed for the rest of the mission).
+		if w.ammo == 0 and not w.is_reloading and w.reserve > 0:
+			w.reload()
 	var player := _nearest_player()
 	# No target in view: chase the last-known spot so a spotted player stays pressured.
 	if player == null:
@@ -232,7 +236,10 @@ func _tick_combat(delta: float) -> void:
 		return
 	var target := player.global_position
 	var dist := global_position.distance_to(target)
-	var has_los := _sensor != null and _has_los(_sensor.global_position, target)
+	# Aim at centre-mass (raised off the player's origin) and exclude the player's own collider, or the
+	# ray would always strike the player and read as "no LoS" — the bug that kept guards from ever firing.
+	var aim_point := target + Vector3.UP * ai_config.combat_aim_height
+	var has_los := _sensor != null and _has_los(_sensor.global_position, aim_point, _collider_rid(player))
 	if should_fire(has_los, dist, cfg.guard_engage_range):
 		_fire_at(player)
 	var speed := def.move_speed * cfg.guard_advance_speed_mult
@@ -370,7 +377,7 @@ func _scan_for_bodies() -> void:
 		var in_cone := _sensor.is_in_cone(origin, forward, body.global_position, half_angle, rng)
 		if not in_cone:
 			continue
-		if Body.raises_alarm(body.concealed, in_cone, _has_los(origin, body.global_position)):
+		if Body.raises_alarm(body.concealed, in_cone, _has_los(origin, body.global_position, _collider_rid(body))):
 			body.discover()
 			# Head to the body and search there (unless already more alert, e.g. in combat).
 			if behavior_severity(AIState.INVESTIGATE) > behavior_severity(ai_state):
@@ -378,13 +385,22 @@ func _scan_for_bodies() -> void:
 				_has_investigate_target = true
 				_set_ai_state(AIState.INVESTIGATE)
 
-func _has_los(from_pos: Vector3, to_pos: Vector3) -> bool:
+## Clear line from `from_pos` to `to_pos`? The target sits AT `to_pos`, so its own collider must be
+## excluded or the ray always terminates inside it (returning "no LoS" forever) — the same fix pattern
+## DetectionSensor._visibility_fraction uses. Pass the target's RID via `exclude_extra`.
+func _has_los(from_pos: Vector3, to_pos: Vector3, exclude_extra: Array[RID] = []) -> bool:
 	var space := get_world_3d().direct_space_state
 	if space == null:
 		return false
 	var q := PhysicsRayQueryParameters3D.create(from_pos, to_pos)
-	q.exclude = [get_rid()]
+	q.exclude = [get_rid()] + exclude_extra
 	return space.intersect_ray(q).is_empty()
+
+## The RID of a node's own collider, so it can be excluded from a LoS ray. Empty if it has none.
+func _collider_rid(node: Node) -> Array[RID]:
+	if node is CollisionObject3D:
+		return [(node as CollisionObject3D).get_rid()]
+	return []
 
 # --- Detection / coordination signals --------------------------------------
 func _on_detection_changed(actor_id: int, det_state: int, _fill: float) -> void:

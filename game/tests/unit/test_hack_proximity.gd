@@ -49,3 +49,12 @@ func test_found_code_skips_the_hack() -> void:
 	autofree(by)
 	assert_true(h.begin_hack(by), "holding the code resolves instantly")
 	assert_true(h.solved, "no timed hack needed")
+
+func test_interaction_progress_drives_the_hold_ring() -> void:
+	var h := _hack()
+	assert_almost_eq(h.interaction_progress(), 0.0, 0.0001, "no ring before the hack starts")
+	h.begin_hack(null)
+	h.tick(1.5, 2.0)   # halfway through the 3.0s in range
+	assert_almost_eq(h.interaction_progress(), 0.5, 0.01, "the HUD ring reflects the proximity-hack fill")
+	h.tick(1.5, 2.0)   # completes
+	assert_almost_eq(h.interaction_progress(), 0.0, 0.0001, "no ring once solved")

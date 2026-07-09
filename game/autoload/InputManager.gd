@@ -87,6 +87,23 @@ func rebind_action(action: StringName, event: InputEvent) -> void:
 	InputMap.action_add_event(action, event)
 	save_bindings()
 
+## Human-readable label for the primary keyboard/mouse binding of `action` (e.g. "F", "LMB"), so HUD
+## prompts show the live bound key and stay correct after a rebind. Falls back to the action name.
+func primary_key_label(action: StringName) -> String:
+	if not InputMap.has_action(action):
+		return String(action)
+	for ev in InputMap.action_get_events(action):
+		if ev is InputEventKey:
+			var k := ev as InputEventKey
+			var code := k.physical_keycode if k.physical_keycode != 0 else k.keycode
+			return OS.get_keycode_string(code)
+		if ev is InputEventMouseButton:
+			match (ev as InputEventMouseButton).button_index:
+				MOUSE_BUTTON_LEFT: return "LMB"
+				MOUSE_BUTTON_RIGHT: return "RMB"
+				MOUSE_BUTTON_MIDDLE: return "MMB"
+	return String(action)
+
 ## Read saved bindings from disk and overwrite the in-memory InputMap for any
 ## action present in the file. Actions absent from the file keep their defaults.
 func load_bindings() -> void:

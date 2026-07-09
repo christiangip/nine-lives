@@ -11,3 +11,8 @@ func can_interact(_by: Node) -> bool:
 
 func interact(_by: Node) -> void:
 	pass # TODO[06]: override per subtype
+
+## In-world progress 0..1 of an interaction already under way (e.g. a proximity hack filling), so the HUD
+## can draw a hold-to-interact ring for it. 0 for instant taps and idle targets. Override per subtype.
+func interaction_progress() -> float:
+	return 0.0

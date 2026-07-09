@@ -12,15 +12,19 @@ class_name CompassEye
 const TICK_COUNT := 12
 ## State → short symbol (redundant, non-colour cue). Indexed by DetectionSensor.DetectionState.
 const STATE_SYMBOLS := ["", "?", "?!", "!", "!!"]
+const _SEARCHING := 2             ## DetectionState.SEARCHING — the threshold at which a threat gets its own lit tick
+const _ALERTED := 3               ## DetectionState.ALERTED — the "fully spotted" commit
 
 var _actors: Dictionary = {}      ## actor_id:int -> [state:int, fill:float]
 var _primary_state: int = 0
 var _primary_fill: float = 0.0
 var _primary_tick: int = -1       ## lit direction tick, or -1 when unknown/ahead-only
+var _threat_ticks: Dictionary = {}  ## tick_index -> strongest state of any threat (>= SEARCHING) at that bearing
 var _colorblind: int = 0          ## gameplay/colorblind palette mode (task 21, FR-21-1)
 var _reduce_flashing: bool = false
 var _prev_state: int = 0
 var _pulse_t: float = 0.0         ## 0..1 escalation pulse, decays; set to 1 when the state rises (task 21 juice)
+var _spotted_flash: float = 0.0   ## 0..1, decays; set to 1 the instant detection commits to ALERTED (the "SPOTTED!" moment)
 
 func _ready() -> void:
 	custom_minimum_size = Vector2(120, 120)
@@ -58,9 +62,15 @@ func _process(delta: float) -> void:
 	# Escalation pulse: a brief expanding ring when the alert state rises (suppressed by Reduce Flashing).
 	if _primary_state > _prev_state and not _reduce_flashing:
 		_pulse_t = 1.0
+	# The "fully spotted" commit: an unmistakable flash + SPOTTED! text the instant any threat reaches
+	# ALERTED (the Searching→Alerted jump), so the player can't miss going from "hunted" to "made".
+	if _primary_state >= _ALERTED and _prev_state < _ALERTED:
+		_spotted_flash = 1.0
 	_prev_state = _primary_state
 	if _pulse_t > 0.0:
 		_pulse_t = maxf(0.0, _pulse_t - delta * 2.5)
+	if _spotted_flash > 0.0:
+		_spotted_flash = maxf(0.0, _spotted_flash - delta * 1.3)
 	queue_redraw()
 
 # --- Pure seams (headless-testable) --------------------------------------------
@@ -96,12 +106,24 @@ func _recompute_primary() -> void:
 	var best_id := 0
 	var best_state := -1
 	var best_fill := -1.0
+	_threat_ticks.clear()
+	# Defensive: drop any detector whose sensor has been freed (belt-and-suspenders with the sensor's
+	# _exit_tree UNAWARE emit), so a taken-down guard can't keep the compass lit.
+	for id in _actors.keys():
+		if not is_instance_id_valid(id):
+			_actors.erase(id)
 	for id in _actors:
 		var sf: Array = _actors[id]
 		var st := int(sf[0])
 		var fl := float(sf[1])
 		if st > best_state or (st == best_state and fl > best_fill):
 			best_state = st; best_fill = fl; best_id = id
+		# Every threat that's actively hunting you (Searching+) lights its own tick, so multiple
+		# converging guards read as a flanking situation, not just the single most-alarming bearing.
+		if st >= _SEARCHING:
+			var t := _tick_for_actor(id)
+			if t >= 0:
+				_threat_ticks[t] = maxi(int(_threat_ticks.get(t, 0)), st)
 	if best_state < 0:
 		_primary_state = 0; _primary_fill = 0.0; _primary_tick = -1
 		return
@@ -129,15 +151,23 @@ func _draw() -> void:
 	var vis := detection_visual(_primary_state, _primary_fill, _colorblind)
 	var col: Color = vis["color"]
 
-	# Direction tick ring: tick 0 at top (12 o'clock), clockwise. The bearing tick is lit + enlarged.
+	# Direction tick ring: tick 0 at top (12 o'clock), clockwise. Every hunting threat lights its tick
+	# (per-threat colour) for a flanking read; the most-alarming bearing is the brightest + most enlarged.
 	for i in TICK_COUNT:
 		var a := -PI * 0.5 + float(i) / float(TICK_COUNT) * TAU
 		var dir := Vector2(cos(a), sin(a))
-		var lit := i == _primary_tick and _primary_state > 0
-		var inner := ring_r - (7.0 if lit else 4.0)
+		var is_primary := i == _primary_tick and _primary_state > 0
+		var threat_state := int(_threat_ticks.get(i, 0))
+		var lit := is_primary or threat_state > 0
+		var tick_col := Color(1, 1, 1, 0.18)
+		if is_primary:
+			tick_col = col
+		elif threat_state > 0:
+			tick_col = UITheme.detection_color_for(threat_state, _colorblind)
+		var inner := ring_r - (7.0 if is_primary else (5.5 if lit else 4.0))
 		var p0 := center + dir * inner
 		var p1 := center + dir * ring_r
-		draw_line(p0, p1, (col if lit else Color(1, 1, 1, 0.18)), 3.0 if lit else 2.0)
+		draw_line(p0, p1, tick_col, (3.0 if is_primary else (2.5 if lit else 2.0)))
 
 	# The eye: dark socket, then a state-coloured iris that grows with the detection fill, + a pupil.
 	var eye_r := ring_r - 14.0
@@ -151,6 +181,18 @@ func _draw() -> void:
 	if _pulse_t > 0.0:
 		var pr := ring_r + (1.0 - _pulse_t) * 10.0
 		draw_arc(center, pr, 0.0, TAU, 32, Color(col.r, col.g, col.b, _pulse_t * 0.6), 3.0)
+
+	# The "fully spotted" moment: a bold ring flash + SPOTTED! text. Under Reduce Flashing it's a steady,
+	# non-strobing highlight rather than a bright pulse (FR-21-1) — still unmistakable, just gentler.
+	if _spotted_flash > 0.0:
+		var alerted_col := UITheme.detection_color_for(_ALERTED, _colorblind)
+		var ring_a := (0.5 if _reduce_flashing else _spotted_flash * 0.9)
+		draw_arc(center, ring_r + 6.0, 0.0, TAU, 40, Color(alerted_col.r, alerted_col.g, alerted_col.b, ring_a), 4.0)
+		var f2 := UITheme.font()
+		if f2 != null:
+			var txt_a := (0.9 if _reduce_flashing else _spotted_flash)
+			draw_string(f2, center + Vector2(-46, ring_r + 30.0), "SPOTTED!",
+				HORIZONTAL_ALIGNMENT_CENTER, 92, 20, Color(alerted_col.r, alerted_col.g, alerted_col.b, txt_a))
 
 	# Redundant, colour-independent state symbol above the eye.
 	var symbol := String(vis["symbol"])

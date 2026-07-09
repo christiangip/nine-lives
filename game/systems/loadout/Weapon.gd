@@ -20,11 +20,14 @@ var spread_base: float = 1.0            ## deg at rest
 var recoil_per_shot: float = 1.5        ## deg added to accumulated recoil each shot
 var recoil_recovery: float = 6.0        ## deg/sec recoil bleeds off
 var fire_interval: float = 0.12         ## seconds between shots
+var reload_time: float = 1.5            ## seconds a reload takes (0 = instant); drives the HUD progress bar
 
 var ammo: int = 0
 var reserve: int = 0
+var is_reloading: bool = false
 var _recoil: float = 0.0                ## accumulated recoil (deg), decays over time
 var _cooldown: float = 0.0
+var _reload_timer: float = 0.0          ## counts a timed reload down to completion
 var _mods: Array[StringName] = []       ## attached attachment/mod ids (FR-09-4)
 
 func _init(p_def: GearDef = null, p_config: LoadoutConfigDef = null) -> void:
@@ -53,6 +56,8 @@ func _read_params() -> void:
 	recoil_per_shot = float(def.param(&"recoil_per_shot", recoil_per_shot))
 	recoil_recovery = float(def.param(&"recoil_recovery", recoil_recovery))
 	fire_interval = float(def.param(&"fire_interval", fire_interval))
+	reload_time = float(def.param(&"reload_time", reload_time))
+	reserve = int(def.param(&"reserve", reserve))
 
 # --- FR-09-4 noise profile (feeds 04/10) — the pure seam test_weapon_noise_profile calls ----
 ## Noise ring (m) a shot emits: loud = base, suppressed = base × suppressor_factor (< 1). Pure.
@@ -95,7 +100,7 @@ func mods() -> Array[StringName]:
 
 # --- Firing / ammo (task 10 consumes the returned shot; this owns ammo/recoil) --------------
 func can_fire() -> bool:
-	return ammo > 0 and _cooldown <= 0.0
+	return ammo > 0 and _cooldown <= 0.0 and not is_reloading
 
 ## Fire one shot: spend a round, add recoil, and return the shot data task-10 combat resolves
 ## (damage + spread + noise). Emits the noise ring so detection (04) reacts even before combat wiring.
@@ -116,18 +121,43 @@ func fire(origin: Vector3 = Vector3.ZERO, marks_effect: float = 0.0) -> Dictiona
 		"suppressed": suppressed,
 	}
 
+## Begin a timed reload (completes in `reload_time`s via tick()). No-op if the mag is already full,
+## the reserve is empty, or a reload is already running. With reload_time <= 0 it completes instantly.
+## Returns true if a reload was started (or instantly completed).
+func reload() -> bool:
+	if is_reloading or reserve <= 0 or ammo >= ammo_capacity:
+		return false
+	if reload_time <= 0.0:
+		_finish_reload()
+		return true
+	is_reloading = true
+	_reload_timer = reload_time
+	return true
+
 ## Move rounds from the reserve into the magazine, up to capacity. Returns rounds loaded.
-func reload() -> int:
+func _finish_reload() -> int:
+	is_reloading = false
+	_reload_timer = 0.0
 	var need := ammo_capacity - ammo
 	var loaded := mini(need, reserve)
 	ammo += loaded
 	reserve -= loaded
 	return loaded
 
-## Recoil bleed-off + fire-rate cooldown. Task 10 calls this each frame; tests drive it directly.
+## Reload completion 0..1 (1.0 when not reloading), for the HUD progress bar.
+func reload_progress() -> float:
+	if not is_reloading or reload_time <= 0.0:
+		return 1.0
+	return clampf(1.0 - _reload_timer / reload_time, 0.0, 1.0)
+
+## Recoil bleed-off + fire-rate cooldown + timed reload. Task 10 calls this each frame; tests drive it directly.
 func tick(delta: float) -> void:
 	_recoil = maxf(0.0, _recoil - recoil_recovery * delta)
 	_cooldown = maxf(0.0, _cooldown - delta)
+	if is_reloading:
+		_reload_timer = maxf(0.0, _reload_timer - delta)
+		if _reload_timer <= 0.0:
+			_finish_reload()
 
 func recoil() -> float:
 	return _recoil

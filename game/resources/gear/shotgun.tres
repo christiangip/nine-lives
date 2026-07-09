@@ -19,5 +19,7 @@ params = {
 "spread_base": 6.0,
 "recoil_per_shot": 3.0,
 "recoil_recovery": 5.0,
-"fire_interval": 0.6
+"fire_interval": 0.6,
+"reserve": 24,
+"reload_time": 2.5
 }

@@ -83,6 +83,13 @@ func tick(delta: float) -> void:
 	elif state == State.ALIVE and armor != null:
 		armor.regen(delta)
 
+## Remaining self-revive window as a 0..1 fraction (1.0 at the moment of going Down, ticking to 0 as it
+## lapses toward CAUGHT). 0 when not Downed. Drives the HUD's DOWNED countdown bar.
+func revive_fraction() -> float:
+	if state != State.DOWNED or config.self_revive_window <= 0.0:
+		return 0.0
+	return clampf(_revive_timer / config.self_revive_window, 0.0, 1.0)
+
 ## Self-revive during the DOWNED window (right gear/perk, §8.7). Returns true if it took.
 func revive() -> bool:
 	if state != State.DOWNED:

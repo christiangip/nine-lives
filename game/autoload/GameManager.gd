@@ -28,6 +28,9 @@ const _TRANSITIONS := {
 var state: int = State.BOOT
 var active_slot: int = -1
 var pending_results: Dictionary = {}   ## last mission/Catch summary; read by MissionResults (task 15, FR-15-8)
+## Debug/QA affordances (force-loud / self-damage / spawn-responder keys in a real mission — Part C).
+## Defaults to the engine debug-build flag so it's inert in an exported release; a build/test can flip it.
+var debug_mode: bool = OS.is_debug_build()
 
 var _fade_layer: CanvasLayer
 var _fade_rect: ColorRect
