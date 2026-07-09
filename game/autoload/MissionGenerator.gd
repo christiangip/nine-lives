@@ -34,6 +34,13 @@ func build(contract: Resource) -> Node3D:
 	if layout.sections.is_empty() or not MissionValidator.validate(layout):
 		push_error("MissionGenerator.build: no solvable layout for '%s' seed %d" % [c.archetype_id, c.mission_seed])
 		return null
+	# Geometry-faithfulness (world-gen Phase 2C): every room should be physically reachable. Non-fatal —
+	# corridors + aligned doors connect by construction and the safety slab backstops it, so we warn
+	# (the hard proof is test_mission_geometry's seed sweep) rather than refuse a playable mission.
+	var geo := MissionGeometry.faithful(layout)
+	if not geo.get("ok", true):
+		push_warning("MissionGenerator.build: geometry not faithful for '%s' seed %d — unreachable=%s clip_cells=%d"
+			% [c.archetype_id, c.mission_seed, str(geo.get("unreachable", [])), int(geo.get("clip_cells", 0))])
 	var controller := MissionController.new()
 	controller.name = "Mission"
 	controller.setup(layout, c)

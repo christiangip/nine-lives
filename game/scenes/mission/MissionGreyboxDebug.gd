@@ -16,6 +16,8 @@ extends Node3D
 const _DEV_GEAR: Array[StringName] = [&"suppressed_pistol", &"keycard_cloner", &"lockpick_set", &"emp", &"smoke"]
 
 var _label: Label
+var _mission: Node3D           ## the built MissionController (read for the Phase-2 geometry check)
+var _geo_line: String = ""     ## last KEY_V faithfulness readout
 
 func _ready() -> void:
 	_equip_dev_loadout()
@@ -42,6 +44,7 @@ func _build_mission() -> void:
 		c.objective_id = arch.objective_ids[0]
 	var root := MissionGenerator.build(c)
 	if root != null:
+		_mission = root
 		add_child(root)
 		print("[MissionGreybox] built '%s' seed %d — %d sections, %d actors, %d gates" % [
 			archetype, mission_seed, root.layout.sections.size(), root.layout.actors.size(), root.layout.gates.size()])
@@ -49,7 +52,9 @@ func _build_mission() -> void:
 		push_error("[MissionGreybox] build failed for '%s' seed %d" % [archetype, mission_seed])
 
 ## Dev keys: L force go-loud (no scripted alarm exists yet); B toggle all light fixtures (blackout) so the
-## light → shadow → detection coupling is testable (world-gen Phase 1C).
+## light → shadow → detection coupling is testable (world-gen Phase 1C); P run the geometry-faithfulness
+## check on the current mission (world-gen Phase 2C) — reports every room reachable + any corridor clips.
+## (P not V — V is the player's takedown action.)
 func _input(event: InputEvent) -> void:
 	if not (event is InputEventKey and event.pressed and not event.echo):
 		return
@@ -61,6 +66,18 @@ func _input(event: InputEvent) -> void:
 			for f in get_tree().get_nodes_in_group(&"lit"):
 				if f.has_method("toggle"):
 					f.toggle()
+		KEY_P:
+			_check_geometry()
+
+## World-gen Phase 2C: prove every graph-connected room is physically reachable in the realized geometry.
+func _check_geometry() -> void:
+	if _mission == null:
+		return
+	var geo := MissionGeometry.faithful(_mission.layout)
+	var rooms: int = _mission.layout.sections.size()
+	_geo_line = "GEOMETRY %s — %d rooms, %d unreachable, %d corridor-clip cells" % [
+		"OK" if geo.ok else "LOCKED-OUT", rooms, (geo.unreachable as Array).size(), int(geo.clip_cells)]
+	print("[MissionGreybox] ", _geo_line, "  unreachable=", geo.unreachable)
 
 # --- Debug overlay ---------------------------------------------------------
 func _build_overlay() -> void:
@@ -84,8 +101,9 @@ func _process(_delta: float) -> void:
 	_label.text = _controls()
 
 func _controls() -> String:
+	var geo := ("\n" + _geo_line) if _geo_line != "" else ""
 	return "[TASK 11 DEV GREYBOX — real HUD is task 15]  WASD move · mouse look · Shift sprint · C crouch · Z prone · Q/E lean\n" + \
-		"F interact/pick-up · V takedown · T throw bag · G drop body · LMB fire · 1 weapon · 4 gadget · L = GO LOUD · B = blackout · Esc pause"
+		"F interact · V takedown · T throw · G drop body · LMB fire · 1 weapon · 4 gadget · L = GO LOUD · B = blackout · P = geometry check · Esc pause" + geo
 
 func _player() -> Node3D:
 	return get_tree().get_first_node_in_group(&"player") as Node3D

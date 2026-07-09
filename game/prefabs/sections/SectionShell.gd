@@ -23,6 +23,11 @@ const DECOR_INSET := 1.3 ## how far wall-hugging decor sits inside a wall
 ## sets this to the sides facing graph-neighbours so the room seals on its outward walls (world-gen Phase 1B).
 ## EMPTY = all four open (back-compat for hand-authored showcase scenes that predate this).
 @export var open_sides: Array[StringName] = []
+## Positioned doorways (world-gen Phase 2): each {side:StringName, offset:float} cuts a DOOR_W opening at
+## `offset` metres along that edge from its centre, so a doorway lines up with its neighbour's instead of
+## always centring on the room's own face (the Phase-1 lock-out). NON-EMPTY takes precedence over
+## `open_sides`; a side may carry several doors. The realizer derives these from MissionGeometry.connect().
+@export var doors: Array[Dictionary] = []
 ## Dressing preset: &"vault" / &"lobby" / &"office" / &"dock" / &"generic" — chooses wall material + decor.
 @export var dressing: StringName = &"generic"
 ## Editor convenience: toggle to rebuild the preview.
@@ -48,10 +53,10 @@ func _build() -> void:
 	_build_floor(half)
 	_build_ceiling(half)
 	_build_pillars(half)
-	_build_edge(&"north", Vector3(0, 0, half.z), Vector3(1, 0, 0), float(fx) * CELL)
-	_build_edge(&"south", Vector3(0, 0, -half.z), Vector3(1, 0, 0), float(fx) * CELL)
-	_build_edge(&"east", Vector3(half.x, 0, 0), Vector3(0, 0, 1), float(fz) * CELL)
-	_build_edge(&"west", Vector3(-half.x, 0, 0), Vector3(0, 0, 1), float(fz) * CELL)
+	_build_edge(&"north", Vector3(0, 0, half.z), Vector3(1, 0, 0), float(fx) * CELL, _door_offsets_for(&"north"))
+	_build_edge(&"south", Vector3(0, 0, -half.z), Vector3(1, 0, 0), float(fx) * CELL, _door_offsets_for(&"south"))
+	_build_edge(&"east", Vector3(half.x, 0, 0), Vector3(0, 0, 1), float(fz) * CELL, _door_offsets_for(&"east"))
+	_build_edge(&"west", Vector3(-half.x, 0, 0), Vector3(0, 0, 1), float(fz) * CELL, _door_offsets_for(&"west"))
 	_dress(half)
 
 func _build_floor(half: Vector3) -> void:
@@ -69,27 +74,52 @@ func _build_pillars(half: Vector3) -> void:
 			var p := Vector3(sx * (half.x - PILLAR * 0.5), WALL_H * 0.5, sz * (half.z - PILLAR * 0.5))
 			_box(p, Vector3(PILLAR, WALL_H, PILLAR), m)
 
-## One wall along an edge. If the side is OPEN (`open_sides` empty or contains it), leave a central DOOR_W
-## gap (two segments) so a neighbour connects there; otherwise seal it with a solid full-length wall so the
-## room is enclosed on its outward faces (world-gen Phase 1B). `edge` is the edge-centre (local), `along` a
-## unit direction, `length` the edge length.
-func _build_edge(side: StringName, edge: Vector3, along: Vector3, length: float) -> void:
+## One wall along an edge, with a DOOR_W opening at each offset in `offsets` (metres along the edge from
+## its centre) and solid wall filling the rest — so several positioned doorways can share a side and each
+## lines up with its neighbour (world-gen Phase 2). No offsets → a solid full-length wall (sealed outward
+## face). `edge` is the edge-centre (local), `along` a unit direction, `length` the edge length.
+func _build_edge(side: StringName, edge: Vector3, along: Vector3, length: float, offsets: Array) -> void:
 	var mat: StringName = _wall_material()
-	if not _side_open(side):
+	var half_len := length * 0.5
+	if offsets.is_empty():
 		var solid := Vector3(length, WALL_H, WALL_T) if along.x > 0.5 else Vector3(WALL_T, WALL_H, length)
 		_box(edge + Vector3(0, WALL_H * 0.5, 0), solid, mat)
 		return
-	var seg := (length - DOOR_W) * 0.5
-	if seg <= 0.2:
-		return   # too short to wall around a doorway — leave the whole edge open
-	var size := Vector3(seg, WALL_H, WALL_T) if along.x > 0.5 else Vector3(WALL_T, WALL_H, seg)
-	for s in [-1.0, 1.0]:
-		var c: Vector3 = edge + along * (float(s) * (DOOR_W * 0.5 + seg * 0.5)) + Vector3(0, WALL_H * 0.5, 0)
-		_box(c, size, mat)
+	# Merge the door openings, then wall the gaps between/around them.
+	var openings: Array = []
+	for o in offsets:
+		var oc: float = clampf(float(o), -half_len, half_len)
+		openings.append([maxf(-half_len, oc - DOOR_W * 0.5), minf(half_len, oc + DOOR_W * 0.5)])
+	openings.sort_custom(func(x, y): return float(x[0]) < float(y[0]))
+	var cursor := -half_len
+	for op in openings:
+		if float(op[0]) > cursor + 0.01:
+			_wall_segment(edge, along, cursor, float(op[0]), mat)
+		cursor = maxf(cursor, float(op[1]))
+	if cursor < half_len - 0.01:
+		_wall_segment(edge, along, cursor, half_len, mat)
 
-## Empty open_sides = every edge open (hand-authored back-compat); otherwise only listed sides open.
-func _side_open(side: StringName) -> bool:
-	return open_sides.is_empty() or side in open_sides
+## A solid wall run covering the edge-coordinate interval [s0, s1] (both in the `along` direction).
+func _wall_segment(edge: Vector3, along: Vector3, s0: float, s1: float, mat: StringName) -> void:
+	var seg_len := s1 - s0
+	if seg_len <= 0.01:
+		return
+	var center_s := (s0 + s1) * 0.5
+	var size := Vector3(seg_len, WALL_H, WALL_T) if along.x > 0.5 else Vector3(WALL_T, WALL_H, seg_len)
+	_box(edge + along * center_s + Vector3(0, WALL_H * 0.5, 0), size, mat)
+
+## Door offsets (metres along the edge from its centre) for a side. `doors` (positioned, Phase 2) wins;
+## else fall back to `open_sides` (empty = every side centred, hand-authored back-compat).
+func _door_offsets_for(side: StringName) -> Array:
+	if not doors.is_empty():
+		var out: Array = []
+		for d in doors:
+			if StringName(d.get("side", &"")) == side:
+				out.append(float(d.get("offset", 0.0)))
+		return out
+	if open_sides.is_empty():
+		return [0.0]
+	return [0.0] if side in open_sides else []
 
 func _wall_material() -> StringName:
 	match dressing:

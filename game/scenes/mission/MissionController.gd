@@ -88,6 +88,7 @@ func realize() -> void:
 	_build_floor(world)
 	_build_envelope(world)
 	_build_sections(world)
+	_build_corridors(world)
 	_build_fixtures(world)
 	_build_actors(world)
 	_build_obstacles(world)
@@ -225,18 +226,20 @@ func _add_collider(world: Node3D, pos: Vector3, size: Vector3) -> void:
 
 func _build_sections(world: Node3D) -> void:
 	for ps in layout.sections:
-		# Edge-aware enclosure (world-gen Phase 1B): open a doorway only on the walls facing a graph-neighbour
-		# so the room seals on its outward faces. The shell falls back to all-open if handed no sides.
-		var open_sides := _open_sides_for(ps.index)
+		# Edge-aware enclosure with ALIGNED doorways (world-gen Phase 2): each door is positioned at the
+		# centre of the shared wall segment with its neighbour (via MissionGeometry), so two rooms' doors
+		# line up instead of opening onto each other's solid wall — the Phase-1 lock-out. The shell seals
+		# every other face.
+		var doors := _doors_for(ps.index)
 		# Real art (task 18, FR-18-7): a SectionDef.scene shell is instanced at the section centre; its
-		# footprint + open sides are synced from the layout so it grid-snaps and seals correctly.
+		# footprint + positioned doors are synced from the layout so it grid-snaps and connects correctly.
 		if ps.def.scene != null:
 			var section: Node3D = ps.def.scene.instantiate()
 			section.name = "Section_%d_%s" % [ps.index, ps.def.id]
 			if "footprint" in section:
 				section.set("footprint", ps.def.footprint)
-			if "open_sides" in section:
-				section.set("open_sides", open_sides)
+			if "doors" in section:
+				section.set("doors", doors)
 			section.position = ps.center_world(CELL)
 			world.add_child(section)
 			continue
@@ -245,10 +248,83 @@ func _build_sections(world: Node3D) -> void:
 		var shell := SectionShell.new()
 		shell.name = "Section_%d_%s" % [ps.index, ps.def.id]
 		shell.footprint = ps.def.footprint
-		shell.open_sides = open_sides
+		shell.doors = doors
 		shell.dressing = _dressing_for(ps.def)
 		shell.position = ps.center_world(CELL)
 		world.add_child(shell)
+
+## Positioned doorways for a section: one per graph-neighbour, at the centre of the shared wall segment
+## (or the corridor mouth) resolved by MissionGeometry — so both rooms of an edge open at the same world
+## point and line up (world-gen Phase 2). Fed to SectionShell.doors.
+func _doors_for(index: int) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var self_rect := layout.sections[index].rect()
+	for e in layout.edges:
+		var other := -1
+		if int(e.get("a", -1)) == index:
+			other = int(e.get("b", -1))
+		elif int(e.get("b", -1)) == index:
+			other = int(e.get("a", -1))
+		if other < 0 or other >= layout.sections.size():
+			continue
+		var conn := MissionGeometry.resolve(self_rect, layout.sections[other].rect())
+		var door: Dictionary = conn.get("door_a", {})
+		if not door.is_empty():
+			out.append({"side": StringName(door.get("side", &"north")), "offset": float(door.get("offset", 0.0))})
+	if out.is_empty():
+		out.append({"side": &"north", "offset": 0.0})   # isolated safety (a connected graph never hits this)
+	return out
+
+## Enclosed hallways along every edge that isn't a shared wall (straight across a gap, or an L for
+## diagonal neighbours) — the connective tissue that bridges whatever offset the assembler left, and where
+## the edge's locked door is hosted (world-gen Phase 2). The safety floor slab stays underneath.
+func _build_corridors(world: Node3D) -> void:
+	for e in layout.edges:
+		var ai := int(e.get("a", -1))
+		var bi := int(e.get("b", -1))
+		if ai < 0 or bi < 0 or ai >= layout.sections.size() or bi >= layout.sections.size():
+			continue
+		var conn := MissionGeometry.resolve(layout.sections[ai].rect(), layout.sections[bi].rect())
+		for r in conn.get("runs", []):
+			_build_hall(world, r.get("from", Vector3.ZERO), r.get("to", Vector3.ZERO))
+
+## One DOOR_W-wide floored + walled + ceilinged corridor run between two world points (axis-aligned).
+## Reuses SectionShell's dims so mouths meet room doorways exactly (single source of truth).
+func _build_hall(world: Node3D, from: Vector3, to: Vector3) -> void:
+	var wall_h := SectionShell.WALL_H
+	var wall_t := SectionShell.WALL_T
+	var door_w := SectionShell.DOOR_W
+	var length := from.distance_to(to) + wall_t * 2.0   # overlap the room walls so there's no seam
+	if length <= wall_t * 2.0 + 0.05:
+		return
+	var center := (from + to) * 0.5
+	if absf(to.x - from.x) >= absf(to.z - from.z):
+		_corridor_box(world, center + Vector3(0, -0.1, 0), Vector3(length, 0.2, door_w), &"floor")
+		_corridor_box(world, center + Vector3(0, wall_h + 0.1, 0), Vector3(length, 0.2, door_w), &"trim")
+		for s in [-1.0, 1.0]:
+			_corridor_box(world, center + Vector3(0, wall_h * 0.5, s * (door_w * 0.5 + wall_t * 0.5)), Vector3(length, wall_h, wall_t), &"wall")
+	else:
+		_corridor_box(world, center + Vector3(0, -0.1, 0), Vector3(door_w, 0.2, length), &"floor")
+		_corridor_box(world, center + Vector3(0, wall_h + 0.1, 0), Vector3(door_w, 0.2, length), &"trim")
+		for s in [-1.0, 1.0]:
+			_corridor_box(world, center + Vector3(s * (door_w * 0.5 + wall_t * 0.5), wall_h * 0.5, 0), Vector3(wall_t, wall_h, length), &"wall")
+
+func _corridor_box(world: Node3D, pos: Vector3, size: Vector3, mat_name: StringName) -> void:
+	var body := StaticBody3D.new()
+	body.name = "Corridor"
+	body.position = pos
+	var mi := MeshInstance3D.new()
+	var bm := BoxMesh.new()
+	bm.size = size
+	mi.mesh = bm
+	mi.material_override = Palette.material(mat_name)
+	body.add_child(mi)
+	var col := CollisionShape3D.new()
+	var bs := BoxShape3D.new()
+	bs.size = size
+	col.shape = bs
+	body.add_child(col)
+	world.add_child(body)
 
 ## Ceiling light fixtures per room (world-gen Phase 1C): honour authored &"light" anchors, else auto-scatter
 ## by footprint. Each fixture pools light + joins group &"lit" so detection reads exposed-vs-shadow.
@@ -285,25 +361,6 @@ static func dominant_side(from_center: Vector3, to_center: Vector3) -> StringNam
 	if absf(dx) >= absf(dz):
 		return &"east" if dx >= 0.0 else &"west"
 	return &"north" if dz >= 0.0 else &"south"
-
-## Which of this section's walls face a connected neighbour (so the shell opens a doorway there).
-func _open_sides_for(index: int) -> Array[StringName]:
-	var sides: Array[StringName] = []
-	var c0 := layout.sections[index].center_world(CELL)
-	for e in layout.edges:
-		var other := -1
-		if int(e.get("a", -1)) == index:
-			other = int(e.get("b", -1))
-		elif int(e.get("b", -1)) == index:
-			other = int(e.get("a", -1))
-		if other < 0 or other >= layout.sections.size():
-			continue
-		var side := dominant_side(c0, layout.sections[other].center_world(CELL))
-		if side not in sides:
-			sides.append(side)
-	if sides.is_empty():
-		sides.append(&"north")   # isolated safety (a connected graph never hits this)
-	return sides
 
 ## Dressing preset for a procedurally-shelled (scene-less) room, by section kind.
 func _dressing_for(def: SectionDef) -> StringName:
@@ -385,7 +442,7 @@ func _spawn_guard(world: Node3D, enemy_id: StringName, pos: Vector3, skill_mult:
 
 func _build_obstacles(world: Node3D) -> void:
 	for g in layout.gates:
-		var pos := _edge_midpoint(int(g.get("edge", -1)))
+		var pos := _edge_gate_pos(int(g.get("edge", -1)))
 		_spawn_obstacle(world, StringName(g.get("obstacle_id", &"")), pos, pos)
 	for h in layout.hazards:
 		var hp: Vector3 = h.get("pos", Vector3.ZERO)
@@ -722,6 +779,20 @@ func _edge_midpoint(edge_index: int) -> Vector3:
 	var a: PlacedSection = layout.sections[int(e.a)]
 	var b: PlacedSection = layout.sections[int(e.b)]
 	return (a.center_world(CELL) + b.center_world(CELL)) * 0.5
+
+## World point to host an edge's locked door: the resolved doorway / corridor centre (world-gen Phase 2),
+## so a gate sits IN the opening instead of floating at the two rooms' centre-midpoint. Falls back to the
+## midpoint if the edge is malformed.
+func _edge_gate_pos(edge_index: int) -> Vector3:
+	if edge_index < 0 or edge_index >= layout.edges.size():
+		return Vector3.ZERO
+	var e := layout.edges[edge_index]
+	var ai := int(e.get("a", -1))
+	var bi := int(e.get("b", -1))
+	if ai < 0 or bi < 0 or ai >= layout.sections.size() or bi >= layout.sections.size():
+		return _edge_midpoint(edge_index)
+	var conn := MissionGeometry.resolve(layout.sections[ai].rect(), layout.sections[bi].rect())
+	return conn.get("gate", _edge_midpoint(edge_index))
 
 # --- Content resolution ----------------------------------------------------
 func _enemy_def(id: StringName) -> EnemyDef:
