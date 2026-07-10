@@ -290,6 +290,9 @@ func _build_corridors(world: Node3D) -> void:
 
 ## One DOOR_W-wide floored + walled + ceilinged corridor run between two world points (axis-aligned).
 ## Reuses SectionShell's dims so mouths meet room doorways exactly (single source of truth).
+## The floor/ceiling trim spans door_w + wall_t*2 so it tucks over/under the side walls instead of
+## meeting them exactly flush (hairline sky seam at the top corners — misc-fixes-2 issue 3); the ±0.01 m
+## y-nudge keeps those slabs off the room slabs' planes in the wall_t overlap zone (z-fighting).
 func _build_hall(world: Node3D, from: Vector3, to: Vector3) -> void:
 	var wall_h := SectionShell.WALL_H
 	var wall_t := SectionShell.WALL_T
@@ -298,20 +301,22 @@ func _build_hall(world: Node3D, from: Vector3, to: Vector3) -> void:
 	if length <= wall_t * 2.0 + 0.05:
 		return
 	var center := (from + to) * 0.5
+	var trim_w := door_w + wall_t * 2.0
+	var side_h := wall_h + 0.01   # walls rise to meet the nudged-up ceiling exactly (no slit)
 	if absf(to.x - from.x) >= absf(to.z - from.z):
-		_corridor_box(world, center + Vector3(0, -0.1, 0), Vector3(length, 0.2, door_w), &"floor")
-		_corridor_box(world, center + Vector3(0, wall_h + 0.1, 0), Vector3(length, 0.2, door_w), &"trim")
+		_corridor_box(world, center + Vector3(0, -0.11, 0), Vector3(length, 0.2, trim_w), &"floor")
+		_corridor_box(world, center + Vector3(0, wall_h + 0.11, 0), Vector3(length, 0.2, trim_w), &"trim")
 		for s in [-1.0, 1.0]:
-			_corridor_box(world, center + Vector3(0, wall_h * 0.5, s * (door_w * 0.5 + wall_t * 0.5)), Vector3(length, wall_h, wall_t), &"wall")
+			_corridor_box(world, center + Vector3(0, side_h * 0.5, s * (door_w * 0.5 + wall_t * 0.5)), Vector3(length, side_h, wall_t), &"wall")
 	else:
-		_corridor_box(world, center + Vector3(0, -0.1, 0), Vector3(door_w, 0.2, length), &"floor")
-		_corridor_box(world, center + Vector3(0, wall_h + 0.1, 0), Vector3(door_w, 0.2, length), &"trim")
+		_corridor_box(world, center + Vector3(0, -0.11, 0), Vector3(trim_w, 0.2, length), &"floor")
+		_corridor_box(world, center + Vector3(0, wall_h + 0.11, 0), Vector3(trim_w, 0.2, length), &"trim")
 		for s in [-1.0, 1.0]:
-			_corridor_box(world, center + Vector3(s * (door_w * 0.5 + wall_t * 0.5), wall_h * 0.5, 0), Vector3(wall_t, wall_h, length), &"wall")
+			_corridor_box(world, center + Vector3(s * (door_w * 0.5 + wall_t * 0.5), side_h * 0.5, 0), Vector3(wall_t, side_h, length), &"wall")
 
-func _corridor_box(world: Node3D, pos: Vector3, size: Vector3, mat_name: StringName) -> void:
+func _corridor_box(world: Node3D, pos: Vector3, size: Vector3, mat_name: StringName, body_name: String = "Corridor") -> void:
 	var body := StaticBody3D.new()
-	body.name = "Corridor"
+	body.name = body_name
 	body.position = pos
 	var mi := MeshInstance3D.new()
 	var bm := BoxMesh.new()
@@ -442,15 +447,25 @@ func _spawn_guard(world: Node3D, enemy_id: StringName, pos: Vector3, skill_mult:
 
 func _build_obstacles(world: Node3D) -> void:
 	for g in layout.gates:
-		var pos := _edge_gate_pos(int(g.get("edge", -1)))
-		_spawn_obstacle(world, StringName(g.get("obstacle_id", &"")), pos, pos)
+		var gt := _edge_gate_transform(int(g.get("edge", -1)))
+		var gpos: Vector3 = gt.get("pos", Vector3.ZERO)
+		_spawn_obstacle(world, StringName(g.get("obstacle_id", &"")), gpos, gpos, true, float(gt.get("yaw", 0.0)))
 	for h in layout.hazards:
 		var hp: Vector3 = h.get("pos", Vector3.ZERO)
 		var sec := int(h.get("section", -1))
 		var center := layout.sections[sec].center_world(CELL) if sec >= 0 and sec < layout.sections.size() else hp
-		_spawn_obstacle(world, StringName(h.get("obstacle_id", &"")), hp, center)
+		_spawn_obstacle(world, StringName(h.get("obstacle_id", &"")), hp, center, false, _snap_yaw_to_wall(hp, center))
 
-func _spawn_obstacle(world: Node3D, obstacle_id: StringName, pos: Vector3, watch_center: Vector3) -> void:
+## Pure seam (unit-tested): whether an obstacle spawn is a DOOR — something hosting an edge's traversal
+## lock in a doorway. EVERY gate spawn is one by definition regardless of category (the default vault
+## gate `elock_basic` is a HACK_TARGET — a category allow-list would miss it, and allowing all of
+## HACK_TARGET would door-ify cameras/keypads), plus BREACH_POINT hazards (a breachable vault leaf).
+## Spawn context + a def property, never an id (house rule). Doors get yaw/frame/DoorVisual.
+static func is_door_spawn(odef: ObstacleDef, is_gate: bool) -> bool:
+	return odef != null and (is_gate or odef.category == ObstacleDef.Category.BREACH_POINT)
+
+func _spawn_obstacle(world: Node3D, obstacle_id: StringName, pos: Vector3, watch_center: Vector3,
+		is_gate: bool = false, yaw: float = 0.0) -> void:
 	var odef := _obstacle_def(obstacle_id)
 	if odef == null:
 		return
@@ -466,15 +481,75 @@ func _spawn_obstacle(world: Node3D, obstacle_id: StringName, pos: Vector3, watch
 	node.position = pos + Vector3(0, mount_y, 0)
 	# Real art (task 18): the ObstacleDef.scene prop prefab brings its own collider, so the interaction ray
 	# resolves up to this Interactable exactly as it did for the marker body. Fallback: the colored marker.
+	var leaf: Node3D = null
 	if odef.scene != null:
-		_add_model(node, odef.scene, Vector3.ZERO if is_cam else Vector3(0, -1.0, 0))
+		leaf = _add_model(node, odef.scene, Vector3.ZERO if is_cam else Vector3(0, -1.0, 0))
 	elif is_cam:
 		_add_marker_body(node, Vector3(0.4, 0.3, 0.6), Palette.TINT_KEYCARRIER)
 	else:
 		_add_marker_body(node, Vector3(0.8, 2.0, 0.3), Color(0.7, 0.5, 0.2))
 	if is_cam:
 		_attach_camera_eye(node, odef, pos, watch_center)
-	world.add_child(node)
+	var is_door := is_door_spawn(odef, is_gate)
+	if is_door:
+		node.rotation.y = yaw   # the whole obstacle rotates — collider, leaf and DoorVisual inherit it
+	world.add_child(node)   # enters the tree HERE → the leaf PropPrefab fits its Collider in _ready
+	if is_door and leaf != null:
+		_wrap_door(world, node, leaf, pos, yaw)
+
+## Turn a door spawn's leaf into a real, openable barrier (misc-fixes-2 issues 4c/5–7): read the leaf's
+## fitted dims, wrap it in a DoorVisual wired to obstacle_solved, and build the static jamb+lintel frame
+## sealing the leaf to the walls. Must run AFTER the node entered the tree (the collider fit is _ready).
+func _wrap_door(world: Node3D, node: Node3D, leaf: Node3D, floor_pos: Vector3, yaw: float) -> void:
+	var dims := _leaf_dims(leaf)
+	var visual := DoorVisual.new()
+	visual.name = "DoorVisual"
+	visual.position = leaf.position   # take over the leaf's local offset so its net transform is unchanged
+	node.add_child(visual)
+	visual.adopt(leaf, dims.x, dims.y)
+	if node.has_signal(&"obstacle_solved"):
+		node.connect(&"obstacle_solved", visual.open)
+	_build_door_frame(world, floor_pos, yaw, dims.x, dims.y)
+
+## The fitted Collider size of a PropPrefab leaf (width × height × thickness). Fallback for a leaf with
+## no fitted box (marker/headless) — a realization-layer default like the _CAMERA_* consts above.
+const _LEAF_FALLBACK_DIMS := Vector3(1.8, 2.4, 0.3)
+func _leaf_dims(leaf: Node3D) -> Vector3:
+	var col := leaf.get_node_or_null("Collider") as CollisionShape3D
+	if col != null and col.shape is BoxShape3D:
+		return (col.shape as BoxShape3D).size
+	return _LEAF_FALLBACK_DIMS
+
+## Static jamb + lintel filling the DOOR_W opening out to the walls around a door leaf (issue 4c): two
+## full-height jambs from ±leaf_w/2 to ±DOOR_W/2 and a lintel over the leaf up to WALL_H. Depth WALL_T*2 —
+## after issue 3's inward wall shift two flush rooms build a back-to-back 0.6 m wall pair, and this frame
+## stays flush with both faces (mid-corridor gates read fine at that depth too). Only the leaf opens.
+func _build_door_frame(world: Node3D, floor_pos: Vector3, yaw: float, leaf_w: float, leaf_h: float) -> void:
+	var wall_h := SectionShell.WALL_H
+	var wall_t := SectionShell.WALL_T
+	var door_w := SectionShell.DOOR_W
+	var depth := wall_t * 2.0
+	var frame := Node3D.new()
+	frame.name = "DoorFrame"
+	frame.position = floor_pos
+	frame.rotation.y = yaw
+	world.add_child(frame)
+	var jamb_span := (door_w - leaf_w) * 0.5
+	if jamb_span > 0.01:
+		var jamb_center := (leaf_w + jamb_span) * 0.5
+		for s in [-1.0, 1.0]:
+			_corridor_box(frame, Vector3(s * jamb_center, wall_h * 0.5, 0), Vector3(jamb_span, wall_h, depth), &"wall", "DoorJamb")
+	if leaf_h < wall_h - 0.01:
+		_corridor_box(frame, Vector3(0, (leaf_h + wall_h) * 0.5, 0), Vector3(leaf_w, wall_h - leaf_h, depth), &"wall", "DoorLintel")
+
+## Pure seam (unit-tested): yaw for a freestanding (hazard) door — face the room centre it guards,
+## snapped to the nearest cardinal so the leaf reads wall-mounted (issue 4a). -Z is the leaf's front.
+static func _snap_yaw_to_wall(from: Vector3, to: Vector3) -> float:
+	var dx := to.x - from.x
+	var dz := to.z - from.z
+	if dx * dx + dz * dz < 0.0001:
+		return 0.0
+	return roundf(atan2(-dx, -dz) / (PI * 0.5)) * (PI * 0.5)
 
 func _is_camera(odef: ObstacleDef) -> bool:
 	return odef.category == ObstacleDef.Category.HACK_TARGET and String(odef.params.get("device", "")) == "camera"
@@ -557,7 +632,7 @@ func _build_banking(world: Node3D) -> void:
 # --- Pursuit + minigame wiring (closes ↩ From 10 / ↩ From 07) --------------
 func _collect_reinforce_points() -> void:
 	for rp in layout.reinforce_points:
-		_reinforce_points.append(rp.get("pos", Vector3.ZERO))
+		_reinforce_points.append(_inset_anchor(rp.get("pos", Vector3.ZERO), int(rp.get("section", -1))))
 	if _reinforce_points.is_empty() and layout.entry_index >= 0:
 		_reinforce_points.append(layout.sections[layout.entry_index].center_world(CELL))
 
@@ -657,10 +732,35 @@ func _spawn_player(world: Node3D) -> void:
 
 func _primary_entry_point() -> Vector3:
 	if not layout.entry_points.is_empty():
-		return layout.entry_points[0].get("pos", Vector3.ZERO)
+		var ep: Dictionary = layout.entry_points[0]
+		return _inset_anchor(ep.get("pos", Vector3.ZERO), int(ep.get("section", -1)))
 	if layout.entry_index >= 0:
 		return layout.sections[layout.entry_index].center_world(CELL)
 	return Vector3.ZERO
+
+## How far (m) an actor-spawning anchor is pulled in from its section's faces: past the inward wall
+## (WALL_T 0.3) + a corner pillar (0.6) + an actor capsule radius (0.35), with slack.
+const _SPAWN_INSET := 1.2
+
+## Several defs author entry/reinforce anchors exactly ON the footprint boundary (doorway-side markers
+## from the all-edges-open shell era) — since the sealed-wall pass that face can be solid wall, and an
+## actor spawned there is embedded and can't move (the greybox seed 20250702 spawn). Pull anchor-derived
+## spawn points into the section interior; no-op when the section is unknown.
+func _inset_anchor(pos: Vector3, section: int) -> Vector3:
+	if section < 0 or section >= layout.sections.size():
+		return pos
+	return inset_into_section(pos, layout.sections[section].rect(), CELL, _SPAWN_INSET)
+
+## Pure seam (unit-tested): clamp a world point to `rect` (grid cells) inset by `margin` metres on x/z,
+## capped at the rect's centre so tiny rooms still resolve.
+static func inset_into_section(pos: Vector3, rect: Rect2i, cell: float, margin: float) -> Vector3:
+	var lo_x := float(rect.position.x) * cell
+	var hi_x := float(rect.end.x) * cell
+	var lo_z := float(rect.position.y) * cell
+	var hi_z := float(rect.end.y) * cell
+	var mx := minf(margin, (hi_x - lo_x) * 0.5)
+	var mz := minf(margin, (hi_z - lo_z) * 0.5)
+	return Vector3(clampf(pos.x, lo_x + mx, hi_x - mx), pos.y, clampf(pos.z, lo_z + mz, hi_z - mz))
 
 # --- Mission state / end (closes Escape.gd TODO[11]) -----------------------
 func _on_objective_updated(objective_id: String, complete: bool) -> void:
@@ -780,19 +880,20 @@ func _edge_midpoint(edge_index: int) -> Vector3:
 	var b: PlacedSection = layout.sections[int(e.b)]
 	return (a.center_world(CELL) + b.center_world(CELL)) * 0.5
 
-## World point to host an edge's locked door: the resolved doorway / corridor centre (world-gen Phase 2),
-## so a gate sits IN the opening instead of floating at the two rooms' centre-midpoint. Falls back to the
-## midpoint if the edge is malformed.
-func _edge_gate_pos(edge_index: int) -> Vector3:
+## World transform to host an edge's locked door: {pos: Vector3, yaw: float}. Pos is the resolved
+## doorway / corridor centre (world-gen Phase 2) so the gate sits IN the opening instead of floating at
+## the two rooms' centre-midpoint; yaw is MissionGeometry.door_yaw so the leaf spans the opening instead
+## of standing 90° through it (misc-fixes-2 issue 4a). Falls back to the midpoint if the edge is malformed.
+func _edge_gate_transform(edge_index: int) -> Dictionary:
 	if edge_index < 0 or edge_index >= layout.edges.size():
-		return Vector3.ZERO
+		return {"pos": Vector3.ZERO, "yaw": 0.0}
 	var e := layout.edges[edge_index]
 	var ai := int(e.get("a", -1))
 	var bi := int(e.get("b", -1))
 	if ai < 0 or bi < 0 or ai >= layout.sections.size() or bi >= layout.sections.size():
-		return _edge_midpoint(edge_index)
+		return {"pos": _edge_midpoint(edge_index), "yaw": 0.0}
 	var conn := MissionGeometry.resolve(layout.sections[ai].rect(), layout.sections[bi].rect())
-	return conn.get("gate", _edge_midpoint(edge_index))
+	return {"pos": conn.get("gate", _edge_midpoint(edge_index)), "yaw": MissionGeometry.door_yaw(conn)}
 
 # --- Content resolution ----------------------------------------------------
 func _enemy_def(id: StringName) -> EnemyDef:

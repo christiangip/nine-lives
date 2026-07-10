@@ -7,3 +7,4 @@
 script = ExtResource("1")
 
 [node name="Model" parent="." instance=ExtResource("2")]
+transform = Transform3D(1.77, 0, 0, 0, 1.77, 0, 0, 0, 1.77, 0, 0, 0)

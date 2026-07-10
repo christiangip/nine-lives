@@ -31,7 +31,7 @@ func _ready() -> void:
 
 	var title := Label.new()
 	title.text = "PAUSE_TITLE"
-	title.add_theme_font_size_override("font_size", 32)
+	UITheme.style_title(title, 32)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(title)
 

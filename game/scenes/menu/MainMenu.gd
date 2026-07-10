@@ -14,6 +14,8 @@ class_name MainMenu
 
 func _ready() -> void:
 	theme = UITheme.build()
+	UITheme.style_title($Title, 48)      # the display face stays on the big headings (misc-fixes-2)
+	UITheme.style_title($Subtitle, 20)
 	_add_background()
 	_add_version_stamp()
 	# Localization scaffold (task 21, FR-21-1): button text is set to translation KEYS; Godot's Control

@@ -60,7 +60,7 @@ func _ready() -> void:
 	root.add_child(header)
 	var title := Label.new()
 	title.text = "Options"
-	title.add_theme_font_size_override("font_size", 30)
+	UITheme.style_title(title, 30)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title)
 	_back_button = Button.new()

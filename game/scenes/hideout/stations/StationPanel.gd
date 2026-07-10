@@ -10,17 +10,12 @@ class_name StationPanel
 
 signal closed   ## local; the hub re-shows itself + refreshes currencies when a panel closes
 
-const FONT := preload("res://game/assets/fonts/KenneyFuture.ttf")
-
 var _body: VBoxContainer
 var _currency_label: Label
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
-	var theme := Theme.new()
-	theme.default_font = FONT
-	theme.default_font_size = 16
-	self.theme = theme
+	theme = UITheme.build()   # shared readable body font + understated-outline widgets (misc-fixes-2)
 
 	var bg := ColorRect.new()
 	bg.color = Color(0.09, 0.10, 0.13, 0.98)
@@ -47,7 +42,7 @@ func _ready() -> void:
 	header.add_child(back)
 	var title := Label.new()
 	title.text = _station_title()
-	title.add_theme_font_size_override("font_size", 30)
+	UITheme.style_title(title, 30)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title)
 	_currency_label = Label.new()

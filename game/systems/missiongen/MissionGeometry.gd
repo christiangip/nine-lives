@@ -120,6 +120,20 @@ static func _elbow_connection(a: Rect2i, b: Rect2i) -> Dictionary:
 		"cells": _runs_cells(runs),
 	}
 
+## Yaw (radians about Y) for the door leaf hosted at a resolved connection's gate point (misc-fixes-2
+## issue 4a — the realizer used to discard orientation, leaving ~50% of doors 90° wrong). The leaf prop
+## faces -Z with its width along local X, so a Z-facing connection needs no rotation, an X-facing one
+## turns 90°, and an elbow's gate blocks the leg leaving room A (door_a.side gives that leg's axis). Pure.
+static func door_yaw(conn: Dictionary) -> float:
+	var axis := String(conn.get("axis", ""))
+	if axis == "x":
+		return PI * 0.5
+	if axis == "z":
+		return 0.0
+	var door_a: Dictionary = conn.get("door_a", {})
+	var side := StringName(door_a.get("side", SIDE_NORTH))
+	return PI * 0.5 if (side == SIDE_EAST or side == SIDE_WEST) else 0.0
+
 ## Best-effort Manhattan L between two door cells through *free* cells (deterministic). Tries both elbow
 ## orientations and returns the one crossing fewer occupied cells; falls back to the direct L. Exposed as
 ## a pure seam for tests; the realizer/elbow path can route with it when an occupancy map is available.

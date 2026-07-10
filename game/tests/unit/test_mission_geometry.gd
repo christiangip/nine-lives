@@ -85,6 +85,62 @@ func test_resolve_is_deterministic() -> void:
 	var b := Rect2i(3, 1, 2, 3)
 	assert_eq(str(MissionGeometry.resolve(a, b)), str(MissionGeometry.resolve(a, b)), "resolve is pure/deterministic")
 
+# --- misc-fixes-2 issue 4a: door yaw (pure) ---------------------------------
+
+func test_door_yaw_x_facing_connection_turns_the_leaf() -> void:
+	var conn := MissionGeometry.resolve(Rect2i(0, 0, 2, 2), Rect2i(2, 0, 2, 2))   # side-by-side along X
+	assert_eq(String(conn["axis"]), "x", "rooms side-by-side along X resolve an X-facing connection")
+	assert_almost_eq(MissionGeometry.door_yaw(conn), PI * 0.5, 0.0001,
+		"an X-facing doorway turns the leaf 90° so it spans the opening")
+
+func test_door_yaw_z_facing_connection_keeps_default() -> void:
+	var conn := MissionGeometry.resolve(Rect2i(0, 0, 2, 2), Rect2i(0, 2, 2, 2))   # stacked along Z
+	assert_eq(String(conn["axis"]), "z", "stacked rooms resolve a Z-facing connection")
+	assert_almost_eq(MissionGeometry.door_yaw(conn), 0.0, 0.0001,
+		"a Z-facing doorway keeps the leaf's default facing (width along X)")
+
+func test_door_yaw_elbow_follows_door_a_side() -> void:
+	# Diagonal with X dominant → A leaves east → the elbow gate blocks an X-running leg → 90°.
+	var conn_ew := MissionGeometry.resolve(Rect2i(0, 0, 2, 2), Rect2i(4, 3, 2, 2))
+	assert_eq(String(conn_ew["kind"]), "elbow", "diagonal neighbours resolve an elbow")
+	assert_eq(String(conn_ew["door_a"]["side"]), "east", "X-dominant diagonal leaves A east")
+	assert_almost_eq(MissionGeometry.door_yaw(conn_ew), PI * 0.5, 0.0001, "east/west elbow leg → 90°")
+	# Diagonal with Z dominant → A leaves north → a Z-running leg → 0°.
+	var conn_ns := MissionGeometry.resolve(Rect2i(0, 0, 2, 2), Rect2i(3, 4, 2, 2))
+	assert_eq(String(conn_ns["door_a"]["side"]), "north", "Z-dominant diagonal leaves A north")
+	assert_almost_eq(MissionGeometry.door_yaw(conn_ns), 0.0, 0.0001, "north/south elbow leg → 0°")
+
+# --- misc-fixes-2 follow-up: spawn anchors pulled inside the walls -----------
+
+func test_inset_into_section_pulls_boundary_anchors_inside() -> void:
+	# The greybox regression: bank_entry_lobby authors its entry anchor ON the west boundary — world
+	# (0, 0, 9) for the seed-20250702 lobby at rect (0,0,3,2) — which is inside the (now back-to-back)
+	# shared wall, embedding the spawned player. The realizer must inset actor spawns off the faces.
+	var lobby := Rect2i(0, 0, 3, 2)
+	var pulled := MissionController.inset_into_section(Vector3(0, 0, 9), lobby, CELL, 1.2)
+	assert_almost_eq(pulled.x, 1.2, 0.001, "a boundary anchor is pulled a margin inside the room")
+	assert_almost_eq(pulled.z, 9.0, 0.001, "the already-interior axis is untouched")
+	assert_eq(MissionController.inset_into_section(Vector3(9, 0, 6), lobby, CELL, 1.2), Vector3(9, 0, 6),
+		"an interior anchor is unchanged")
+	var corner := MissionController.inset_into_section(Vector3(0, 0, 0), lobby, CELL, 1.2)
+	assert_almost_eq(corner.x, 1.2, 0.001, "a corner anchor clears the wall + pillar on x")
+	assert_almost_eq(corner.z, 1.2, 0.001, "a corner anchor clears the wall + pillar on z")
+	var tiny := MissionController.inset_into_section(Vector3(0, 0, 0), Rect2i(0, 0, 1, 1), 2.0, 5.0)
+	assert_almost_eq(tiny.x, 1.0, 0.001, "an oversized margin caps at the room centre")
+
+func test_realized_player_spawn_is_off_the_shared_wall() -> void:
+	# The exact reported repro: MissionGreybox's fixed bank seed put the player at (0, 0.2, 9) — inside
+	# the lobby↔office shared wall — and the player couldn't move at all.
+	var controller := MissionGenerator.build(_contract(20250702, &"bank", 2))
+	assert_not_null(controller, "greybox-seed bank built")
+	if controller == null:
+		return
+	add_child_autofree(controller)
+	var player := get_tree().get_first_node_in_group(&"player") as Node3D
+	assert_not_null(player, "the realizer spawned a player")
+	if player != null:
+		assert_gt(player.position.x, 1.0, "the spawn is pulled off the entry room's west boundary wall")
+
 # --- 2B: free-cell corridor router (pure) ----------------------------------
 
 func test_route_corridor_contiguous_and_bounded() -> void:

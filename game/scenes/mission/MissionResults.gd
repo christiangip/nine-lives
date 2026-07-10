@@ -33,7 +33,7 @@ func _ready() -> void:
 
 	var title := Label.new()
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 44)
+	UITheme.style_title(title, 44)
 	if is_challenge:
 		title.text = "CHALLENGE FAILED" if is_catch else "CHALLENGE COMPLETE"
 		title.add_theme_color_override("font_color", UITheme.WARN if is_catch else UITheme.OK)

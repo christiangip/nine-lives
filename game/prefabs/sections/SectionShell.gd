@@ -64,8 +64,10 @@ func _build_floor(half: Vector3) -> void:
 
 ## A ceiling caps the room so the exterior sun no longer floods it — interiors go dark and the light
 ## fixtures (world-gen Phase 1C) create the lit pools stealth reads. Sits just above the wall tops.
+## Full-footprint (NOT inset like the floor) so it always reaches the walls — an inset pad left an
+## unroofed perimeter ring where the sky showed through (misc-fixes-2 issue 3).
 func _build_ceiling(half: Vector3) -> void:
-	_box(Vector3(0, WALL_H + 0.1, 0), Vector3(half.x * 2.0 - 0.4, 0.2, half.z * 2.0 - 0.4), &"trim")
+	_box(Vector3(0, WALL_H + 0.1, 0), Vector3(half.x * 2.0, 0.2, half.z * 2.0), &"trim")
 
 func _build_pillars(half: Vector3) -> void:
 	var m: StringName = &"metal" if dressing == &"vault" else &"trim"
@@ -78,12 +80,15 @@ func _build_pillars(half: Vector3) -> void:
 ## its centre) and solid wall filling the rest — so several positioned doorways can share a side and each
 ## lines up with its neighbour (world-gen Phase 2). No offsets → a solid full-length wall (sealed outward
 ## face). `edge` is the edge-centre (local), `along` a unit direction, `length` the edge length.
+## Walls sit INSIDE the footprint (outer face on the boundary, like the pillars): centred on the boundary
+## they missed the inset ceiling by 0.05 m, leaving a sky-leaking perimeter ring (misc-fixes-2 issue 3).
 func _build_edge(side: StringName, edge: Vector3, along: Vector3, length: float, offsets: Array) -> void:
 	var mat: StringName = _wall_material()
 	var half_len := length * 0.5
+	var inward := -edge.normalized()   # edge-centres have a single outward component
 	if offsets.is_empty():
 		var solid := Vector3(length, WALL_H, WALL_T) if along.x > 0.5 else Vector3(WALL_T, WALL_H, length)
-		_box(edge + Vector3(0, WALL_H * 0.5, 0), solid, mat)
+		_box(edge + inward * WALL_T * 0.5 + Vector3(0, WALL_H * 0.5, 0), solid, mat)
 		return
 	# Merge the door openings, then wall the gaps between/around them.
 	var openings: Array = []
@@ -100,13 +105,15 @@ func _build_edge(side: StringName, edge: Vector3, along: Vector3, length: float,
 		_wall_segment(edge, along, cursor, half_len, mat)
 
 ## A solid wall run covering the edge-coordinate interval [s0, s1] (both in the `along` direction).
+## Shifted inward like _build_edge's solid wall so the outer face lands on the footprint boundary.
 func _wall_segment(edge: Vector3, along: Vector3, s0: float, s1: float, mat: StringName) -> void:
 	var seg_len := s1 - s0
 	if seg_len <= 0.01:
 		return
 	var center_s := (s0 + s1) * 0.5
+	var inward := -edge.normalized()
 	var size := Vector3(seg_len, WALL_H, WALL_T) if along.x > 0.5 else Vector3(WALL_T, WALL_H, seg_len)
-	_box(edge + along * center_s + Vector3(0, WALL_H * 0.5, 0), size, mat)
+	_box(edge + along * center_s + inward * WALL_T * 0.5 + Vector3(0, WALL_H * 0.5, 0), size, mat)
 
 ## Door offsets (metres along the edge from its centre) for a side. `doors` (positioned, Phase 2) wins;
 ## else fall back to `open_sides` (empty = every side centred, hand-authored back-compat).

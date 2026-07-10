@@ -7,17 +7,12 @@ extends Control
 ## This is the 2D functional hub; HideoutGreybox.tscn demos the diegetic 3D safehouse. Scene swaps stay
 ## GameManager's job. See docs/tasks/13_hideout_stations.md and GDD §6.
 
-const FONT := preload("res://game/assets/fonts/KenneyFuture.ttf")
-
 var _grid: GridContainer
 var _currency_label: Label
 var _active_panel: StationPanel
 
 func _ready() -> void:
-	var theme := Theme.new()
-	theme.default_font = FONT
-	theme.default_font_size = 16
-	self.theme = theme
+	theme = UITheme.build()   # shared readable body font + understated-outline widgets (misc-fixes-2)
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 
 	var bg := ColorRect.new()
@@ -38,7 +33,7 @@ func _ready() -> void:
 	root.add_child(header)
 	var title := Label.new()
 	title.text = "THE HIDEOUT"
-	title.add_theme_font_size_override("font_size", 40)
+	UITheme.style_title(title, 40)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title)
 	_currency_label = Label.new()
