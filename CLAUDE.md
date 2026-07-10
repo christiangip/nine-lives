@@ -772,7 +772,16 @@ consequence logic tested behind a hook and added `↩ From 06` banners to `07`�
   `_build_door_frame` seals **jambs + a lintel** out to the `DOOR_W` opening at `WALL_T*2` depth (flush
   with the post-shift back-to-back wall pair). Locked by **`test_door_visual.gd`** (mapping/geometry
   seams + a realized-bank integration test proving DoorVisual/DoorFrame spawn with collider-read dims)
-  and `door_yaw` cases in `test_mission_geometry.gd`. **Residual (`[~]`):** the F6 sign-off —
-  `MissionGreybox.tscn` (no sky seams; door orientation/size/frames; keycard+e-lock slide, lockpick
-  swings, breach shatters; pass-through) and the menu sweep (readable body font + consistent outline
-  scheme incl. Options tabs/dropdowns), mirroring prior greyboxes.
+  and `door_yaw` cases in `test_mission_geometry.gd`. **Playtest fix (spawn-in-wall):** the first F6
+  surfaced that `MissionGreybox`'s fixed bank seed spawned the player UNABLE TO MOVE — several defs
+  (bank + estate pack) author `entry`/`reinforce` anchors exactly ON the footprint boundary (doorway-side
+  markers from the all-edges-open shell era), which since the sealed-wall pass is solid shared wall (and
+  issue 3's inward shift made it a 0.6 m back-to-back pair), embedding the spawned capsule. Fixed in the
+  realizer (data untouched): pure seam **`MissionController.inset_into_section`** clamps anchor-derived
+  spawn points `_SPAWN_INSET` (1.2 m — clears wall + corner pillar + capsule) inside the section, applied
+  in `_primary_entry_point` (player) and `_collect_reinforce_points` (reinforcement guards had the same
+  bug); locked by `test_inset_into_section_*` + a realized greybox-seed spawn test (GUT **488/488**).
+  **Residual (`[~]`):** the F6 sign-off — `MissionGreybox.tscn` (spawn can move; no sky seams; door
+  orientation/size/frames; keycard+e-lock slide, lockpick swings, breach shatters; pass-through) and the
+  menu sweep (readable body font + consistent outline scheme incl. Options tabs/dropdowns), mirroring
+  prior greyboxes.
