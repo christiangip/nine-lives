@@ -92,6 +92,16 @@ func open(kind: StringName, obstacle: Node, ctx: Dictionary = {}) -> Minigame:
 	mg.begin(_build_ctx(obstacle, ctx))
 	return mg
 
+## The player, as "the hacker/driller" for every proximity rule. `player_path` is the explicit wiring,
+## but it is NOT always set (a scene that places its own player short-circuits MissionController's
+## binding), and a null hacker silently DISABLES proximity in the overlays — so fall back to the
+## &"player" group, exactly as DrillMinigame already does. (misc-fixes-4)
+func _player() -> Node:
+	var p := get_node_or_null(player_path)
+	if p == null and is_inside_tree():
+		p = get_tree().get_first_node_in_group(&"player")
+	return p
+
 func _build_ctx(obstacle: Node, ctx: Dictionary) -> Dictionary:
 	var full := ctx.duplicate()
 	if not full.has("target") and obstacle is Node3D:
@@ -99,7 +109,7 @@ func _build_ctx(obstacle: Node, ctx: Dictionary) -> Dictionary:
 	if not full.has("breach") and obstacle is BreachPoint:
 		full["breach"] = obstacle
 	if not full.has("hacker"):
-		var p := get_node_or_null(player_path)
+		var p := _player()
 		if p != null:
 			full["hacker"] = p
 	# Inject the equipped BREACH tool (method + upgrade params) so the drill overlay uses the loadout's
@@ -113,7 +123,7 @@ func _build_ctx(obstacle: Node, ctx: Dictionary) -> Dictionary:
 	return full
 
 func _player_loadout() -> Loadout:
-	var p := get_node_or_null(player_path)
+	var p := _player()
 	if p != null and p.get("loadout") != null:
 		return p.loadout as Loadout
 	return null
@@ -132,7 +142,7 @@ func _attribute_level_for(kind: StringName) -> int:
 ## overlays widen cues / ease difficulty for the right gear (closes TODO[09]). Empty if there's no
 ## player/loadout (headless). Reads via a duck-typed `loadout` accessor to avoid a hard dependency.
 func _gear_params() -> Dictionary:
-	var p := get_node_or_null(player_path)
+	var p := _player()
 	if p != null and p.get("loadout") != null:
 		return p.loadout.gear_flags()
 	return {}

@@ -752,3 +752,103 @@ For the project overview, architecture, folder map, and conventions see
   against the 0.35/s decay (**≈4× longer to be noticed**) and a crouch-walk no longer out-paces decay at all.
   **Residual (`[~]`):** the F6 "feel" sign-off in `MissionGreybox.tscn` — the checklist is the
   "Verification" section of `misc-fixes-3.md`.
+
+- **Misc fixes 4 — thrown-bag duplication + hack/breach proximity cancel** (spec: `misc-fixes-4.md`):
+  **code + automated DoD complete & verified green** on Godot 4.6.3 (headless GUT **532/532**, +18 tests).
+  Two reported playtest defects, plus two latent bugs found in the same code paths.
+  **(1) Infinite loot.** `ThrownBag._on_body_entered` had **no "already landed" latch**, and `queue_free()`
+  is *deferred* — so the projectile stayed alive and contact-monitoring for the rest of the frame. `_settle()`
+  spawns a `DroppedBag` **at the ThrownBag's own position**, and that `DroppedBag` builds its own
+  `StaticBody3D` collider *inside* the still-live projectile → another `body_entered` → `_settle()` again
+  (level geometry did it too: the world is many separate `StaticBody3D` chunks, so a corner or a floor seam
+  reports 2+ bodies in one step). Every duplicate `DroppedBag` got handed the **same `Bag` RefCounted** — never
+  copied — and `Inventory.adopt_bag()` re-credits `total_value()` in full with no identity tracking, so each
+  one was another full payout. It also meant a bag touching a Drop Point *and* the floor in one frame would
+  **bank AND settle**. Fixed with a `_settled` latch + a `_go_inert()` that zeroes the body's collision state
+  (all `set_deferred` — mutating it *inside* a physics callback is an engine error), both branches dropping
+  the `Bag` reference once it's handed off; mirrored into `ThrownBody` (where a double `_settle()` re-parented
+  an already-parented `Body`); and `DroppedBag` finally got the `_consumed` latch `LootPickup` always had.
+  `Inventory` itself was **untouched** — it was correct, just fed duplicate nodes. New
+  `test_thrown_bag_settle.gd` proves the once-only rule with **zero physics simulation** (it drives
+  `_on_body_entered()` directly, the `test_throw_to_drop.gd` approach).
+  **(2) A door hack finished while the player walked away.** The e-lock gate (`elock_basic`) is **not an
+  overlay** — it's a `HackTarget` running an in-world fill timer in its own `_process`, and with
+  `hold_seconds = 0.0` the tap fires `interact()` **once** and the PlayerController is never involved again.
+  `hacking = false` appeared **exactly once in the codebase** (inside `_complete()`): there was no cancel path
+  at all. Out of range `step_progress` merely *held*, so the hack silently resumed and completed the moment the
+  player drifted back — no key press, no aim, and no HUD ring (that reads `_current_interactable`, null once you
+  look away). The obstacle node sits at `floor + 1 m` while the player origin is at their feet, so the 3 m
+  *sphere* was only ~2.83 m of **horizontal** leash — backing off a 3-second timer often never broke range.
+  `BreachPoint._process` was worse: **no distance check whatsoever**, so a vault drill ground to completion from
+  anywhere on the map. **This was a spec conflict, not just a slip** — GDD §9.2 / FR-06-5 / two passing tests all
+  specified pause-and-resume — so per the user's ruling the *spec* changed: leaving range now **abandons** the
+  attempt (progress lost, start over), for the drill too. `HackTarget.step_progress` returns **0.0** out of range
+  and `tick()` calls a new idempotent `cancel_hack()`; `BreachPoint` captures the `by` it was already being
+  handed (and discarding), gates `_process` on `_driller_in_range()`, and emits a new local `breach_cancelled`
+  that closes the `DrillMinigame` overlay via `abort()` (a *non-outcome*, not a `failed`). Both stay **fail-open
+  with no operator to measure** (headless/greybox), and `BreachPoint` reuses `HackTarget.in_proximity` rather
+  than a second copy. `proximity_range = 4.0` added to `breach_vault.tres` — a 12 s drill deserves a roomier
+  leash than a 3 s door tap (data, not a magic number). **Deliberately proximity-only:** looking away does *not*
+  cancel — you must be able to start a hack and watch the corridor. **EventBus stayed frozen** throughout
+  (`cancel_hack` reuses the existing `state_changed`; `breach_cancelled` is local, matching
+  `breach_progress`/`jammed`/`breached`). `test_hack_proximity.gd` rewritten to the new spec; new
+  `test_breach_proximity.gd`. GDD §9.2/§9.6 + FR-06-5/FR-06-9 + the `ObstacleDef.proximity_range` /
+  `Minigame.pauses_world` doc comments all updated.
+  **(3) Latent: the MinigameHost's player was often never bound.** `MinigameHost.player_path` was assigned in
+  exactly one place — `MissionController._spawn_player()`, **after an early-return** taken whenever a scene
+  already placed a player. `player_path` then stayed empty → `_build_ctx()` injected no `"hacker"` →
+  `HackMinigame._current_in_range()` returned `true` unconditionally, **silently disabling the overlay hack's
+  proximity rule entirely** (and the loadout gear bonuses, which read the same path). `_spawn_player` now binds a
+  pre-placed player too; `MinigameHost` gained a `_player()` resolver with a `&"player"`-group fallback backing
+  `_build_ctx`/`_player_loadout`/`_gear_params`; `HackMinigame.begin()` gained the same fallback `DrillMinigame`
+  already had. **(4) Latent:** `DrillMinigame` passed `ctx["by"]` to `begin_breach` — a key `_build_ctx` never
+  injects, so the breach always got `null`; it now passes the resolved `_driller`.
+  **Out of scope (deliberate):** `HackMinigame`'s own pause-on-range rule stands — unlike the door its overlay is
+  on screen throughout and its routing input is already blocked out of range, so it cannot finish behind your
+  back; it's visible, not silent.
+  **Residual (`[~]`):** the F6 "feel" sign-off in `MissionGreybox.tscn` — the checklist is the "Verification"
+  section of `misc-fixes-4.md`.
+- **Misc fixes 5 — the interaction movement rule** (spec: `misc-fixes-5.md`): **code + automated DoD
+  complete & verified green** on Godot 4.6.3 (headless GUT **538/538**). The playtest revision of
+  misc-fixes-4 issue 2. (Issue 1's bag-duplication fix was confirmed correct and is untouched.)
+  **Cancelling a timed interaction on DISTANCE was the wrong lever, twice over.** First, the **breach was
+  never supposed to need proximity at all** — a running drill *must* keep grinding while the player walks
+  off, because it screams, draws guards, and making you leave it to fight them **is** the mechanic
+  (GDD §9.6). misc-fixes-4 had "fixed" that into a cancel. Reverted: `BreachPoint`'s `_driller` /
+  `_driller_in_range()` / `cancel_breach()` / `breach_cancelled` machinery is gone and `_process` runs the
+  timer unattended again; `breach_vault.tres`'s `proximity_range = 4.0` is removed. What survives is
+  misc-fixes-3's **jam-repair** gate — the real "you must be at the door to fix the drill" rule — with
+  `MinigameConfigDef.drill_proximity_range` (3.0) now documented as mirroring `PlayerConfigDef.interact_range`
+  (2.5 m, the interaction ray) plus a small tolerance, so **a breach you could reach to begin is always one
+  you can reach to repair**. Second, for every *other* timed interaction the real rule is **movement, not
+  distance** — and it's a **player choice**. New setting **`gameplay/interaction_movement`** (Options →
+  Controls → *"While Interacting"*, an `_option_int` row): **0 = Cancel interaction on movement** (default —
+  moving or jumping abandons it, progress lost) · **1 = Lock movement while interacting** (rooted in place,
+  look/aim still free; the crosshair prompt becomes **"Press [F] to cancel"** via the existing
+  `InputManager.primary_key_label(&"interact")` so it survives a rebind, and Interact abandons it).
+  **The seam is on `Interactable`, not a special-case list in the player:** `is_channeling()` +
+  `cancel_interaction()`, both defaulting to the no-op — which is what makes the three exemptions **free**
+  rather than branchy (instant taps finish inside a frame; MODAL overlays freeze the world so you can't move
+  anyway; and a **breach returns `false`**, expressing its exemption as *data*). `HackTarget` overrides them
+  onto its `hacking` flag + misc-fixes-4's `cancel_hack()`. **`PlayerController`** gained
+  `enum InteractionMovement`, a cached setting (refreshed on the already-wired `EventBus.settings_changed`),
+  two **pure static seams** (`cancels_on_move`/`locks_movement`), and a `_channel` reference — **deliberately
+  distinct from `_current_interactable`**, because a hack keeps ticking after you look away, so the aim target
+  is the wrong thing to hang the rule (or the HUD ring) on; `interaction_hold_progress()` now reports the
+  channel's fill even when you've looked away (the ring was previously lying about a live hack).
+  `_physics_process` resolves movement **intent** before spending it so a channel can veto it, and
+  `cancel_interaction()` latches `_hold_timer` to the already-fired sentinel so a **still-held** interact key
+  can't instantly restart what was just cancelled (release re-arms it, exactly as `update_hold()` already
+  worked). In LOCK mode the cancel press is intercepted **before** `update_hold`, so it can't also re-fire
+  `interact()` on the same target in the same frame. **`HUD`** renders the whole cancel sentence (no `[F]`
+  verb prefix, like the DOWNED prompt) and its crosshair prompt label was widened + re-offset by half its
+  width so the longer string stays centred; `interaction_cancel_prompt()` is **channel-only** — during a
+  *hold*-to-interact you're already holding the key and letting go **is** the cancel, so "press F to cancel"
+  would be nonsense. **EventBus stayed frozen.** `HackTarget`'s proximity abandon is **kept as a backstop**
+  (if something else ever displaces the player mid-hack) though the movement rule makes it unreachable in
+  normal play. New `test_interaction_movement.gd` (+8); `test_breach_proximity.gd` rewritten to lock in the
+  **exemption** (an unattended drill finishes; a running breach reports `is_channeling() == false`);
+  `test_drill_proximity.gd` / `test_hack_proximity.gd` / `test_interaction_ray.gd` untouched and green.
+  GDD §9.2/§9.6 + FR-06-5/FR-06-9 + the `ObstacleGreyboxDebug` help text updated.
+  **Residual (`[~]`):** the F6 "feel" sign-off — the checklist is the "Verification" section of
+  `misc-fixes-5.md` (both option modes + the drill exemption).

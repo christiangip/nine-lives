@@ -18,11 +18,11 @@ with defined counter-play. Obstacles pair with minigames (07) but are never
 - **FR-06-2** Safes → dial-combination minigame; **combo clues** in-level skip/trivialize it; stethoscope widens cues.
 - **FR-06-3** Keys & keycards: held by NPCs (pickpocket/takedown) or stashed; keycards **clonable** via gadget; inspector carries a must-have card (05).
 - **FR-06-4** Display cases: key/lock, hack, glasscutter (silent), or smash (instant + loud alarm).
-- **FR-06-5** Hacking targets: e-locks, keypads, cameras (disable or **loop**), alarm panels, vault time-locks, data loot; hacks need **proximity + time**.
+- **FR-06-5** Hacking targets: e-locks, keypads, cameras (disable or **loop**), alarm panels, vault time-locks, data loot; hacks need **time + standing still**. A timed hack is a **channelled** interaction: **moving abandons it** (progress resets; you start over), or — per the `gameplay/interaction_movement` option — the player is **locked in place** for its duration with Interact rebound to "cancel". Leaving range still abandons it as a backstop. *(Revised by misc-fixes-4/5: it used to* pause *out of range and silently resume when the player drifted back, so a hack completed behind their back with no prompt and no HUD ring.)*
 - **FR-06-6** Detection hardware: laser grids, motion sensors, pressure plates, biometric/magnetic locks — each with the GDD counter-play set.
 - **FR-06-7** Silent alarms: invisible triggers that summon police; Intel reveals locations.
 - **FR-06-8** Power/light: fuse boxes cut power (cameras/locks/lights) with a backup-generator timer + investigate-draw; lights shootable/switchable to expand shadow.
-- **FR-06-9** Breaching: drill (timed, jammable, noisy), thermite (timed burn), C4 (instant, max alarm); upgradeable.
+- **FR-06-9** Breaching: drill (timed, jammable, noisy), thermite (timed burn), C4 (instant, max alarm); upgradeable. A running breach **keeps grinding while you walk away** — that *is* the tension (it draws guards you must go fight), so it is deliberately **exempt** from the hack's movement rule (`is_channeling() == false`). Only clearing a **jam** needs you back at the door, roughly as close as you had to be to start it. *(misc-fixes-5.)*
 - **FR-06-10** Every obstacle exposes its difficulty + valid solution set as data for the generator/Intel.
 
 ## Phases
@@ -66,7 +66,8 @@ with defined counter-play. Obstacles pair with minigames (07) but are never
 
 ### Phase 06.2 — Electronic security (M0 core: one hack target)
 - [x] Hack interactable with proximity-lock + time; camera loop vs disable; e-locks; data-loot download.
-  *(`HackTarget.gd`: pure `in_proximity()`/`step_progress()` (pause/resume), tested; `device` +
+  *(`HackTarget.gd`: pure `in_proximity()`/`step_progress()` (**abandon on leaving range** — revised
+  from pause/resume by misc-fixes-4) + `cancel_hack()`, tested; `device` +
   `camera_action` params; data-loot transfer → 08.)*
 - [x] Keypad deduction + found-code alternate. *(`keypad` device + `found_code` clue alternate; the
   Mastermind **deduction overlay** is task 07.)*
@@ -99,7 +100,9 @@ with defined counter-play. Obstacles pair with minigames (07) but are never
 
 ## Tests (GUT)
 - `test_lock_snap.gd` — failure can snap a pick; Lockpicking attribute reduces snap odds.
-- `test_hack_proximity.gd` — leaving range pauses/fails the hack; returning resumes.
+- `test_hack_proximity.gd` — leaving range **abandons** the hack (progress resets, it never self-completes on return); restarting works.
+- `test_interaction_movement.gd` — the `gameplay/interaction_movement` rule: CANCEL abandons a channel on movement, LOCK roots the player and rebinds Interact to cancel; a running hack is a channel, a finished one isn't. *(misc-fixes-5)*
+- `test_breach_proximity.gd` — a running drill is **exempt**: it finishes unattended and reports `is_channeling() == false`, so the movement rule never touches it. *(misc-fixes-5)*
 - `test_combo_clue_skip.gd` — possessing the found clue bypasses the safe minigame.
 - `test_power_cut.gd` — cutting power disables cameras/e-locks in the zone and starts the generator timer + investigate event.
 - `test_solution_set.gd` — each obstacle reports ≥2 valid solutions (never minigame-only) where the GDD requires it.

@@ -51,6 +51,8 @@ static func node_count_for_tier(base: int, tier: int, per_tier: int) -> int:
 func begin(ctx: Dictionary = {}) -> void:
 	super.begin(ctx)
 	_hacker = ctx.get("hacker") as Node3D
+	if _hacker == null and is_inside_tree():
+		_hacker = get_tree().get_first_node_in_group(&"player") as Node3D   # a null hacker disables proximity — don't
 	_target = ctx.get("target") as Node3D
 	_proximity_range = float(ctx.get("proximity_range", config.hack_proximity_range))
 	_time_limit = time_limit_for_tier(config.hack_time_limit_base, difficulty,

@@ -16,3 +16,21 @@ func interact(_by: Node) -> void:
 ## can draw a hold-to-interact ring for it. 0 for instant taps and idle targets. Override per subtype.
 func interaction_progress() -> float:
 	return 0.0
+
+## Is a CHANNELLED interaction running on this target right now — one the player started and must keep
+## standing there for (a HackTarget's timed fill)? PlayerController applies the gameplay/interaction_movement
+## rule to it: either moving cancels it, or the player is locked in place until it finishes. (misc-fixes-5)
+##
+## Default false, and that default is load-bearing, not laziness:
+##   • instant taps (loot, keycard doors) finish inside one frame — there is nothing to interrupt;
+##   • MODAL minigame overlays (lockpick/safe/keypad/pickpocket) freeze the world, so the player can't
+##     move anyway;
+##   • a BREACH is deliberately exempt — a running drill screams for guards and MUST keep grinding while
+##     you leave it to fight them (GDD §9.6). Only its jam repair is proximity-gated.
+func is_channeling() -> bool:
+	return false
+
+## Abort a channelled interaction (the player moved, or pressed interact again to cancel). Idempotent;
+## default no-op. Override alongside is_channeling().
+func cancel_interaction() -> void:
+	pass

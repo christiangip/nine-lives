@@ -13,6 +13,8 @@ const _MSAA := ["Off", "2×", "4×", "8×"]
 const _SHADOWS := ["Off", "Low", "Medium", "High"]
 const _LANG_CODES := ["en", "es", "fr", "de"]
 const _LANG_NAMES := ["English", "Español", "Français", "Deutsch"]
+## Indices match PlayerController.InteractionMovement (CANCEL, LOCK).
+const _INTERACTION_MOVEMENT := ["Cancel interaction on movement", "Lock movement while interacting"]
 
 ## Pretty labels for the remappable actions (falls back to a titled id).
 const _ACTION_LABELS := {
@@ -118,6 +120,8 @@ func _build_controls(body: VBoxContainer) -> void:
 	_check(body, "Hold-to-Crouch (off = toggle)", "gameplay", "crouch_toggle")
 	_check(body, "Hold-to-Sprint (off = toggle)", "gameplay", "sprint_toggle")
 	_check(body, "Controller Vibration", "gameplay", "vibration")
+	_option_int(body, "While Interacting", "gameplay", "interaction_movement", _INTERACTION_MOVEMENT)
+	_note(body, "A timed interaction (hacking a lock, holding a switch) needs you to stand still. Choose whether moving cancels it, or whether you're held in place until it's done. A running drill is exempt — it keeps grinding while you deal with the guards it drew.")
 	_note(body, "Rebind — click a binding, then press a key, mouse button, or gamepad button. Esc cancels.")
 	for action in InputManager.ACTIONS:
 		_remap_row(body, action)

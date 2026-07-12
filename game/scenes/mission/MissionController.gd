@@ -721,13 +721,21 @@ func _build_debug_hint() -> void:
 	layer.add_child(lbl)
 
 func _spawn_player(world: Node3D) -> void:
-	if get_tree() != null and not get_tree().get_nodes_in_group(&"player").is_empty():
-		return   # a scene (greybox) already placed a player
+	var existing: Node = get_tree().get_first_node_in_group(&"player") if get_tree() != null else null
+	if existing != null:
+		# A scene (greybox) already placed a player — but it STILL has to be bound to the minigame
+		# host. This early-return used to skip the binding below, leaving player_path empty, which
+		# silently disabled every overlay's proximity rule and its loadout gear bonuses (misc-fixes-4).
+		_bind_player(existing)
+		return
 	var player := _PLAYER_SCENE.instantiate()
 	var spawn := _primary_entry_point()
 	player.position = spawn + Vector3(0, 0.2, 0)
 	world.add_child(player)
-	if _host != null:
+	_bind_player(player)
+
+func _bind_player(player: Node) -> void:
+	if _host != null and player != null:
 		_host.player_path = _host.get_path_to(player)
 
 func _primary_entry_point() -> Vector3:

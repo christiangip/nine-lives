@@ -51,5 +51,9 @@ class_name MinigameConfigDef
 
 # --- Drill / Thermite (FR-07-8): a tension manager, not a puzzle. The timer/jam/noise live on the
 # BreachPoint obstacle (ObstacleDef.time_seconds + params.jam_chance_per_sec); the overlay mirrors
-# progress and offers the repair prompt — which you must be AT THE DRILL to hit. ------------------
-@export var drill_proximity_range: float = 3.0   ## clearing a jam requires standing this close to the breach point
+# progress and offers the repair prompt — which you must be AT THE DRILL to hit. The drill itself
+# keeps running while you walk away (that IS the tension); only the repair needs you back. ---------
+## Clearing a jam requires standing this close to the breach point — i.e. back where you had to be to
+## START it. Mirrors PlayerConfigDef.interact_range (2.5 m, the interaction ray) with a small tolerance,
+## so a breach you could reach to begin is always a breach you can reach to repair.
+@export var drill_proximity_range: float = 3.0

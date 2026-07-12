@@ -14,7 +14,8 @@ signal aborted
 
 ## Whether entering this minigame pauses the game world. Focused close-ups (lockpick / safe / keypad
 ## / pickpocket) pause; the hack and drill are NON-MODAL so proximity + pursuit stay live while you
-## work (GDD §9.2 hacks pause out of range, §9.6 the vault drill draws guards).
+## work (GDD §9.2 the hack overlay's soft timer pauses out of range, §9.6 the vault drill draws guards
+## — and walking away ABANDONS the drill outright, which closes this overlay; see BreachPoint).
 @export var pauses_world: bool = true
 
 @export var difficulty: int = 1

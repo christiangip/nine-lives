@@ -36,6 +36,12 @@ const DEFAULTS := {
 		"ui_scale": 1.0,
 		"crouch_toggle": false,  # false = hold to crouch; true = press to toggle (task 03)
 		"sprint_toggle": false,  # false = hold to sprint; true = press to toggle (task 03)
+		# What happens to a CHANNELLED interaction (a timed hack, a hold-to-interact) when you try to
+		# move (misc-fixes-5). PlayerController.InteractionMovement:
+		#   0 = CANCEL — moving abandons the interaction
+		#   1 = LOCK   — you can't move until it finishes; press interact again to cancel
+		# A running BREACH is exempt either way: the drill must keep grinding while you leave it.
+		"interaction_movement": 0,
 		# Accessibility (GDD §15.2). Read on demand by the HUD / camera / input.
 		"colorblind": 0,         # 0 none · 1 protanopia · 2 deuteranopia · 3 tritanopia
 		"reduce_flashing": false,# HUD honours this (no flashing cues) — FR-15-7

@@ -4,6 +4,14 @@ class_name BreachPoint
 ## DRILL (timed, noisy, can JAM and need a repair, upgradeable), THERMITE (timed burn, very loud, no
 ## jam), or C4 (instant breach, max alarm). This is a tension manager, not a puzzle: a timer + jam
 ## events + noise. Tool params (time/noise/jam, upgrades) come from the def / gear (task 09).
+##
+## UNLIKE a hack, a running breach KEEPS GOING while the player walks away — that's the whole point of
+## the tension: you set the drill screaming and it draws guards to you, so you may well need to leave it
+## and deal with them. What DOES need proximity is clearing a JAM (misc-fixes-3 issue 2): you have to be
+## back at the door, roughly as close as you had to be to start it (DrillMinigame._can_reach_drill()).
+## So this is deliberately exempt from the "movement cancels the interaction" rule the timed HACK obeys —
+## it reports is_channeling() == false, so the player never locks/cancels on it. (misc-fixes-5)
+##
 ## The on-screen drill gauge/repair prompt is task 07 (FR-07-8); the logic lives here.
 ## See docs/tasks/06_heist_mechanics_obstacles.md (FR-06-9).
 
@@ -46,6 +54,9 @@ func equip_tool(gear_params: Dictionary) -> void:
 	_speed_mult = maxf(0.0, float(gear_params.get("speed_mult", 1.0)))
 	_jam_mult = maxf(0.0, float(gear_params.get("jam_mult", 1.0)))
 
+## `_by` is the operator. The breach deliberately does NOT hold on to it: the drill runs unattended by
+## design (see the class doc) — only the DrillMinigame's JAM repair is proximity-gated, and it measures
+## against its own ctx["hacker"].
 func begin_breach(p_method: StringName, _by: Node = null) -> void:
 	if solved or def == null or not def.has_solution(p_method):
 		return

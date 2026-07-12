@@ -13,6 +13,7 @@ const _RADIUS: float = 0.18
 const _MESH_COLOR: Color = Color(0.55, 0.45, 0.15, 1.0)   ## matches ThrownBag's in-flight color
 
 var bag: Bag
+var _consumed: bool = false   ## mirrors LootPickup._consumed: reclaimed once, never twice
 
 func _ready() -> void:
 	prompt = "Pick Up Bag"
@@ -46,13 +47,22 @@ func _ensure_mesh() -> void:
 	add_child(mesh_inst)
 
 func can_interact(by: Node) -> bool:
+	if _consumed:
+		return false
 	var inv = by.get("inventory") if by != null else null
 	return inv != null and bag != null
 
+## Hands the Bag back to the picker. queue_free() is deferred, so this node can still be interacted
+## with for the rest of the frame — the _consumed latch (and dropping the Bag reference) is what
+## makes a reclaim strictly once-only.
 func interact(by: Node) -> void:
+	if _consumed:
+		return
 	var inv = by.get("inventory") if by != null else null
 	if inv == null or bag == null:
 		return
 	if inv.adopt_bag(bag):
+		_consumed = true
+		bag = null
 		EventBus.carry_changed.emit(inv.current_weight(), inv.current_volume())
 		queue_free()

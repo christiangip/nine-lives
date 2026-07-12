@@ -3,7 +3,10 @@ class_name DrillMinigame
 ## Drill / thermite overlay (FR-07-8, GDD §9.6/§9.8): NOT a puzzle — a TENSION MANAGER. It drives a
 ## BreachPoint (the timer + jam + noise maths already live there, tasks 06) and shows the progress
 ## gauge; when the drill JAMS, press to repair and resume. NON-MODAL (pauses_world = false) so guards
-## keep closing in while it grinds. Solves when the barrier is breached. See docs/tasks/07_minigames.md.
+## keep closing in while it grinds — and the drill deliberately KEEPS RUNNING while you walk off to
+## deal with them. Only the JAM repair is proximity-gated: you must come back to the door, roughly as
+## close as you had to be to start the breach. Solves when the barrier is breached.
+## See docs/tasks/07_minigames.md.
 
 var _breach: BreachPoint
 var _method: StringName = &"drill"
@@ -31,7 +34,8 @@ func begin(ctx: Dictionary = {}) -> void:
 	_breach.breached.connect(_on_breached)
 	_breach.equip_tool(ctx.get("breach_gear", {}))   # apply the loadout breach tool's upgrades (task 09)
 	_build_ui()
-	_breach.begin_breach(_method, ctx.get("by"))
+	# (This used to pass ctx["by"] — a key MinigameHost._build_ctx never injects, so it was always null.)
+	_breach.begin_breach(_method, _driller)
 
 func _build_ui() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)   # offsets too: anchors alone keep the 0x0 rect a code-built Control starts with

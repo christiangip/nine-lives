@@ -2,7 +2,10 @@ extends Obstacle
 class_name HackTarget
 ## An electronic security target — e-lock, keypad, camera, alarm panel, vault time-lock, or data-loot
 ## drive (FR-06-5, GDD §9.2). Hacking needs PROXIMITY + TIME: start it, then stay in range while a
-## timer fills; step out and progress pauses; step back and it resumes. A found code/payload skips the
+## timer fills; step out of range and the hack is ABANDONED — progress resets and you start over
+## (misc-fixes-4 issue 2; this supersedes the original pause-and-resume rule, under which a hack
+## silently ran to completion behind the player's back the moment they drifted back into range).
+## A found code/payload skips the
 ## minigame entirely, and a camera can be LOOPED (quieter, temporary) instead of DISABLED (offline).
 ## Also a powered device: cutting its zone's power (FuseBox, FR-06-8) disables it / opens an e-lock.
 ## The dial/keypad overlay itself is task 07; this owns the proximity+timing+mode logic + the data hook.
@@ -29,11 +32,12 @@ func _ready() -> void:
 static func in_proximity(distance: float, max_range: float) -> bool:
 	return distance <= max_range
 
-## Advance hack progress by `delta` only while in range; out of range it holds (pause, not reset).
-## Clamped to `total`. Pure — this is the whole proximity-lock rule. (FR-06-5)
+## Advance hack progress by `delta` while in range; OUT OF RANGE THE HACK IS ABANDONED and progress
+## resets to 0 — walking away costs you the attempt. Clamped to `total`. Pure — the whole proximity
+## rule lives here. (FR-06-5, misc-fixes-4 issue 2)
 static func step_progress(current: float, delta: float, total: float, in_range: bool) -> float:
 	if not in_range:
-		return current
+		return 0.0
 	return minf(current + delta, total)
 
 # --- Device identity -------------------------------------------------------
@@ -77,17 +81,45 @@ func apply_minigame_result(kind: StringName, success: bool) -> void:
 		_complete(&"keypad")
 
 ## Tick the in-progress hack given the hacker's current distance. Pure-ish (mutates progress); call it
-## from _process or drive it directly in tests.
+## from _process or drive it directly in tests. Leaving range abandons the hack outright.
 func tick(delta: float, distance: float) -> void:
 	if not hacking or def == null:
 		return
-	progress = step_progress(progress, delta, def.time_seconds, in_proximity(distance, def.proximity_range))
+	var in_range := in_proximity(distance, def.proximity_range)
+	progress = step_progress(progress, delta, def.time_seconds, in_range)
+	if not in_range:
+		cancel_hack()
+		return
 	if progress >= def.time_seconds and def.time_seconds > 0.0:
 		_complete(&"hack")
 
+# --- Interactable channel contract (PlayerController's movement rule, misc-fixes-5) ---------------
+## A timed hack is exactly the "stand here and hold still" interaction the movement rule governs, so the
+## player either cancels it by moving or is locked in place for its duration (gameplay/interaction_movement).
+func is_channeling() -> bool:
+	return hacking
+
+func cancel_interaction() -> void:
+	cancel_hack()
+
+## Abandon an in-progress hack (the hacker moved, walked out of range, or went away entirely). Idempotent.
+## Emits the existing readability signal — EventBus stays frozen. (misc-fixes-4 issue 2)
+func cancel_hack() -> void:
+	if not hacking:
+		return
+	hacking = false
+	progress = 0.0
+	_hacker = null
+	state_changed.emit()
+
 func _process(delta: float) -> void:
+	# A null _hacker means "no spatial context" (headless test / tick() driven directly) and is left
+	# alone, as before. A NON-null but freed one is a dangling reference — cancel rather than read it.
 	if hacking and _hacker != null:
-		tick(delta, _hacker.global_position.distance_to(global_position))
+		if not is_instance_valid(_hacker):
+			cancel_hack()
+		else:
+			tick(delta, _hacker.global_position.distance_to(global_position))
 	if looped:
 		_loop_remaining -= delta
 		if _loop_remaining <= 0.0:

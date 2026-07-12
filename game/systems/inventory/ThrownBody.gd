@@ -11,6 +11,11 @@ class_name ThrownBody
 var body: Body        ## the real Body this projectile carries; deposited on landing
 var thrower: Node3D    ## excluded from this projectile's own collisions
 
+## Landing latch — see ThrownBag._settled for the full story (misc-fixes-4 issue 1). Here a second
+## _settle() would call host.add_child() on a Body that already has a parent (a Godot error), so the
+## deposit must resolve exactly once too.
+var _settled: bool = false
+
 const _RADIUS: float = 0.35
 const _HEIGHT: float = 1.8
 const _MESH_COLOR: Color = Color(0.78, 0.18, 0.18, 1.0)   ## matches Body's own placeholder capsule
@@ -50,7 +55,19 @@ func launch(from: Vector3, velocity: Vector3) -> void:
 	linear_velocity = velocity
 
 func _on_body_entered(_node: Node) -> void:
+	if _settled:
+		return
+	_settled = true
+	_go_inert()
 	_settle()
+
+## Stop being a physics object the instant we've landed (mirrors ThrownBag._go_inert). Deferred:
+## we're inside a physics callback, where the body's collision state can't be mutated directly.
+func _go_inert() -> void:
+	set_deferred(&"contact_monitor", false)
+	set_deferred(&"freeze", true)
+	set_deferred(&"collision_layer", 0)
+	set_deferred(&"collision_mask", 0)
 
 ## Landed: deposit the real Body back into the world at rest, draggable again via the usual
 ## interact path. Added to the tree before global_position is set — Node3D's global transform is
@@ -61,4 +78,5 @@ func _settle() -> void:
 		host.add_child(body)
 		body.global_position = global_position
 		body.set_concealed(false)
+	body = null   # deposited; this projectile no longer owns it
 	queue_free()

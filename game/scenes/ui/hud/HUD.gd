@@ -237,8 +237,10 @@ func _build_crosshair() -> void:
 	_prompt_label.add_theme_color_override("font_color", UITheme.ACCENT)
 	_prompt_label.add_theme_color_override("font_outline_color", Color.BLACK)
 	_prompt_label.add_theme_constant_override("outline_size", _OUTLINE)
-	_prompt_label.position = Vector2(-70, 22)
-	_prompt_label.custom_minimum_size = Vector2(140, 0)
+	# Wide enough for the longest prompt ("Press [F] to cancel"), and offset by half that width so the
+	# centred text stays centred on the crosshair instead of growing off to the right.
+	_prompt_label.position = Vector2(-180, 22)
+	_prompt_label.custom_minimum_size = Vector2(360, 0)
 	_prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_crosshair.add_child(_prompt_label)
 	# Radial hold-to-interact progress ring, centred on the crosshair.
@@ -490,15 +492,18 @@ func _update_carry(player: Node) -> void:
 	_carry_full.text = "◆ CARRY FULL — drop or bag at a Drop Point" if carry_warning(w, v, wc, vc) else ""
 
 func _update_prompt(player: Node) -> void:
-	if player != null and player.has_method("current_prompt"):
-		var p: String = player.current_prompt()
-		# Prefix the live bound key so the prompt stays correct after a rebind ("[F] Pick up").
-		if p != "" and InputManager != null:
-			_prompt_label.text = "[%s] %s" % [InputManager.primary_key_label(&"interact"), p]
-		else:
-			_prompt_label.text = p
-	else:
+	if player == null or not player.has_method("current_prompt"):
 		_prompt_label.text = ""
+		return
+	var key := InputManager.primary_key_label(&"interact") if InputManager != null else "F"
+	# Rooted in place by a timed interaction (the "Lock movement while interacting" option): the interact
+	# key is now the way OUT, so say so. Rendered whole — no "[F]" verb prefix — like the DOWNED prompt.
+	if player.has_method("interaction_cancel_prompt") and player.interaction_cancel_prompt():
+		_prompt_label.text = "Press [%s] to cancel" % key
+		return
+	var p: String = player.current_prompt()
+	# Prefix the live bound key so the prompt stays correct after a rebind ("[F] Pick up").
+	_prompt_label.text = "[%s] %s" % [key, p] if p != "" else ""
 
 func _update_hold_ring(player: Node) -> void:
 	if _hold_ring == null:

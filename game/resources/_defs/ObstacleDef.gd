@@ -37,7 +37,7 @@ enum Category {
 
 # --- Shared tunables (each category reads what it needs; keeps logic magic-number-free) -----
 @export var time_seconds: float = 0.0        ## hack / breach duration to completion (FR-06-5/9)
-@export var proximity_range: float = 3.0     ## hack proximity-lock radius; leave it and progress pauses (FR-06-5)
+@export var proximity_range: float = 3.0     ## hack/breach leash (m); leave it and the attempt is ABANDONED (FR-06-5/9)
 @export var snap_base_chance: float = 0.25   ## lock: base pick-snap chance on a failed attempt (FR-06-1)
 @export var backup_seconds: float = 20.0     ## fuse box: backup-generator restore timer (FR-06-8)
 @export var power_zone: StringName = &""     ## fuse box <-> powered-device zone key (FR-06-8)

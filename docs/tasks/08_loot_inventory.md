@@ -93,6 +93,7 @@ counts. This is what makes "one more trip?" the central tension.
 - `test_bagging_required.gd` — loose cash can't be carried until bagged.
 - `test_secured_survives_catch.gd` — value at a Drop Point persists through a simulated Catch; in-hand value is lost.
 - `test_throw_to_drop.gd` — a thrown bag landing in a Drop Point banks its value.
+- `test_thrown_bag_settle.gd` — a projectile's landing resolves **exactly once**: two contacts in one frame settle a single `DroppedBag` (not two sharing one `Bag`), a Drop Point banks once, and a reclaimed bag can't be reclaimed twice. *(misc-fixes-4: the missing latch was an infinite-loot duplication loop.)*
 - `test_body_drag.gd` — dragging occupies both hand slots, is mutually exclusive with a carried bag, and grants `is_carrying_keyholder()`/held-item duck-types (↩ from 05/06).
 - `test_duck_type_bridge.gd` — `Obstacle.actor_has_item()` and `BiometricLock`'s keyholder check resolve through a real `PlayerController`/`Inventory` (↩ from 06).
 

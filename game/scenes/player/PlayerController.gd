@@ -9,6 +9,13 @@ class_name PlayerController
 
 enum Stance { STAND, CROUCH, PRONE }
 
+## What moving does to a CHANNELLED interaction — a timed hack, a hold-to-interact (gameplay/
+## interaction_movement, chosen in Options). Indices are the setting's stored values. (misc-fixes-5)
+enum InteractionMovement {
+	CANCEL,   ## trying to move abandons the interaction
+	LOCK,     ## movement is locked until it finishes; press interact again to cancel
+}
+
 ## Normalized look-sensitivity (SettingsManager "mouse_sensitivity", ~0..1) -> radians
 ## per mouse count. A unit conversion, not a gameplay tunable.
 const _LOOK_UNIT: float = 0.01
@@ -55,6 +62,10 @@ var _current_interactable: Interactable = null
 var _last_grounded_pos: Vector3 = Vector3.ZERO   ## fall-backstop anchor (world-gen Phase 1A)
 var _has_grounded: bool = false
 var _hold_timer: float = 0.0          ## -1.0 = an interaction already fired this press (latched)
+## The target running a CHANNELLED interaction we started (a HackTarget's timed fill). Unlike
+## _current_interactable this survives looking away — the hack keeps filling — so it's what the
+## movement rule and the cancel prompt act on. (misc-fixes-5)
+var _channel: Interactable = null
 var _crouch_toggle_state: bool = false
 var _sprint_toggle_state: bool = false
 # Cached settings (refreshed on EventBus.settings_changed)
@@ -64,6 +75,7 @@ var _crouch_toggle: bool = false
 var _sprint_toggle: bool = false
 var _camera_shake_on: bool = true       ## video/camera_shake
 var _reduce_flashing: bool = false      ## gameplay/reduce_flashing (also suppresses shake)
+var _interaction_movement: int = InteractionMovement.CANCEL   ## gameplay/interaction_movement
 
 # --- Camera shake (task 21 juice; gated by the two settings above) ----------
 var _cam_shake: CameraShake
@@ -139,13 +151,23 @@ func _physics_process(delta: float) -> void:
 	_update_stance_input()
 	_update_stance_transition(delta)
 
+	# Resolve movement INTENT before it's spent, so a channelled interaction can veto it (misc-fixes-5).
+	var input_2d := Input.get_vector(&"move_left", &"move_right", &"move_forward", &"move_back")
+	var wants_jump := Input.is_action_just_pressed(&"jump")
+	var wants_move := input_2d.length() > 0.1 or wants_jump
+	if interaction_active():
+		if interaction_locked():
+			input_2d = Vector2.ZERO   # held in place for the duration; look/aim still free
+			wants_jump = false
+		elif cancels_on_move(_interaction_movement, true, wants_move):
+			cancel_interaction()
+
 	var on_floor := is_on_floor()
 	if not on_floor:
 		velocity.y -= _gravity * delta
-	elif Input.is_action_just_pressed(&"jump") and stance == Stance.STAND:
+	elif wants_jump and stance == Stance.STAND:
 		velocity.y = config.jump_velocity
 
-	var input_2d := Input.get_vector(&"move_left", &"move_right", &"move_forward", &"move_back")
 	var wish_dir := (transform.basis * Vector3(input_2d.x, 0.0, input_2d.y))
 	wish_dir.y = 0.0
 	wish_dir = wish_dir.normalized()
@@ -389,6 +411,9 @@ func _update_lean(delta: float) -> void:
 # --- Interaction (FR-03-5) -------------------------------------------------
 
 func _update_interaction(delta: float) -> void:
+	if _channel != null and not _channel_active():
+		_channel = null   # it finished, was cancelled, or the node went away
+
 	var hit: Interactable = null
 	if _interact_ray != null and _interact_ray.is_colliding():
 		hit = _resolve_interactable(_interact_ray.get_collider())
@@ -396,9 +421,65 @@ func _update_interaction(delta: float) -> void:
 		_current_interactable = hit
 		_hold_timer = 0.0
 		interaction_target_changed.emit(_current_interactable)
+
+	# In LOCK mode the interact key doubles as CANCEL while a channel runs — you're rooted in place, so
+	# there has to be a way out. Consume the press here so it can't also re-fire interact() below.
+	if _channel_active() and locks_movement(_interaction_movement, true) \
+			and Input.is_action_just_pressed(&"interact"):
+		cancel_interaction()
+		return
+
 	if update_hold(delta, Input.is_action_pressed(&"interact")):
 		if _current_interactable != null and _current_interactable.can_interact(self):
 			_current_interactable.interact(self)
+			# A tap that started a timed fill (a hack) keeps running on its own — remember it, so the
+			# movement rule still governs it after we look away from the target.
+			if is_instance_valid(_current_interactable) and _current_interactable.is_channeling():
+				_channel = _current_interactable
+
+# --- Channelled interactions + the movement rule (misc-fixes-5) --------------
+
+## Pure: while an interaction is running, does trying to move ABANDON it? Only in CANCEL mode.
+static func cancels_on_move(mode: int, interacting: bool, wants_move: bool) -> bool:
+	return interacting and wants_move and mode == InteractionMovement.CANCEL
+
+## Pure: is the player rooted in place right now? Only in LOCK mode, and only while interacting.
+static func locks_movement(mode: int, interacting: bool) -> bool:
+	return interacting and mode == InteractionMovement.LOCK
+
+func _channel_active() -> bool:
+	return _channel != null and is_instance_valid(_channel) and _channel.is_channeling()
+
+## Is an interaction WE started still running — a hold-to-interact charging (a positive `_hold_timer`;
+## -1.0 means it already fired), or a tap-started channel the target drives itself? The HUD reads this
+## to swap the prompt for "press to cancel", and `_physics_process` to apply the movement rule.
+func interaction_active() -> bool:
+	return _hold_timer > 0.0 or _channel_active()
+
+## True when movement is currently rooted by an in-progress interaction (LOCK mode).
+func interaction_locked() -> bool:
+	return locks_movement(_interaction_movement, interaction_active())
+
+## True when the interact key is currently acting as CANCEL, so the HUD should say "Press [F] to cancel"
+## instead of the target's verb. Only for a tap-started CHANNEL that has rooted us: during a
+## hold-to-interact you're already holding the key down and simply letting go is the cancel.
+func interaction_cancel_prompt() -> bool:
+	return _channel_active() and locks_movement(_interaction_movement, true)
+
+## Abandon whatever interaction is in progress. Idempotent.
+##
+## Always latches `_hold_timer` to the already-fired sentinel, so a still-held interact key can't
+## immediately restart what we just cancelled. That matters most for the LOCK-mode cancel press: the
+## key is DOWN at that moment, and an instant-tap target (a hack has hold_seconds == 0) would otherwise
+## re-fire interact() on the very next frame and restart the hack we were asked to abandon. If the key
+## isn't actually held, update_hold() clears the sentinel back to 0 on its next call — so this costs
+## nothing in the cancel-by-movement case.
+func cancel_interaction() -> void:
+	if _channel != null:
+		if is_instance_valid(_channel):
+			_channel.cancel_interaction()
+		_channel = null
+	_hold_timer = -1.0
 
 ## Walk up from a ray-hit collider to the owning Interactable (or null). Pure.
 func _resolve_interactable(collider: Object) -> Interactable:
@@ -437,7 +518,11 @@ func current_prompt() -> String:
 ## Progress 0..1 of the interaction on the aimed target, for the HUD hold ring. Covers both the tap/hold
 ## timer (hold_seconds obstacles like a fuse box) AND an in-world timed interaction the target drives
 ## itself (e.g. a HackTarget's proximity-hack fill) via Interactable.interaction_progress(). 0 when idle.
+## A running channel counts even when we've looked away from it — otherwise the ring lies about a hack
+## that is still ticking (misc-fixes-5).
 func interaction_hold_progress() -> float:
+	if _channel_active():
+		return clampf(_channel.interaction_progress(), 0.0, 1.0)
 	if _current_interactable == null:
 		return 0.0
 	var p: float = _current_interactable.interaction_progress()   # in-world timed interactions (hacks, …)
@@ -752,6 +837,8 @@ func _refresh_settings() -> void:
 	_crouch_toggle = bool(s.get_value("gameplay", "crouch_toggle"))
 	_sprint_toggle = bool(s.get_value("gameplay", "sprint_toggle"))
 	_reduce_flashing = bool(s.get_value("gameplay", "reduce_flashing"))
+	_interaction_movement = clampi(int(s.get_value("gameplay", "interaction_movement")),
+		InteractionMovement.CANCEL, InteractionMovement.LOCK)
 	_camera_shake_on = bool(s.get_value("video", "camera_shake"))
 	# Field of view is a graphics option (GDD §15.2) but only the player camera can apply it (task 15).
 	if _camera != null:

@@ -14,7 +14,8 @@ const HELP_TEXT := """OBSTACLE GREYBOX (F6) — walk up (within ~2.5 m), aim the
 • FUSE BOX (yellow, zone 'wing_a'): HOLD {key} -> e-lock OPENS + camera OFF. Does NOT reach the
    laser (different zone) — power cuts are zone-scoped, not global.
 • JUNCTION BOX (orange, zone 'vault'): HOLD {key} -> the red LASER goes dark (its power-cut counter-play).
-• E-LOCK (cyan): tap {key} then STAY CLOSE ~3s -> OPEN. Walk out of range -> it pauses.
+• E-LOCK (cyan): tap {key} then STAND STILL ~3s -> OPEN. MOVING CANCELS IT (progress is lost) — or, with
+   Options > Controls > 'While Interacting' set to Lock, you're rooted until it's done ({key} = cancel).
 • LOCK / SAFE / KEYCARD: inert props — need the task-07 minigame / task-08 inventory (labelled)."""
 
 @export var player_path: NodePath = ^"../Player"
