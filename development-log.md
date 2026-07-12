@@ -676,3 +676,79 @@ For the project overview, architecture, folder map, and conventions see
   orientation/size/frames; keycard+e-lock slide, lockpick swings, breach shatters; pass-through) and the
   menu sweep (readable body font + consistent outline scheme incl. Options tabs/dropdowns), mirroring
   prior greyboxes.
+- **Misc fixes 3 — alert lifecycle, drill/footstep/pickup feel, UI centering** (specs:
+  `misc-fixes-3.md` + `discovery.md`): **code + automated DoD complete & verified green** on Godot 4.6.3
+  (headless GUT **514/514**, +26 tests across 4 new suites; content/docs/asset validators exit 0).
+  **EventBus stayed frozen** — every part of this rides pre-declared signals (`alarm_tripped` /
+  `pursuit_phase_changed` / `detection_changed`) plus local ones. **The alert lifecycle (issue 1, and the
+  root cause behind `discovery.md` #1–#3):** a new mission-scoped **`RunManager.alert_state`**
+  (`CALM → PURSUIT → ALERTED`, reset on every mission entry via the existing `_reset_mission_tracking`)
+  is the readable state; **`PursuitDirector`** owns the ticking half — a `_lost_timer` that ends the
+  pursuit after the new `PursuitConfigDef.pursuit_lost_timeout` (60 s) of **zero contact**, where contact
+  is a **poll of sensor `fill`** over a new `&"detection_sensor"` group (pure seams `has_contact` /
+  `step_lost_timer`) rather than a `detection_changed` listener: that signal is epsilon-throttled AND
+  ALERTED-latched, so a sensor staring at the player at `fill = 1.0` emits **nothing** (`discovery.md` #4)
+  and an event-driven timer would have ended the pursuit **mid-firefight**. `_end_pursuit` calls
+  `RunManager.enter_alerted()` **before** broadcasting `pursuit_phase_changed(0)` (synchronous delivery —
+  the handlers must already read ALERTED). That phase-0 broadcast is the mission-wide "pursuit ended"
+  signal: **`DetectionSensor._deescalate()`** drops the never-releasable ALERTED latch (fill +
+  `has_target` + state, so the guard's next lead isn't a stale `last_seen_position`) and **`CameraEye`**
+  overrides it to re-arm `_alarm_raised` (a camera could previously alarm **once per mission**);
+  **`GuardAI`** stands down from COMBAT→PATROL when its own sensor holds no fill — the **COMBAT exit the
+  state machine never had** — as a *one-shot on the transition*, not a per-tick check (which would have
+  cancelled every post-pursuit body/noise investigation, contradicting the escalate-only rule), testing
+  `fill` not `state` (latched sensors haven't de-escalated yet when the synchronous handler runs). Guards
+  now also **listen to `alarm_tripped`** and converge on the **alarm location** (never the player's true
+  position) with a **staggered** sweep-ring start (`posmod(instance_id, _SEARCH_POINTS)`, so a converged
+  pack doesn't walk in lockstep), keep re-anchoring their sweep while `alert_state == PURSUIT` instead of
+  resuming patrol, and **ignore `"silent"` alarms** (pure seam `responds_to_alarm`) — those are a
+  police-only, no-on-screen-warning response by design, and a visibly beelining guard force would erase
+  the loud/silent distinction. Post-pursuit, every sensor (guards **and** cameras) permanently sharpens:
+  new `DetectionConfigDef.alerted_gain_mult` (1.5) / `alerted_range_mult` (1.25), applied in the node glue
+  only — **the pure detection seams are untouched**, so the 64 task-04 tests stand. **Feel fixes:** the
+  drill's unjam prompt is now **proximity-gated** (`MinigameConfigDef.drill_proximity_range`, reusing
+  `HackMinigame.in_proximity`) — a jam was clearing from **anywhere on the map** (issue 2); footstep noise
+  **halved** at the single multiplicative base (`base_step_radius 6.0 → 3.0`, so every stance/surface/run
+  radius scales exactly 50 %, issue 3); footfalls are now **distance-based** (`step_stride` 1.6 m + the
+  pure `PlayerController.accumulate_step`, replacing `step_interval_walk/sprint`) so **tapping a move key
+  can no longer cross a room in silence**, a held key can't spam the interval, and cadence scales with
+  speed for free (issue 8, which also resolves `discovery.md` #10's crouch/prone cadence). **Feedback:** a
+  carry-capped pickup finally **says why** — a transient HUD notice line (pure `MissionHUD.carry_message`,
+  bound through the player's existing `interaction_target_changed`) over the long-dead
+  `LootPickup.pickup_rejected` (issue 4). **UI:** the `PRESET_CENTER`-without-grow defect is fixed
+  everywhere it appears — `PauseMenu` / `Options` / `ConfirmPopup` (issues 5–6) **plus** `MissionResults`,
+  `SlotPopup`, and all six minigame readouts (`discovery.md` #7–#9); and the Pause menu's dim+panel now
+  live under one inner `_content` Control that **hides** while a sub-menu is open, so its buttons are no
+  longer visible/clickable *through* the Options/Abort overlay (issue 7). **Dead code dropped (user's
+  call):** `DetectionState.PURSUIT` (enum value 4 — never produced; mission-scoped pursuit now lives in
+  `RunManager`) and the never-emitted `Inventory.carry_full`, with their ripples through `GuardAI` /
+  `DetectionConeDebug` / `UITheme` bands / `CompassEye` / `AudioManager` (`discovery.md` #5–#6). *(That
+  drop initially **silently skipped** two test scripts on stale `S.PURSUIT` refs — the known false-green
+  trap; caught by the script/test-count check, both updated.)*
+  **Playtest fixes (GUT 519/519):** the first pass surfaced two things the plan got wrong.
+  **(a) The centering fix was only half the story — and made the symptom worse.** Growing a panel BOTH
+  ways centres it on its *parent's* centre, but the overlay roots were **0×0**, so they centred on the
+  screen's **top-left pixel**. Root cause: **`set_anchors_preset()` on a Control that is already in the
+  tree preserves its current rect** (it recomputes the offsets), and a code-built `Control.new()` starts
+  0×0 — so every root that called `set_anchors_preset(PRESET_FULL_RECT)` **inside `_ready()`** stayed
+  zero-sized forever (which is also why those overlays' dim never actually darkened anything; it only
+  *looked* passable before because `GROW_DIRECTION_END` dropped the panel at the origin). `PauseMenu`/`HUD`
+  escaped it — a `.tscn` root and a `CanvasLayer` child get a real rect for free. Fixed by switching all
+  **12** such roots (`Options`/`ConfirmPopup`/`SlotPopup`/the six minigame overlays/`StationPanel`/
+  `Hideout`/`PauseMenu`) to **`set_anchors_and_offsets_preset`**, which zeroes the offsets so the root
+  really fills its parent; locked by a new **`test_overlay_centering.gd`** (root fills parent **and** panel
+  centre == parent centre, plus the pause-content-hidden-under-a-sub-menu rule).
+  **(b) Issue 3 was fixed in the wrong place — and the noise radius never fed detection at all.**
+  `hearing_bump`'s magnitude is `gain × (1 − dist/reach)` with `reach = max(noise_radius, hearing_radius)`,
+  and a footstep's radius (≤ 6.6 m) **never exceeds a guard's 8 m hearing**, so the radius only ever set the
+  unused reach: **a prone crawl filled a guard's meter exactly as fast as a standing walk**, making stance /
+  Silence / soft-soled gear / floor surface *cosmetic* against a guard's ears. Halving `base_step_radius`
+  therefore just shrank the on-world ring (the readability read the user explicitly did **not** want
+  shrunk) while changing detection by zero. **Reverted to 6.0**; instead a new pure seam
+  **`DetectionSensor.loudness_factor(radius, reference)`** (`clamp(radius/reference, 0, 1)`, new tunable
+  `DetectionConfigDef.sound_reference_radius = 8.0`) now multiplies the hearing bump, so **how loud you are
+  finally governs how fast you're heard**: standing walk lands ~0.83 of the bump, crouch ~0.41, prone ~0.21,
+  sprint/gunshot/drill saturate at 1.0. At 2 m from a guard a walking player's meter now climbs ~0.45/s
+  against the 0.35/s decay (**≈4× longer to be noticed**) and a crouch-walk no longer out-paces decay at all.
+  **Residual (`[~]`):** the F6 "feel" sign-off in `MissionGreybox.tscn` — the checklist is the
+  "Verification" section of `misc-fixes-3.md`.

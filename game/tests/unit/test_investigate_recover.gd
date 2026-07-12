@@ -19,7 +19,6 @@ func test_detection_maps_to_behaviour() -> void:
 	assert_eq(_g.ai_state_for_detection(S.SUSPICIOUS), AI.INVESTIGATE, "a half-sighting/noise → investigate")
 	assert_eq(_g.ai_state_for_detection(S.SEARCHING), AI.SEARCH, "found evidence → local search")
 	assert_eq(_g.ai_state_for_detection(S.ALERTED), AI.COMBAT, "confirmed spot → combat/converge")
-	assert_eq(_g.ai_state_for_detection(S.PURSUIT), AI.COMBAT, "pursuit stays in combat")
 
 func test_investigate_to_search_on_arrival() -> void:
 	assert_eq(_g.investigate_next(true, false), AI.SEARCH, "arriving at the last-known spot starts a local search")

@@ -449,19 +449,30 @@ func interaction_hold_progress() -> float:
 
 # --- Noise (FR-03-6) -------------------------------------------------------
 
+## Footfalls accumulate DISTANCE, not time (misc-fixes-3 issue 8). The old time-based version reset the
+## accumulator whenever the player was nearly still, so tapping a move key repeatedly covered ground in
+## total silence while a held key could spam the interval. Now: only real travel advances the stride, the
+## accumulator is HELD (never reset) while airborne or stopped so taps carry over, and cadence scales with
+## speed for free — a crouch-walk is both quieter and slower-footed.
 func _update_footsteps(delta: float, horizontal_speed: float, is_running: bool) -> void:
 	if not is_on_floor() or horizontal_speed < 0.1:
-		_step_accum = 0.0
+		return   # hold the accumulator: a stop-start tap must not wipe the ground already covered
+	var step := accumulate_step(_step_accum, horizontal_speed * delta, config.step_stride)
+	_step_accum = float(step[1])
+	if not bool(step[0]):
 		return
-	_step_accum += delta
-	var interval := config.step_interval_sprint if is_running else config.step_interval_walk
-	if _step_accum < interval:
-		return
-	_step_accum = 0.0
 	# Silence reduction stacks the trained attribute with soft-soled gear (FR-09-7), clamped once.
 	var reduction := clampf(attr_effect(&"silence") + _gear_silence_bonus(), 0.0, config.max_silence_reduction)
 	noise_level = compute_noise_radius(stance, is_running, _current_surface_tag(), reduction)
 	emit_noise(noise_level, "footstep")
+
+## Advance the footfall accumulator by `distance` metres. Returns [emit: bool, remaining: float] — one
+## step per `stride` crossed, carrying the remainder so cadence never drifts. Pure.
+static func accumulate_step(accum: float, distance: float, stride: float) -> Array:
+	var total := accum + maxf(distance, 0.0)
+	if stride <= 0.0 or total < stride:
+		return [false, total]
+	return [true, total - stride]
 
 ## Footstep noise radius (m): base × stance × run × surface × (1 − Silence). Pure;
 ## `silence_reduction` is the already-resolved 0..1 fraction (live code reads it from

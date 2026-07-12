@@ -5,10 +5,17 @@ extends Node
 ## stack, and the Catch conversion Notoriety × Heat-multiplier → permanent Legacy (task 12).
 ## See docs/tasks/12_progression_streak_legacy.md and GDD §5.
 
+## Mission-scoped alert lifecycle (misc-fixes-3 issue 1). CALM until an alarm trips → PURSUIT while the
+## law is actively hunting → ALERTED once the pursuit times out for lack of contact: the level stays
+## heightened for the rest of the mission (guards see further/faster) and a fresh alarm re-escalates to
+## PURSUIT. PursuitDirector owns the ticking timeline; this is the readable state everyone else queries.
+enum AlertState { CALM, PURSUIT, ALERTED }
+
 var notoriety: int = 0
 var streak_level: int = 1
 var streak_length: int = 0          ## contracts completed this streak
 var heat: float = 0.0               ## 0..1; rises on alarms/going loud
+var alert_state: int = AlertState.CALM   ## mission-scoped; reset on every mission entry
 var take: int = 0                   ## per-streak cash currency
 var edges: Array[StringName] = []   ## chosen temporary perks (Edge ids), applied while held
 var job_board: Array = []           ## available contracts (+ seeds)
@@ -65,6 +72,8 @@ func _econ() -> EconomyConfigDef:
 func _on_alarm_tripped(kind: String, _position: Vector3) -> void:
 	committed = true
 	_alarm_this_mission = true
+	# Any alarm (including one raised while already ALERTED) puts the level back into an active hunt.
+	alert_state = AlertState.PURSUIT
 	raise_heat(_heat_for_alarm(kind))
 	# Strict saves (Q5, FR-16-5): flip the on-disk checkpoint flag the instant we commit, so a
 	# hot-quit mid-mission resolves as the Catch on next launch. One-way + un-save-scummable (it can
@@ -114,9 +123,16 @@ func _performance_flags(summary: Dictionary, cfg: ProgressionConfigDef) -> Dicti
 		"full_clear": bool(summary.get("full_clear", false)),
 	}
 
+## The pursuit lost contact for pursuit_lost_timeout seconds: the hunt is called off, but the level stays
+## on edge for the rest of the mission (DetectionSensor sharpens its senses while ALERTED). PursuitDirector
+## calls this immediately before broadcasting pursuit_phase_changed(0).
+func enter_alerted() -> void:
+	alert_state = AlertState.ALERTED
+
 func _reset_mission_tracking() -> void:
 	_alarm_this_mission = false
 	_spotted_this_mission = false
+	alert_state = AlertState.CALM
 
 ## Public seam for GameManager: clear this-mission tracking at the start of every mission entry, so a
 ## previous mission's exit path that deliberately skips the normal end-of-mission bookkeeping (a clean

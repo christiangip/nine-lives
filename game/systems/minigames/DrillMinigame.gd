@@ -10,6 +10,7 @@ var _method: StringName = &"drill"
 var _fraction: float = 0.0
 var _jammed: bool = false
 var _readout: Label
+var _driller: Node3D   ## the player working the drill; a jam can only be cleared from AT the breach
 
 func _init() -> void:
 	pauses_world = false   # the drill draws guards — the world must keep running (GDD §9.6)
@@ -19,6 +20,9 @@ func begin(ctx: Dictionary = {}) -> void:
 	super.begin(ctx)
 	_breach = ctx.get("breach") as BreachPoint
 	_method = StringName(ctx.get("method", &"drill"))
+	_driller = ctx.get("hacker") as Node3D   # MinigameHost injects the player under this key
+	if _driller == null and is_inside_tree():
+		_driller = get_tree().get_first_node_in_group(&"player") as Node3D
 	if _breach == null:
 		abort()   # nothing to drive
 		return
@@ -30,10 +34,11 @@ func begin(ctx: Dictionary = {}) -> void:
 	_breach.begin_breach(_method, ctx.get("by"))
 
 func _build_ui() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)   # offsets too: anchors alone keep the 0x0 rect a code-built Control starts with
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_readout = Label.new()
 	_readout.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_readout.grow_horizontal = Control.GROW_DIRECTION_BOTH   # else the label's LEFT edge sits at centre
 	_readout.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_readout.position.y = 40.0
 	add_child(_readout)
@@ -53,10 +58,19 @@ func _on_breached(_method: StringName) -> void:
 func _process(_delta: float) -> void:
 	if _finished or _breach == null:
 		return
-	if _jammed and Input.is_action_just_pressed(&"ui_accept"):
+	if _jammed and Input.is_action_just_pressed(&"ui_accept") and _can_reach_drill():
 		_breach.repair()
 		_jammed = _breach.is_jammed
 		_refresh()
+
+## You must be AT the breach to free a jam — clearing it from across the map was the bug (issue 2).
+## Reuses HackMinigame's already-unit-tested proximity seam rather than a local copy. With no spatial
+## context (headless test / greybox with no player), the drill stays operable.
+func _can_reach_drill() -> bool:
+	if _driller == null or _breach == null:
+		return true
+	return HackMinigame.in_proximity(
+		_driller.global_position.distance_to(_breach.global_position), config.drill_proximity_range)
 
 func _refresh() -> void:
 	if _readout == null:
@@ -66,5 +80,7 @@ func _refresh() -> void:
 	var bar := "#".repeat(filled) + "-".repeat(CELLS - filled)
 	var line := "DRILL  %s  [%s] %d%%" % [String(_method).to_upper(), bar, int(round(_fraction * 100.0))]
 	if _jammed:
-		line += "\n!! JAMMED — [Enter] to clear !!"
+		line += "\n!! JAMMED — [Enter] to clear (stand at the drill) !!"
+		if not _can_reach_drill():
+			line += "\n— TOO FAR FROM THE DRILL —"
 	_readout.text = line

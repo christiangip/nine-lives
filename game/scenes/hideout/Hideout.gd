@@ -13,7 +13,7 @@ var _active_panel: StationPanel
 
 func _ready() -> void:
 	theme = UITheme.build()   # shared readable body font + understated-outline widgets (misc-fixes-2)
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)   # offsets too: anchors alone keep the 0x0 rect a code-built Control starts with
 
 	var bg := ColorRect.new()
 	bg.color = Color(0.07, 0.08, 0.10)

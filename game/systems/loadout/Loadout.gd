@@ -6,7 +6,7 @@ class_name Loadout
 ## it's directly `.new()`-able and unit-tests headlessly. Owned by RunManager (the per-Streak equipped
 ## set) and read by PlayerController for gadget queries + the MinigameHost for gear bonuses. Cross-system
 ## effects stay the caller's job and EventBus is FROZEN — loadout changes fire a LOCAL signal, matching
-## Inventory.carry_full / Obstacle.state_changed. See docs/tasks/09_loadout_gear_gadgets.md.
+## LootPickup.pickup_rejected / Obstacle.state_changed. See docs/tasks/09_loadout_gear_gadgets.md.
 
 signal loadout_changed   ## local; the Armory UI (task 13) + HUD (task 15) listen — world stays EventBus-driven
 

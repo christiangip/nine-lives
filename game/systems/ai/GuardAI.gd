@@ -59,6 +59,10 @@ func _ready() -> void:
 		EventBus.player_spotted.connect(_on_player_spotted)
 	if not EventBus.body_discovered.is_connected(_on_body_discovered):
 		EventBus.body_discovered.connect(_on_body_discovered)
+	if not EventBus.alarm_tripped.is_connected(_on_alarm_tripped):
+		EventBus.alarm_tripped.connect(_on_alarm_tripped)
+	if not EventBus.pursuit_phase_changed.is_connected(_on_pursuit_phase_changed):
+		EventBus.pursuit_phase_changed.connect(_on_pursuit_phase_changed)
 
 func _exit_tree() -> void:
 	if EventBus.detection_changed.is_connected(_on_detection_changed):
@@ -67,6 +71,10 @@ func _exit_tree() -> void:
 		EventBus.player_spotted.disconnect(_on_player_spotted)
 	if EventBus.body_discovered.is_connected(_on_body_discovered):
 		EventBus.body_discovered.disconnect(_on_body_discovered)
+	if EventBus.alarm_tripped.is_connected(_on_alarm_tripped):
+		EventBus.alarm_tripped.disconnect(_on_alarm_tripped)
+	if EventBus.pursuit_phase_changed.is_connected(_on_pursuit_phase_changed):
+		EventBus.pursuit_phase_changed.disconnect(_on_pursuit_phase_changed)
 
 func _resolve_sensor() -> void:
 	if sensor_path != NodePath() and has_node(sensor_path):
@@ -101,7 +109,7 @@ func ai_state_for_detection(det_state: int) -> int:
 			return AIState.INVESTIGATE
 		DetectionSensor.DetectionState.SEARCHING:
 			return AIState.SEARCH
-		DetectionSensor.DetectionState.ALERTED, DetectionSensor.DetectionState.PURSUIT:
+		DetectionSensor.DetectionState.ALERTED:
 			return AIState.COMBAT
 		_:
 			return AIState.PATROL
@@ -139,6 +147,13 @@ func investigate_next(arrived: bool, timed_out: bool) -> int:
 ## Resolution of a SEARCH: resume PATROL once the sweep time is spent.
 func search_next(timed_out: bool) -> int:
 	return AIState.PATROL if timed_out else AIState.SEARCH
+
+## Does a guard visibly respond to this alarm? A "silent" alarm is a POLICE-only response by design —
+## no on-screen warning, Intel reveals them (PursuitConfigDef) — so the guard force must not visibly
+## beeline to it, or the loud/silent strategic distinction collapses. Everything else ("camera", "loud",
+## …) turns the whole floor. Pure. (misc-fixes-3 issue 1)
+static func responds_to_alarm(kind: String) -> bool:
+	return kind != "silent"
 
 ## A local-sweep waypoint offset around the search center: a deterministic ring of points at
 ## `radius`, so SEARCH actually walks the area (reads AIConfigDef.search_radius) instead of
@@ -196,6 +211,11 @@ func _tick_investigate(delta: float) -> void:
 	_timer = tick_timer(_timer, delta)
 	var next := investigate_next(arrived, _timer <= 0.0)
 	if next != AIState.INVESTIGATE:
+		# Giving up (timed out) mid-PURSUIT would send the guard back to patrol while the law is still
+		# hunting. Sweep where we stalled instead — which doubles as the anti-stuck fallback for a guard
+		# whose straight-line steering can't reach a wall-blocked alarm spot (no navmesh).
+		if next == AIState.PATROL and _pursuit_active():
+			next = AIState.SEARCH
 		_set_ai_state(next)
 		return
 	_move_toward(_investigate_target, def.move_speed * ai_config.investigate_speed_mult, delta)
@@ -203,6 +223,11 @@ func _tick_investigate(delta: float) -> void:
 func _tick_search(delta: float) -> void:
 	_timer = tick_timer(_timer, delta)
 	if search_next(_timer <= 0.0) == AIState.PATROL:
+		if _pursuit_active():
+			# The hunt is still on: re-anchor a fresh sweep wherever we've ended up, so coverage drifts
+			# outward organically rather than resuming patrol while the player is still at large.
+			_begin_search()
+			return
 		_set_ai_state(AIState.PATROL)   # sweep window spent, nothing found → resume patrol
 		return
 	# Walk a ring of sweep points around the lost-contact spot so "Search" actually searches
@@ -314,9 +339,11 @@ func _set_ai_state(s: int) -> void:
 
 ## Anchor the sweep at wherever we are now — SEARCH is entered on arriving at the lead
 ## (via investigate_next) or on discovering a body, so this is the lost-contact spot.
+## The ring start is STAGGERED per guard: when an alarm converges the whole floor on one spot, every
+## guard would otherwise walk the same 4 sweep points in lockstep. Deterministic, no new tunable.
 func _begin_search() -> void:
 	_search_center = global_position
-	_search_point_index = 0
+	_search_point_index = posmod(int(get_instance_id()), _SEARCH_POINTS)
 	_timer = ai_config.search_duration
 
 func _begin_investigate() -> void:
@@ -442,6 +469,37 @@ func _on_body_discovered(position: Vector3) -> void:
 		_investigate_target = position
 		_has_investigate_target = true
 		_set_ai_state(AIState.INVESTIGATE)
+
+# --- Alarm response + stand-down (misc-fixes-3 issue 1) --------------------
+## Is the law actively hunting right now? (RunManager owns the mission-scoped lifecycle.)
+func _pursuit_active() -> bool:
+	return RunManager != null and RunManager.alert_state == RunManager.AlertState.PURSUIT
+
+## An alarm went off ANYWHERE on the level: every guard heads for it. Guards learn the ALARM LOCATION
+## only — never the player's true position — so evading is still about breaking contact, not outrunning
+## omniscience. Already-fighting guards keep fighting; silent alarms stay a police-only response.
+func _on_alarm_tripped(kind: String, position: Vector3) -> void:
+	if ai_state == AIState.DOWNED or ai_state == AIState.COMBAT:
+		return
+	if not responds_to_alarm(kind):
+		return
+	_investigate_target = position
+	_has_investigate_target = true
+	_set_ai_state(AIState.INVESTIGATE)
+
+## The pursuit ended (phase 0): stand down to an ALERTED patrol — heightened senses (DetectionSensor),
+## but no longer hunting. This is the COMBAT exit the state machine never had (discovery.md #2).
+## A ONE-SHOT on the transition, deliberately not a per-tick "while alerted" check: the latter would
+## instantly cancel every post-pursuit body/noise investigation, contradicting the escalate-only rule at
+## _react_to_own_detection (state timers own the wind-down). Contact tests `fill`, not `state`: this
+## handler runs synchronously with the emission, BEFORE the sensors' own de-latch, so `state` would still
+## read ALERTED and wrongly block the stand-down — `fill` is guaranteed 0 (the director's poll couldn't
+## have timed out otherwise), making the check ordering-proof.
+func _on_pursuit_phase_changed(phase: int) -> void:
+	if phase != 0 or ai_state == AIState.DOWNED or ai_state == AIState.PATROL:
+		return
+	if _sensor == null or _sensor.fill <= 0.0:
+		_set_ai_state(AIState.PATROL)
 
 ## A nearby teammate raised the alarm at `actor_id`'s sensor: converge to investigate (FR-05-2).
 func _propagate_from(actor_id: int) -> void:

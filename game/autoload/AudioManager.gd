@@ -14,7 +14,6 @@ const DET_UNAWARE := 0
 const DET_SUSPICIOUS := 1
 const DET_SEARCHING := 2
 const DET_ALERTED := 3
-const DET_PURSUIT := 4
 
 const _SILENT_DB := -80.0
 

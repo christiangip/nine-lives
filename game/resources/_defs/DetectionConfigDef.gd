@@ -11,13 +11,28 @@ class_name DetectionConfigDef
 # --- Fill dynamics (meter is 0..1) -----------------------------------------
 @export var see_gain_rate: float = 0.9     ## fill/sec at full factors (point-blank, lit, standing, running, clear LoS)
 @export var decay_rate: float = 0.35       ## fill/sec recovered while the target is unseen
-@export var sound_gain: float = 0.4        ## fill bump from an audible noise at the source
+@export var sound_gain: float = 0.4        ## fill bump from a FULLY LOUD noise at the source
 @export var sound_fill_cap: float = 0.6    ## sound alone can't push fill past this (never fully spots)
+## How LOUD a noise has to be (its emitted radius, m) to land the full `sound_gain` bump. Quieter noises
+## scale down proportionally, so the player's noise levers — stance, Silence, soft-soled gear, floor
+## surface — finally govern how fast a guard notices them. Without this the bump depended only on
+## DISTANCE: a prone crawl and a standing walk built a guard's meter at exactly the same rate, because a
+## footstep's radius never exceeds a guard's hearing radius and so only ever set the (unused) reach.
+## Reference 8.0 = a guard's default hearing radius: a standing walk (6.6 m) lands ~0.83 of the bump,
+## a crouch-walk (3.3 m) ~0.41, a prone crawl ~0.21, and a sprint/gunshot/drill saturates at 1.0.
+@export var sound_reference_radius: float = 8.0
 
 # --- State thresholds (0..1, ascending) ------------------------------------
 @export var suspicious_threshold: float = 0.2
 @export var searching_threshold: float = 0.5
 @export var alerted_threshold: float = 0.85
+
+# --- Post-pursuit awareness (misc-fixes-3 issue 1) --------------------------
+## Applied while RunManager.alert_state == ALERTED — i.e. an alarm raised a pursuit, the player shook it
+## off, and the level stays on edge for the rest of the mission: every sensor (guards AND cameras) fills
+## faster and sees further. Not applied during the pursuit itself (a silent alarm must not tip its hand).
+@export var alerted_gain_mult: float = 1.5    ## detection builds this much faster while ALERTED
+@export var alerted_range_mult: float = 1.25  ## and the vision cone reaches this much further
 
 # --- Distance ---------------------------------------------------------------
 @export var distance_falloff_exp: float = 1.0   ## >1 makes near detection punchier; closer always fills faster

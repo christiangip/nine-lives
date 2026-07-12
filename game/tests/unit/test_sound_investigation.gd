@@ -33,6 +33,32 @@ func test_noise_out_of_range_no_bump() -> void:
 	var bump := _sensor.hearing_bump(4.0, Vector3(12, 0, 0), Vector3.ZERO, 8.0, 0.4)
 	assert_eq(bump, 0.0, "a noise beyond reach produces no bump")
 
+# --- Loudness (pure; misc-fixes-3 follow-up) --------------------------------
+## The player's noise levers (stance / Silence / soft-soled gear / floor surface) all scale the emitted
+## RADIUS. Before loudness_factor, that radius only ever widened the reach — and since a footstep's radius
+## never exceeds a guard's hearing radius, a prone crawl filled a guard's meter exactly as fast as a
+## standing walk. Quieter must mean slower-to-notice, or none of those levers buy anything.
+func test_a_quieter_noise_registers_less() -> void:
+	var walk := DetectionSensor.loudness_factor(6.6, 8.0)    # standing walk
+	var crouch := DetectionSensor.loudness_factor(3.3, 8.0)  # crouch-walk
+	var prone := DetectionSensor.loudness_factor(1.65, 8.0)  # prone crawl
+	assert_gt(walk, crouch, "a crouch-step registers less than a standing step")
+	assert_gt(crouch, prone, "a prone crawl registers less still")
+	assert_almost_eq(crouch, 0.41, 0.01, "and it scales linearly with the noise radius")
+
+func test_a_loud_noise_saturates() -> void:
+	assert_eq(DetectionSensor.loudness_factor(11.2, 8.0), 1.0, "a sprint lands the full bump")
+	assert_eq(DetectionSensor.loudness_factor(30.0, 8.0), 1.0, "a gunshot can't exceed it")
+
+func test_quiet_movement_builds_the_meter_more_slowly() -> void:
+	var sensor := _live_sensor()
+	EventBus.noise_emitted.emit(Vector3(2, 0, 0), 6.6, "footstep")   # a standing step, 2 m away
+	var loud_fill := sensor.fill
+	sensor.fill = 0.0
+	EventBus.noise_emitted.emit(Vector3(2, 0, 0), 3.3, "footstep")   # a crouch-step from the same spot
+	assert_gt(loud_fill, sensor.fill,
+		"the same step taken quietly takes longer to be noticed — the whole point of crouching")
+
 # --- Signal-driven investigation (integration) -----------------------------
 ## A live sensor added to the tree (so _ready subscribes to EventBus.noise_emitted).
 ## Built locally + add_child_autofree so GUT owns its lifetime (member _sensor is for the

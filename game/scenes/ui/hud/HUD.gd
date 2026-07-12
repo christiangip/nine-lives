@@ -57,6 +57,10 @@ var _pause_menu: Control = null
 var _ui_scale: float = 1.0
 var _caption_label: Label = null       ## audio captions (task 17, FR-17-7); shown only when subtitles on
 var _caption_token: int = 0            ## generation guard so a new caption cancels the old clear timer
+var _notice_label: Label = null        ## transient gameplay notices (carry-cap rejection, …); always shown
+var _notice_token: int = 0             ## generation guard for the notice auto-clear
+var _notice_src: Node = null           ## the player whose interaction_target_changed we're connected to
+var _reject_src: Interactable = null   ## the interactable whose pickup_rejected we're currently listening to
 
 # --- Damage feedback + hit marker (task 21 juice; honour reduce_flashing) ---
 var _reduce_flashing: bool = false
@@ -184,6 +188,19 @@ func _build() -> void:
 	_caption_label.add_theme_color_override("font_outline_color", Color.BLACK)
 	_caption_label.add_theme_constant_override("outline_size", _OUTLINE)
 	_root.add_child(_caption_label)
+
+	# One line above the caption: transient gameplay notices (a pickup refused by the carry cap, …).
+	# NOT subtitles-gated — this is a gameplay answer to "why didn't that work?", not an audio caption.
+	_notice_label = Label.new()
+	_notice_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_notice_label.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_notice_label.position = Vector2(-260, -105) * _ui_scale
+	_notice_label.custom_minimum_size = Vector2(520, 0) * _ui_scale
+	_notice_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_notice_label.add_theme_color_override("font_color", UITheme.WARN)
+	_notice_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	_notice_label.add_theme_constant_override("outline_size", _OUTLINE)
+	_root.add_child(_notice_label)
 
 	# CRITICAL (FP mouse-look): every HUD element is a passive readout — none is meant to be clicked —
 	# but Godot Controls default to MOUSE_FILTER_STOP, and mouse_filter does NOT inherit from a parent.
@@ -343,6 +360,7 @@ func _process(delta: float) -> void:
 	_update_damage_tick(delta)
 	_update_downed(player)
 	_update_hit_marker(player, delta)
+	_update_notice_binding(player)
 
 # --- Damage vignette + hit marker (task 21, FR-21-3) ---------------------------
 ## Watch the player's Health for a drop and flash a red vignette on damage. Under Reduce Flashing the flash
@@ -405,6 +423,58 @@ func _update_hit_marker(player: Node, delta: float) -> void:
 
 func _on_shot_landed() -> void:
 	_hit_flash = 1.0
+
+# --- Carry-cap rejection notice (misc-fixes-3 issue 4) -------------------------
+## Follow the player's aimed interactable and listen to its local `pickup_rejected`, so a pickup refused
+## by the two-axis carry cap says WHY instead of failing in silence. Lazily bound like the stamina/hit
+## hooks above. Ordering is safe: interaction_target_changed is emitted synchronously as the aim changes,
+## so we're connected before the same tick's hold-to-interact can fire the rejection.
+func _update_notice_binding(player: Node) -> void:
+	if player == _notice_src:
+		return
+	_notice_src = player
+	if player != null and player.has_signal("interaction_target_changed") \
+			and not player.interaction_target_changed.is_connected(_on_interaction_target_changed):
+		player.interaction_target_changed.connect(_on_interaction_target_changed)
+
+func _on_interaction_target_changed(interactable: Interactable) -> void:
+	# is_instance_valid first: a SUCCESSFUL pickup queue_free()s the previous target, and the aim then
+	# changes to null — disconnecting from a freed object would crash.
+	if is_instance_valid(_reject_src) and _reject_src.pickup_rejected.is_connected(_on_pickup_rejected):
+		_reject_src.pickup_rejected.disconnect(_on_pickup_rejected)
+	_reject_src = null
+	if interactable != null and interactable.has_signal("pickup_rejected"):
+		_reject_src = interactable
+		interactable.pickup_rejected.connect(_on_pickup_rejected)
+
+func _on_pickup_rejected(axis: StringName) -> void:
+	_show_notice(carry_message(axis))
+
+## The player-facing reason a pickup was refused, by the failing carry axis. Pure. (FR-08-1 feedback)
+static func carry_message(axis: StringName) -> String:
+	match axis:
+		&"weight":
+			return "You are carrying too much weight"
+		&"volume":
+			return "No space — you can't carry that"
+		_:
+			return "Your hands are full"
+
+## Flash a transient notice line. Auto-clears; a newer notice cancels the older clear via a token
+## (the same generation-guard pattern as _on_caption).
+func _show_notice(text: String) -> void:
+	if _notice_label == null:
+		return
+	_notice_label.text = text
+	_notice_token += 1
+	var token := _notice_token
+	var tree := get_tree()
+	if tree == null:
+		return
+	var t := tree.create_timer(2.5)
+	t.timeout.connect(func() -> void:
+		if _notice_label != null and _notice_token == token:
+			_notice_label.text = "")
 
 func _update_carry(player: Node) -> void:
 	if player == null or player.get("inventory") == null:

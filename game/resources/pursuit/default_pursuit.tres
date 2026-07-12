@@ -7,6 +7,7 @@ script = ExtResource("1_pursuit")
 id = &"default"
 phase_durations = Array[float]([0.0, 18.0, 22.0, 30.0, 40.0, 0.0])
 silent_skip_phase = 2
+pursuit_lost_timeout = 60.0
 heat_per_loud_alarm = 0.25
 heat_per_silent_alarm = 0.12
 spawn_budget = Array[int]([0, 1, 2, 3, 4, 5])

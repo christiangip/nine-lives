@@ -36,6 +36,14 @@ func _physics_process(delta: float) -> void:
 		_alarm_raised = true
 		EventBus.alarm_tripped.emit(alarm_kind, global_position)
 
+## The pursuit ended (DetectionSensor de-latches on the phase-0 broadcast): re-arm the alarm, so a camera
+## that spots the player again raises a FRESH one. Without this, `_alarm_raised` latched for the whole
+## mission and a camera could only ever alarm once (discovery.md #1). Riding the signal (rather than a
+## per-tick check) also re-arms a camera that is looped/unpowered at the moment the pursuit ends.
+func _deescalate() -> void:
+	super._deescalate()
+	_alarm_raised = false
+
 ## Pure seam (unit-tested): is a camera with these flags currently blind?
 static func is_defeated(disabled: bool, looped: bool, powered: bool, solved: bool) -> bool:
 	return disabled or looped or solved or not powered

@@ -38,7 +38,6 @@ const DETECTION_COLORS := [
 	Color(0.95, 0.85, 0.30),   # SUSPICIOUS — yellow
 	Color(0.98, 0.60, 0.20),   # SEARCHING — orange
 	Color(0.95, 0.25, 0.22),   # ALERTED  — red
-	Color(0.80, 0.10, 0.30),   # PURSUIT  — deep red
 ]
 
 # Colorblind-adjusted detection bands (task 21, FR-21-1). Keyed by SettingsManager gameplay/colorblind
@@ -50,21 +49,18 @@ const DETECTION_COLORS_PROT := [
 	Color(0.30, 0.55, 0.95),   # blue
 	Color(0.40, 0.78, 0.98),   # cyan
 	Color(0.98, 0.85, 0.20),   # yellow
-	Color(1.00, 0.55, 0.05),   # amber
 ]
 const DETECTION_COLORS_DEUT := [
 	Color(0.55, 0.58, 0.62),   # grey
 	Color(0.20, 0.50, 0.95),   # blue
 	Color(0.45, 0.72, 0.98),   # light blue
 	Color(0.99, 0.80, 0.15),   # yellow
-	Color(1.00, 0.60, 0.10),   # amber
 ]
 const DETECTION_COLORS_TRIT := [
 	Color(0.58, 0.60, 0.60),   # grey
 	Color(0.20, 0.80, 0.80),   # teal/cyan
 	Color(0.95, 0.50, 0.60),   # pink
 	Color(0.96, 0.22, 0.26),   # red
-	Color(0.70, 0.05, 0.15),   # dark red
 ]
 
 static var _theme: Theme = null

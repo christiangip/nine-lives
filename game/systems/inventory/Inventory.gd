@@ -26,8 +26,6 @@ var _carried_body: Body = null            ## the one Body being dragged, or null
 var _in_hand_value: int = 0               ## sum of value NOT yet secured (lost on Catch)
 var _secured_value: int = 0               ## sum of value already banked (survives Catch)
 
-signal carry_full(axis: StringName)   ## local; HUD "full" feedback (task 15) — "weight" | "volume" | "hands"
-
 # --- FR-08-1: weight/volume/hand-slot accounting ----------------------------
 
 ## Current total weight (kg): pocketed loot + hand-slot loot + bag contents + carried body.

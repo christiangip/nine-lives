@@ -7,24 +7,38 @@ class_name PauseMenu
 ## (end_streak → Legacy → Results). Reuses the shared OptionsMenu + ConfirmPopup. Themed via UITheme.
 ## See docs/tasks/15_ui_hud_menus.md and DESIGN_DECISIONS.md Q5.
 
+## The pause dim + panel, grouped so a sub-menu (Options / Abort confirm) can hide the WHOLE pause menu
+## while it's open — a hidden Control isn't drawn, focusable, or clickable, so the pause buttons can't be
+## reached through the sub-menu's own dim any more (issue 7). It is a SIBLING of the sub-menu, not a parent.
+var _content: Control
+var _resume_btn: Button
+
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)   # offsets too: anchors alone keep the 0x0 rect a code-built Control starts with
 	process_mode = Node.PROCESS_MODE_ALWAYS   # run while the tree is paused
 	theme = UITheme.build()
 	get_tree().paused = true
 	_set_mouse(Input.MOUSE_MODE_VISIBLE)
 	Localization.ensure_registered()   # localization scaffold (task 21) — keyed text auto-translates
 
+	_content = Control.new()
+	_content.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_content)
+
 	var dim := ColorRect.new()
 	dim.color = Color(0, 0, 0, 0.55)
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	dim.mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(dim)
+	_content.add_child(dim)
 
 	var panel := PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_CENTER)
+	# PRESET_CENTER alone pins the panel's TOP-LEFT to screen centre; growing BOTH ways truly centres it.
+	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	panel.grow_vertical = Control.GROW_DIRECTION_BOTH
 	panel.custom_minimum_size = Vector2(420, 0)
-	add_child(panel)
+	_content.add_child(panel)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 14)
 	panel.add_child(box)
@@ -48,10 +62,10 @@ func _ready() -> void:
 	box.add_child(status)
 	box.add_child(HSeparator.new())
 
-	var resume_btn := _menu_button(box, "PAUSE_RESUME", _resume)
+	_resume_btn = _menu_button(box, "PAUSE_RESUME", _resume)
 	_menu_button(box, "PAUSE_OPTIONS", _open_options)
 	_menu_button(box, "PAUSE_ABORT", _abort)
-	resume_btn.grab_focus()   # every other overlay in the game defaults focus somewhere; this didn't (gamepad/KB-only nav was stuck)
+	_resume_btn.grab_focus()   # every other overlay in the game defaults focus somewhere; this didn't (gamepad/KB-only nav was stuck)
 
 	var ver := Label.new()   # build/version stamp (task 21, FR-21-7)
 	ver.text = Version.string()
@@ -78,15 +92,28 @@ func _resume() -> void:
 	queue_free()
 
 func _open_options() -> void:
-	OptionsMenu.open(self, true)
+	_content.hide()   # the pause menu underneath must be fully out of the way, not just dimmed
+	var o := OptionsMenu.open(self, true)
+	o.closed.connect(_on_submenu_closed)
 
 func _abort() -> void:
+	_content.hide()
+	var c: ConfirmPopup
 	if _committed():
-		var c := ConfirmPopup.open(self, "You're committed — aborting now resolves as the Catch. Bank your Notoriety as Legacy and end the Streak?", "Accept the Catch")
+		c = ConfirmPopup.open(self, "You're committed — aborting now resolves as the Catch. Bank your Notoriety as Legacy and end the Streak?", "Accept the Catch")
 		c.confirmed.connect(_abort_as_catch)
 	else:
-		var c := ConfirmPopup.open(self, "Bug out cleanly? You keep secured loot and your Streak stays intact.", "Bug Out")
+		c = ConfirmPopup.open(self, "Bug out cleanly? You keep secured loot and your Streak stays intact.", "Bug Out")
 		c.confirmed.connect(_abort_clean)
+	# Only CANCEL comes back to the pause menu — a confirmed abort leaves with the scene swap.
+	c.cancelled.connect(_on_submenu_closed)
+
+## A sub-menu closed: bring the pause menu back and re-seat focus (gamepad/KB nav would otherwise be lost).
+func _on_submenu_closed() -> void:
+	if _content != null:
+		_content.show()
+	if _resume_btn != null:
+		_resume_btn.grab_focus()
 
 func _abort_as_catch() -> void:
 	get_tree().paused = false

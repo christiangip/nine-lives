@@ -57,9 +57,14 @@ class_name PlayerConfigDef
 @export var interact_range: float = 2.5      ## ray length for the interaction probe (m)
 
 # --- Footstep noise --------------------------------------------------------
-@export var step_interval_walk: float = 0.5      ## seconds between footstep emissions at walk
-@export var step_interval_sprint: float = 0.32   ## faster cadence while sprinting
-@export var base_step_radius: float = 6.0        ## noise radius (m) of a standing walk step on a default surface
+## Footfalls are DISTANCE-based, not time-based: a step is emitted every `step_stride` metres travelled.
+## So a tap of the move key still makes noise once you've actually covered ground (it can't be dodged by
+## stutter-stepping), faster movement naturally steps more often, and a crouch-walk is quiet AND slow-
+## cadenced. ~1.6 m reproduces the old cadences (walk 3.2 m/s → ~0.5 s; sprint 5.6 m/s → ~0.29 s).
+@export var step_stride: float = 1.6             ## metres travelled between footfalls
+## Noise radius (m) of a standing walk step on a default surface. This is the AUDIBILITY/ring size; how
+## strongly a step registers on a guard's detection meter is DetectionConfigDef.sound_reference_radius.
+@export var base_step_radius: float = 6.0
 @export var run_noise_mult: float = 1.7          ## extra multiplier when running/sprinting
 @export var max_silence_reduction: float = 0.85  ## cap on the Silence-attribute noise cut (avoid 0-radius)
 ## Floor-surface tag -> footstep-radius multiplier. Tags come from a floor collider's

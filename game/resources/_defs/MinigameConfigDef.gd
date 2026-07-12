@@ -50,5 +50,6 @@ class_name MinigameConfigDef
 @export var pickpocket_meter_speed: float = 1.2        ## meter sweeps per second (presentation glue)
 
 # --- Drill / Thermite (FR-07-8): a tension manager, not a puzzle. The timer/jam/noise live on the
-# BreachPoint obstacle (ObstacleDef.time_seconds + params.jam_chance_per_sec); the overlay just
-# mirrors progress and offers the repair prompt, so no extra tunables are needed here. ------------
+# BreachPoint obstacle (ObstacleDef.time_seconds + params.jam_chance_per_sec); the overlay mirrors
+# progress and offers the repair prompt — which you must be AT THE DRILL to hit. ------------------
+@export var drill_proximity_range: float = 3.0   ## clearing a jam requires standing this close to the breach point

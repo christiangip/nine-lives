@@ -11,7 +11,7 @@ class_name CompassEye
 
 const TICK_COUNT := 12
 ## State → short symbol (redundant, non-colour cue). Indexed by DetectionSensor.DetectionState.
-const STATE_SYMBOLS := ["", "?", "?!", "!", "!!"]
+const STATE_SYMBOLS := ["", "?", "?!", "!"]
 const _SEARCHING := 2             ## DetectionState.SEARCHING — the threshold at which a threat gets its own lit tick
 const _ALERTED := 3               ## DetectionState.ALERTED — the "fully spotted" commit
 

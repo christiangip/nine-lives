@@ -50,7 +50,7 @@ func begin(ctx: Dictionary = {}) -> void:
 	_build_ui()
 
 func _build_ui() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)   # offsets too: anchors alone keep the 0x0 rect a code-built Control starts with
 	var panel := ColorRect.new()
 	panel.color = Color(0.05, 0.05, 0.07, 0.85)
 	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -58,6 +58,8 @@ func _build_ui() -> void:
 	add_child(panel)
 	_readout = Label.new()
 	_readout.set_anchors_preset(Control.PRESET_CENTER)
+	_readout.grow_horizontal = Control.GROW_DIRECTION_BOTH   # else the label's top-left sits at centre
+	_readout.grow_vertical = Control.GROW_DIRECTION_BOTH
 	_readout.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	add_child(_readout)
 	_refresh()

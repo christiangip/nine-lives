@@ -13,7 +13,6 @@ func test_pure_mapping() -> void:
 	assert_eq(AudioManager.music_state_for(AudioManager.DET_SUSPICIOUS, 0), AudioManager.MusicState.TENSE, "suspicious → tense")
 	assert_eq(AudioManager.music_state_for(AudioManager.DET_SEARCHING, 0), AudioManager.MusicState.TENSE, "searching → tense")
 	assert_eq(AudioManager.music_state_for(AudioManager.DET_ALERTED, 0), AudioManager.MusicState.COMBAT, "alerted → combat")
-	assert_eq(AudioManager.music_state_for(AudioManager.DET_PURSUIT, 0), AudioManager.MusicState.COMBAT, "pursuit state → combat")
 
 func test_pursuit_phase_forces_combat() -> void:
 	assert_eq(AudioManager.music_state_for(AudioManager.DET_UNAWARE, 1), AudioManager.MusicState.COMBAT, "any pursuit phase → combat")

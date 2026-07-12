@@ -14,7 +14,7 @@ var _body: VBoxContainer
 var _currency_label: Label
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)   # offsets too: anchors alone keep the 0x0 rect a code-built Control starts with
 	theme = UITheme.build()   # shared readable body font + understated-outline widgets (misc-fixes-2)
 
 	var bg := ColorRect.new()

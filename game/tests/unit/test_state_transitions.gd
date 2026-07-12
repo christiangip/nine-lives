@@ -35,7 +35,18 @@ func test_suspicious_and_searching_recover() -> void:
 
 func test_alerted_latches() -> void:
 	assert_eq(_sensor.step_state(S.ALERTED, 0.0), S.ALERTED, "Alerted does not auto-recover even at empty fill")
-	assert_eq(_sensor.step_state(S.PURSUIT, 0.0), S.PURSUIT, "Pursuit also latches")
+
+## The latch is released ONLY by the pursuit-end de-escalation (misc-fixes-3 issue 1), never by decay —
+## before that, a sensor that ever fully spotted the player stayed ALERTED for the whole mission.
+func test_deescalate_releases_the_alerted_latch() -> void:
+	_sensor.fill = 0.9
+	_sensor.has_target = true
+	_sensor._update_state()
+	assert_eq(_sensor.state, S.ALERTED, "a full meter commits to Alerted")
+	_sensor._deescalate()
+	assert_eq(_sensor.state, S.UNAWARE, "the pursuit ending drops the latch")
+	assert_eq(_sensor.fill, 0.0, "and clears the meter")
+	assert_false(_sensor.has_target, "and forgets the stale last-seen lead")
 
 func test_detection_changed_fires_on_change() -> void:
 	watch_signals(EventBus)

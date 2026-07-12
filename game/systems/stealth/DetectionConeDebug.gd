@@ -52,5 +52,5 @@ func _state_color(state: int) -> Color:
 	match state:
 		DetectionSensor.DetectionState.SUSPICIOUS: return Color(0.95, 0.85, 0.2)
 		DetectionSensor.DetectionState.SEARCHING: return Color(0.98, 0.55, 0.1)
-		DetectionSensor.DetectionState.ALERTED, DetectionSensor.DetectionState.PURSUIT: return Color(0.95, 0.15, 0.15)
+		DetectionSensor.DetectionState.ALERTED: return Color(0.95, 0.15, 0.15)
 		_: return Color(0.2, 0.85, 0.35)

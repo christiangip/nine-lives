@@ -7,7 +7,7 @@ class_name DetectionSensor
 ## comes from EnemyDef, all curve/threshold tunables from DetectionConfigDef.
 ## See docs/tasks/04_stealth_detection.md and GDD §8.1-§8.3.
 
-enum DetectionState { UNAWARE, SUSPICIOUS, SEARCHING, ALERTED, PURSUIT }
+enum DetectionState { UNAWARE, SUSPICIOUS, SEARCHING, ALERTED }
 
 ## Curve/threshold tunables. Falls back to Content.detection's default if left unset.
 @export var config: DetectionConfigDef
@@ -31,12 +31,18 @@ func _ready() -> void:
 	# Content is an autoload; fall back to the registered default config when unassigned.
 	if config == null and Content != null and Content.detection != null:
 		config = Content.detection.get_def(&"default") as DetectionConfigDef
+	# PursuitDirector polls this group's `fill` to decide whether the law still has contact (issue 1).
+	add_to_group(&"detection_sensor")
 	if not EventBus.noise_emitted.is_connected(_on_noise_emitted):
 		EventBus.noise_emitted.connect(_on_noise_emitted)
+	if not EventBus.pursuit_phase_changed.is_connected(_on_pursuit_phase_changed):
+		EventBus.pursuit_phase_changed.connect(_on_pursuit_phase_changed)
 
 func _exit_tree() -> void:
 	if EventBus.noise_emitted.is_connected(_on_noise_emitted):
 		EventBus.noise_emitted.disconnect(_on_noise_emitted)
+	if EventBus.pursuit_phase_changed.is_connected(_on_pursuit_phase_changed):
+		EventBus.pursuit_phase_changed.disconnect(_on_pursuit_phase_changed)
 	# Announce we're no longer detecting anything, so the HUD/CompassEye drop this actor. Without this, a
 	# taken-down/killed guard's last detection state lingers forever (no more ticks to decay it), leaving
 	# the compass "suspicious" with no guard actually aware of the player.
@@ -85,7 +91,10 @@ func _sense_player(player: Node, delta: float) -> void:
 	var forward := -global_transform.basis.z
 	var target_pos: Vector3 = (player as Node3D).global_position
 	var half_angle := deg_to_rad(cone_angle_deg() * 0.5)
-	var max_range := cone_range()
+	# Heightened awareness once the level is ALERTED (a pursuit happened and was shaken off): the sensor
+	# sees FURTHER and fills FASTER for the rest of the mission. Applied here in the node glue only — the
+	# pure seams stay untouched, so the task-04 detection tests are unaffected.
+	var max_range := cone_range() * _range_mult()
 
 	var gain := 0.0
 	if is_in_cone(origin, forward, target_pos, half_angle, max_range):
@@ -96,12 +105,40 @@ func _sense_player(player: Node, delta: float) -> void:
 			var light := _sample_light_level(target_pos)
 			var stance_profile := _target_stance_profile(player)
 			var mf := movement_factor(_target_speed(player))
-			gain = compute_fill_rate(df, light, stance_profile, mf, visibility)
+			gain = compute_fill_rate(df, light, stance_profile, mf, visibility) * _gain_mult()
 			has_target = true
 			last_seen_position = target_pos
 
 	fill = step_fill(fill, gain, delta)
 	_update_state()
+
+# --- Alert-state awareness (misc-fixes-3 issue 1) --------------------------
+## Is the mission in the post-pursuit ALERTED state? Deliberately NOT keyed to PURSUIT as well: during a
+## pursuit the convergence behaviour IS the response, and a silent alarm arms a pursuit that must stay
+## invisible to the player (guards would visibly sharpen). Null-guarded for headless/pure tests.
+func _alerted() -> bool:
+	return RunManager != null and RunManager.alert_state == RunManager.AlertState.ALERTED
+
+func _gain_mult() -> float:
+	return config.alerted_gain_mult if config != null and _alerted() else 1.0
+
+func _range_mult() -> float:
+	return config.alerted_range_mult if config != null and _alerted() else 1.0
+
+## The pursuit ended (phase 0): drop the ALERTED latch so this sensor can sense — and be spotted-by —
+## afresh. Without this, `state` pins at ALERTED for the life of the sensor (discovery.md #3) and the
+## guard never leaves COMBAT. `has_target` must clear with the fill, or the guard's next investigate
+## would chase the stale pre-pursuit last_seen_position instead of a fresher heard-noise lead.
+func _on_pursuit_phase_changed(phase: int) -> void:
+	if phase == 0:
+		_deescalate()
+
+func _deescalate() -> void:
+	fill = 0.0
+	has_target = false
+	_last_emitted_fill = 0.0
+	if state != DetectionState.UNAWARE:
+		_set_state(DetectionState.UNAWARE)   # emits detection_changed so the HUD/compass drop too
 
 ## Frames between full senses for a guard `dist` metres from the player (LOD): 1 (every frame) when near
 ## enough to see, throttled at mid range, 0 (sleep) beyond the sleep range. Pure. (FR-21-2)
@@ -175,16 +212,19 @@ func state_for_fill(f: float) -> int:
 		return DetectionState.SUSPICIOUS
 	return DetectionState.UNAWARE
 
-## Next state from the current one and the meter. Alerted/Pursuit latch — "full detection
-## commits the location to alert" (GDD §8.3); Suspicious/Searching recover as fill decays.
+## Next state from the current one and the meter. Alerted latches — "full detection commits the location
+## to alert" (GDD §8.3); Suspicious/Searching recover as fill decays. The latch is released only by
+## _deescalate() when the pursuit ends (issue 1), never by decay.
 func step_state(current_state: int, f: float) -> int:
-	if current_state == DetectionState.ALERTED or current_state == DetectionState.PURSUIT:
+	if current_state == DetectionState.ALERTED:
 		return current_state
 	return state_for_fill(f)
 
 ## Fill bump from an audible noise, scaled by closeness. Audible within the larger of the
 ## noise's own carry radius and the sensor's hearing radius (keen-eared actors hear quiet
 ## noises too). Returns 0.0 if out of range.
+## NOTE: this is the DISTANCE half only — multiply by loudness_factor() for how loud the noise
+## actually was. See _on_noise_emitted.
 func hearing_bump(noise_radius: float, noise_pos: Vector3, sensor_pos: Vector3, sensor_hearing: float, gain: float) -> float:
 	var reach := maxf(noise_radius, sensor_hearing)
 	if reach <= 0.0:
@@ -194,11 +234,23 @@ func hearing_bump(noise_radius: float, noise_pos: Vector3, sensor_pos: Vector3, 
 		return 0.0
 	return gain * (1.0 - dist / reach)
 
+## How much of the full bump a noise of this radius lands: 1.0 once it's as loud as `reference`,
+## scaling down linearly for quieter ones. This is what makes a crouch-step register less than a
+## standing step and a sprint saturate — before it, `hearing_bump` used the radius ONLY to widen the
+## reach, so every footstep filled a guard's meter identically regardless of how quiet it was. Pure.
+static func loudness_factor(noise_radius: float, reference: float) -> float:
+	if reference <= 0.0:
+		return 1.0
+	return clampf(noise_radius / reference, 0.0, 1.0)
+
 # --- Sound channel (FR-04-4) -----------------------------------------------
 func _on_noise_emitted(position: Vector3, radius: float, source: String) -> void:
 	if config == null or not is_inside_tree():
 		return
-	var bump := hearing_bump(radius, position, global_position, hearing(), config.sound_gain)
+	# Distance × LOUDNESS: a quiet noise close by must register less than a loud one at the same spot,
+	# or the player's stance/Silence/surface choices buy them nothing against a guard's ears.
+	var bump := hearing_bump(radius, position, global_position, hearing(), config.sound_gain) \
+		* loudness_factor(radius, config.sound_reference_radius)
 	if bump <= 0.0:
 		return
 	last_heard_position = position

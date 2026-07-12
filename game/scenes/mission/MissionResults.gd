@@ -27,6 +27,9 @@ func _ready() -> void:
 
 	var box := VBoxContainer.new()
 	box.set_anchors_preset(Control.PRESET_CENTER)
+	# Without growing BOTH ways, PRESET_CENTER puts the box's top-left at screen centre (off-centre summary).
+	box.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	box.grow_vertical = Control.GROW_DIRECTION_BOTH
 	box.custom_minimum_size = Vector2(560, 0)
 	box.add_theme_constant_override("separation", 14)
 	add_child(box)

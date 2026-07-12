@@ -24,7 +24,7 @@ var _mode: int = Mode.NEW
 var _list: VBoxContainer
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)   # offsets too: anchors alone keep the 0x0 rect a code-built Control starts with
 	theme = UITheme.build()
 
 	var dim := ColorRect.new()
@@ -35,6 +35,9 @@ func _ready() -> void:
 
 	var panel := PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_CENTER)
+	# Without growing BOTH ways, PRESET_CENTER puts the panel's top-left at screen centre (off-centre panel).
+	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	panel.grow_vertical = Control.GROW_DIRECTION_BOTH
 	panel.custom_minimum_size = Vector2(720, 560)
 	add_child(panel)
 	var root := VBoxContainer.new()

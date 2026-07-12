@@ -20,7 +20,7 @@ var _message: String = ""
 var _confirm_text: String = "Confirm"
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)   # offsets too: anchors alone keep the 0x0 rect a code-built Control starts with
 	process_mode = Node.PROCESS_MODE_ALWAYS   # usable while the tree is paused (Pause → Abort confirm)
 	theme = UITheme.build()
 
@@ -32,6 +32,10 @@ func _ready() -> void:
 
 	var panel := PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_CENTER)
+	# PRESET_CENTER alone pins the panel's TOP-LEFT to screen centre (it grows toward the bottom-right).
+	# Growing BOTH ways is what actually centres it — the GalleryHub idiom.
+	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	panel.grow_vertical = Control.GROW_DIRECTION_BOTH
 	panel.custom_minimum_size = Vector2(460, 0)
 	add_child(panel)
 	var box := VBoxContainer.new()

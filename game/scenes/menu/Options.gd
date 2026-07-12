@@ -37,7 +37,7 @@ var _listening_action: StringName = &""
 var _listening_button: Button = null
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)   # offsets too: anchors alone keep the 0x0 rect a code-built Control starts with
 	if _pause_aware:
 		process_mode = Node.PROCESS_MODE_ALWAYS
 	theme = UITheme.build()
@@ -50,6 +50,9 @@ func _ready() -> void:
 
 	var panel := PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_CENTER)
+	# Without growing BOTH ways, PRESET_CENTER puts the panel's top-left at screen centre (off-centre panel).
+	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	panel.grow_vertical = Control.GROW_DIRECTION_BOTH
 	panel.custom_minimum_size = Vector2(820, 620)
 	add_child(panel)
 	var root := VBoxContainer.new()

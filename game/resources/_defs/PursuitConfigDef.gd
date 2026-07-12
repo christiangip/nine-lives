@@ -16,6 +16,10 @@ class_name PursuitConfigDef
 ## A silent alarm starts the timeline further along than a loud one (police are quietly enroute,
 ## no on-screen warning — Intel reveals them). Loud always starts at phase 1. (FR-10-2)
 @export var silent_skip_phase: int = 2
+## Seconds of ZERO detection contact (no sensor anywhere holding any fill) before the pursuit is called
+## off. The level then drops to phase 0 but stays ALERTED for the rest of the mission — guards resume
+## patrol with heightened senses, and a fresh alarm re-escalates to a full pursuit. (misc-fixes-3 issue 1)
+@export var pursuit_lost_timeout: float = 60.0
 
 # --- Heat on going loud (FR-10-3) ------------------------------------------
 @export var heat_per_loud_alarm: float = 0.25    ## Heat added (0..1) when a loud alarm fires

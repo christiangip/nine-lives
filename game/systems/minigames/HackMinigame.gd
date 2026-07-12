@@ -65,10 +65,11 @@ func begin(ctx: Dictionary = {}) -> void:
 	_build_ui()
 
 func _build_ui() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)   # offsets too: anchors alone keep the 0x0 rect a code-built Control starts with
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_readout = Label.new()
 	_readout.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_readout.grow_horizontal = Control.GROW_DIRECTION_BOTH   # else the label's LEFT edge sits at centre
 	_readout.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_readout.position.y = 40.0
 	add_child(_readout)
